@@ -24,6 +24,7 @@ jobs:
           arguments: >
             build jib 
             -Djib.to.image=ghcr.io/${{ steps.repository.outputs.lowercase }}:${{github.ref_name}}
+            -Djib.to.tags=${{github.ref_name}},latest
             -Djib.to.auth.username=${{ github.actor }}
             -Djib.to.auth.password=${{ github.token }}
 
