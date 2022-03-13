@@ -1,0 +1,25 @@
+apiVersion: cmcc.tsystemsmms.com/v1
+kind: CoreMediaContentCloud
+metadata:
+  name: example
+spec:
+  comment: a comment.
+  with:
+    databases: true
+    live: true
+    management: true
+    prefix: example
+  defaults:
+    image:
+      pullPolicy: IfNotPresent
+      registry: gitlab.example.com/corporate-website/coremedia-blueprint
+      tag: main
+    ingressDomain: 127.0.0.1.nip.io
+  siteMappings:
+    - hostname: corporate
+      primarySegment: corporate
+      additionalSegments:
+        - corporate-de-de
+        - corporate-en-ca
+        - corporate-en-gb
+
