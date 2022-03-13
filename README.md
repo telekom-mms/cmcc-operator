@@ -1,5 +1,7 @@
 # Kubernetes Operator for CoreMedia Content Cloud
 
+[![build](https://github.com/T-Systems-MMS/cmcc-operator/actions/workflows/build.yml/badge.svg)](https://github.com/T-Systems-MMS/cmcc-operator/actions/workflows/build.yml)
+
 ## Introduction
 
 [Kubernetes Operators](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) are specialized software packages that help manage applications and resources in a k8s cluster. This operator will create, initialize and run a CoreMedia Content Cloud application. A custom resource definition is used to define all relevant parameters.
@@ -10,6 +12,7 @@
 * [Installing the Operator](#preparing-your-cluster-and-installing-the-operator)
 * [Using the Operator to create a CoreMedia installation](#using-the-operator)
 * [Customizing the CMCC Operator](docs/customizing-the-operator.md) information for developers
+* [ghcr.io/t-systems-mms/cmcc-operator/cmcc-operator](https://github.com/T-Systems-MMS/cmcc-operator/pkgs/container/cmcc-operator%2Fcmcc-operator) Docker Image
 
 ## Preparing Your Cluster and Installing the Operator
 
