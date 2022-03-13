@@ -29,7 +29,7 @@ spec:
       serviceAccountName: cmcc-operator
       containers:
         - name: operator
-          image: ghcr.io/cmcc-operator/cmcc-operator:latest
+          image: ghcr.io/t-systems-mms/cmcc-operator/cmcc-operator:latest
           imagePullPolicy: Always
 
 ---
