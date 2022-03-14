@@ -1,0 +1,24 @@
+image: gradle:jdk11
+
+before_script:
+  - "export GRADLE_USER_HOME=$(pwd)/.gradle"
+
+build:
+  script:
+    - "tag=$(echo -n ${CI_COMMIT_BRANCH} | tr -c '[:alnum:]' '-' | tr '[:upper:]' '[:lower:]')"
+    - >
+      gradle --build-cache clean test jib
+      -Djib.to.image=${CI_REGISTRY_IMAGE}/${CI_PROJECT_NAME}
+      -Djib.to.tags=${tag},latest
+      -Djib.to.auth.username=${CI_REGISTRY_USER}
+      -Djib.to.auth.password=${CI_REGISTRY_PASSWORD}
+
+  allow_failure: false
+  tags:
+    - docker
+  cache:
+    key: "$CI_COMMIT_REF_NAME"
+    policy: push
+    paths:
+      - build
+      - .gradle
