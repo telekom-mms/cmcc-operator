@@ -22,7 +22,7 @@ jobs:
         uses: gradle/gradle-build-action@v2
         with:
           arguments: >
-            build jib 
+            build test jib 
             -Djib.to.image=ghcr.io/${{ steps.repository.outputs.lowercase }}:${{github.ref_name}}
             -Djib.to.tags=${{github.ref_name}},latest
             -Djib.to.auth.username=${{ github.actor }}
