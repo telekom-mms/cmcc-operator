@@ -68,6 +68,12 @@ kubectl apply -f k8s/cmcc-crd.yaml
 kubectl apply -f k8s/cmcc-operator.yaml
 ```
 
+or for the impatient:
+```shell
+kubectl apply -f https://raw.githubusercontent.com/T-Systems-MMS/cmcc-operator/main/k8s/cmcc-crd.yaml -f https://raw.githubusercontent.com/T-Systems-MMS/cmcc-operator/main/k8s/cmcc-operator.yaml
+```
+
+
 ## Using the Operator
 
 ### Pull Secret
