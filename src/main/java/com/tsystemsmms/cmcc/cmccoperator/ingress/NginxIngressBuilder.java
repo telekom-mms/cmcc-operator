@@ -112,4 +112,10 @@ public class NginxIngressBuilder extends AbstractIngressBuilder {
 
         return b;
     }
+
+    @Override
+    public IngressBuilder uploadSize(String size) {
+        annotations.put("nginx.ingress.kubernetes.io/proxy-body-size", size);
+        return this;
+    }
 }

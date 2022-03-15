@@ -85,6 +85,7 @@ public abstract class AbstractCmccIngressGenerator implements CmccIngressGenerat
                 .pathPrefix("/login", serviceName)
                 .pathPrefix("/logout", serviceName)
                 .pathPrefix("/cspInfo.html", serviceName)
+                .uploadSize("500m")
                 .build();
     }
 }
