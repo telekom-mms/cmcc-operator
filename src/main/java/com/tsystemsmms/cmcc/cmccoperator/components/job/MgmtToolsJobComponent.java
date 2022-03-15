@@ -81,8 +81,39 @@ public class MgmtToolsJobComponent extends JobComponent {
         } else {
             env.add(EnvVarSimple("THEMES_ARCHIVE_URL", "/coremedia/import/themes/frontend.zip"));
         }
+
+        env.addAll(getMySqlEnvVars());
+
         return env;
     }
+
+    /**
+     * Get a list of environment variables to configure the MySQL database connection of the component.
+     *
+     * @return list of env vars
+     */
+    public EnvVarSet getMySqlEnvVars() {
+        MySQLDetails details = getMySQLDetails("management");
+        EnvVarSet env = new EnvVarSet();
+
+        env.add(EnvVarSimple("MYSQL_HOST", details.getHostName())); // needed for MySQL command line tools
+
+        env.add(EnvVarSimple("DEV_MANAGEMENT_JDBC_DRIVER", "com.mysql.cj.jdbc.Driver"));
+        env.add(EnvVarSecret("DEV_MANAGEMENT_JDBC_PASSWORD", details.getSecretName(), TargetState.DATABASE_SECRET_PASSWORD_KEY));
+        env.add(EnvVarSimple("DEV_MANAGEMENT_JDBC_SCHEMA", details.getDatabaseSchema()));
+        env.add(EnvVarSimple("DEV_MANAGEMENT_JDBC_URL", details.getJdbcUrl()));
+        env.add(EnvVarSecret("DEV_MANAGEMENT_JDBC_USER", details.getSecretName(), TargetState.DATABASE_SECRET_USERNAME_KEY));
+
+        details = getMySQLDetails("master");
+        env.add(EnvVarSimple("DEV_MASTER_JDBC_DRIVER", "com.mysql.cj.jdbc.Driver"));
+        env.add(EnvVarSecret("DEV_MASTER_JDBC_PASSWORD", details.getSecretName(), TargetState.DATABASE_SECRET_PASSWORD_KEY));
+        env.add(EnvVarSimple("DEV_MASTER_JDBC_SCHEMA", details.getDatabaseSchema()));
+        env.add(EnvVarSimple("DEV_MASTER_JDBC_URL", details.getJdbcUrl()));
+        env.add(EnvVarSecret("DEV_MASTER_JDBC_USER", details.getSecretName(), TargetState.DATABASE_SECRET_USERNAME_KEY));
+        return env;
+    }
+
+
 
     @Override
     public List<Container> getInitContainers() {
