@@ -16,16 +16,15 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import lombok.Data;
 import org.springframework.beans.factory.BeanFactory;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 /**
  * Manage a collection of components. Includes a factory method for components that uses the ComponentBeanFactories and the type from the ComponentSpec.
  */
 public class ComponentCollection {
-    HashMap<ComponentReference, Component> components = new HashMap<>();
+    private final HashMap<ComponentReference, Component> components = new HashMap<>();
     private final BeanFactory beanFactory;
     private final KubernetesClient kubernetesClient;
     private final TargetState targetState;
@@ -40,12 +39,17 @@ public class ComponentCollection {
      * Adds a component by spec. Returns the generated component to allow further customization.
      *
      * @param componentSpec specifying the component to add
-     * @return added component
+     * @return the created/updated component
      */
     public Component add(ComponentSpec componentSpec) {
-        Component component = createComponentByComponentSpec(componentSpec);
-        components.put(new ComponentReference(componentSpec), component);
-        return component;
+        ComponentReference cr = new ComponentReference(componentSpec);
+        Component c = components.get(cr);
+        if (c == null) {
+            components.put(cr, createComponentByComponentSpec(componentSpec));
+        } else {
+            c.updateComponentSpec(componentSpec);
+        }
+        return c;
     }
 
     /**
@@ -57,6 +61,10 @@ public class ComponentCollection {
         specs.forEach(this::add);
     }
 
+    public boolean containsName(String name) {
+        return components.values().stream().anyMatch(c -> c.getComponentSpec().getName().equals(name));
+    }
+
     /**
      * Returns all added components.
      *
@@ -64,6 +72,20 @@ public class ComponentCollection {
      */
     public Collection<Component> getComponents() {
         return components.values();
+    }
+
+    /**
+     * Find all components implementing clazz.
+     *
+     * @param clazz the class
+     * @param <T> the class
+     * @return a list of components implementing class.
+     */
+    @SuppressWarnings("unchecked")
+    public <T> List<T> getAllImplementing(Class<T> clazz) {
+        return (List<T>) components.values().stream()
+                .filter(c -> c.getClass().isAssignableFrom(clazz))
+                .collect(Collectors.toList());
     }
 
     /**
@@ -181,6 +203,10 @@ public class ComponentCollection {
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Component \"" + name + "\"/\"" + kind + "\": " + e.getMessage());
         }
+    }
+
+    public static boolean equalsSpec(ComponentSpec a, ComponentSpec b) {
+        return new ComponentReference(a).equals(new ComponentReference(b));
     }
 
     @Data

@@ -158,4 +158,10 @@ public class CAEComponent extends CorbaComponent implements HasService {
 
         return volumeMounts;
     }
+
+    @Override
+    public String getUapiClientDefaultUsername() {
+        return "webserver";
+    }
+
 }

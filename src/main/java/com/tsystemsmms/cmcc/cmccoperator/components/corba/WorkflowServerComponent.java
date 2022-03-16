@@ -69,4 +69,9 @@ public class WorkflowServerComponent extends CorbaComponent implements HasMySQLS
         return env;
     }
 
+    @Override
+    public String getUapiClientDefaultUsername() {
+        return "workflow";
+    }
+
 }

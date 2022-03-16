@@ -51,4 +51,9 @@ public class UserChangesComponent extends CorbaComponent {
         return containers;
     }
 
+    @Override
+    public String getUapiClientDefaultUsername() {
+        return "studio";
+    }
+
 }

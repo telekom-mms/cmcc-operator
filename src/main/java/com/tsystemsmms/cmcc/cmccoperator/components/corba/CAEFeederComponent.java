@@ -97,4 +97,9 @@ public class CAEFeederComponent extends CorbaComponent implements HasMySQLSchema
         return env;
     }
 
+    @Override
+    public String getUapiClientDefaultUsername() {
+        return "feeder";
+    }
+
 }

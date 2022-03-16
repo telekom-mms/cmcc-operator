@@ -177,4 +177,9 @@ public class ContentServerComponent extends CorbaComponent implements HasMySQLSc
         return volumes;
     }
 
+    @Override
+    public String getUapiClientDefaultUsername() {
+        return "publisher";
+    }
+
 }

@@ -13,10 +13,11 @@ The `status` property of the custom resource has these fields:
 
 The `milestone` status column shows the creation status of the installation:
 1. `Created`: The initial databases are being created (if requested by `with.databases`)
-2. `DatabasesReady`: The databases are running, all schema s have been created. The core management components are being started (CMS, MLS, WFS).
-3. `ManagementReady`: The core managment components are running. All remaining component are being started, including the content import.
-4. `Ready`: The content import has completed, all components are up and running.
-5. `Never`: Special state that will never be reached, can be used on components to define them, but have the operator never create the resources for them.
+2. `DatabasesReady`: The databases are running, all schema s have been created. The core management components are being started (CMS, MLS).
+3. `ContentserverReady`: The Content Management Server and the Master Live Server are running. The default passwords are being replaced based on secrets.
+4. `ManagementReady`: The core management components are running. All remaining component are being started, including the content import.
+5. `Ready`: The content import has completed, all components are up and running.
+6. `Never`: Special state that will never be reached, can be used on components to define them, but have the operator never create the resources for them.
 
 
 ## Custom Resource Properties Specification
@@ -39,23 +40,7 @@ The Custom Resource `CoreMediaContentClouds` (`cmcc` for short) `spec` field def
 | `defaults.previewHostname`            | String          | `preview`                      | Hostname of the preview CAE. Unless it is a fully-qualified domain name, the `namePrefix` and the `ingressDomain` will be pre- and appended.                                               |
 | `defaults.resources`                  | resources       | –                              | Default [resources to apply to component pods](https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/pod-v1/#resources)                                                   |
 | `defaults.studioHostname`             | String          | `studio`                       | Hostname of the Studio. Unless it is a fully-qualified domain name, the `namePrefix` and the `ingressDomain` will be pre- and appended.                                                    |
-| `importJob`                           | object          | –                              | Parameters for the content-users and frontend import. See below for more info.                                                                                                             |
-| `importJob.blobServer`                | boolean         | false                          | Configure a blob server component                                                                                                                                                          |
-| `importJob.contentUsersAuth`          | object          | –                              | Secret reference for authentication for downloading the content-users.zip                                                                                                                  |
-| `importJob.contentUsersAuth.password` | String          | `password`                     | secret key for the password                                                                                                                                                                |
-| `importJob.contentUsersAuth.secret`   | String          | ""                             | name of the secret                                                                                                                                                                         |
-| `importJob.contentUsersAuth.username` | String          | `username`                     | secret key for the username                                                                                                                                                                |
-| `importJob.contentUsersUrl`           | string          | ""                             | URL of the content-users.zip to be imported, used by `use-remote-content-archive`                                                                                                          |
-| `importJob.env`                       | list of EnvVars | –                              | Addititional [environment variables](https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/pod-v1/#environment-variables) to be added to the `management-tools` container |
-| `importJob.forceContentImport`        | boolean         | false                          | force re-import of content and users                                                                                                                                                       |
-| `importJob.forceThemeImport`          | boolean         | false                          | force re-import of themes                                                                                                                                                                  |
-| `importJob.pvc`                       | string          | ""                             | Volume `containing content-users.zip` and `frontend.zip`, used by `unpack-content-users-frontend`                                                                                          |
-| `importJob.tasks`                     | list of Strings | see description                | List of the entrypoint scripts to be run to import things. Defaults to a list suitable to either local import (when `importJob.pvc` is set) or a remote download otherwise                 |
-| `importJob.themesAuth`                | object          | –                              | Secret reference for authentication for downloading the `content-users.zip`                                                                                                                |
-| `importJob.themesAuth.password`       | String          | `password`                     | secret key for the password                                                                                                                                                                |
-| `importJob.themesAuth.secret`         | String          | ""                             | name of the secret                                                                                                                                                                         |
-| `importJob.themesAuth.username`       | String          | `username`                     | secret key for the username                                                                                                                                                                |
-| `importJob.themesUrl`                 | string          | ""                             | URL of the frontend.zip to be imported, used by `import-themes`                                                                                                                            |
+| `importJob`                           | object          | –                              | Deprecated, not evaluated any more. See below for the `management-tools` component.                                                                                                        |
 | `licenseSecrets`                      | object          | –                              | Names of the secrets containing the license                                                                                                                                                |
 | `licenseSecrets.CMSLicense`           | String          | `license-cms`                  | Name of the secret containing a `license.zip` entry with the appropriate file contents                                                                                                     |
 | `licenseSecrets.MLSLicense`           | String          | `license-mls`                  | Name of the secret containing a `license.zip` entry with the appropriate file contents                                                                                                     |
@@ -294,9 +279,30 @@ The database schema and username is `edcom`.
 
 The Solr collection is `studio`.
 
-### Component `tools`
+### Component `management-tools`
 
-A Kubernetes Job running the `management-tools` image.
+A Kubernetes Job running the `management-tools` image. You can configure these properties:
+
+| Property                              | Type            | Default    | Description                                                                                                                                                                              |
+|---------------------------------------|-----------------|------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `args`                                | list of Strings | ""         | List of the entrypoint scripts to be run to import things. Defaults to a list suitable to either local import (when `importJob.pvc` is set) or a remote download otherwise               |
+| `env`                                 | list of EnvVars | –          | Additional [environment variables](https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/pod-v1/#environment-variables) to be added to the `management-tools` container |
+| `importJob.blobServer`                | boolean         | false      | Configure a blob server component                                                                                                                                                        |
+| `importJob.contentUsersAuth`          | object          | –          | Secret reference for authentication for downloading the content-users.zip                                                                                                                |
+| `importJob.contentUsersAuth.password` | String          | `password` | secret key for the password                                                                                                                                                              |
+| `importJob.contentUsersAuth.secret`   | String          | ""         | name of the secret                                                                                                                                                                       |
+| `importJob.contentUsersAuth.username` | String          | `username` | secret key for the username                                                                                                                                                              |
+| `importJob.contentUsersUrl`           | string          | ""         | URL of the content-users.zip to be imported, used by `use-remote-content-archive`                                                                                                        |
+| `importJob.forceContentImport`        | boolean         | false      | force re-import of content and users                                                                                                                                                     |
+| `importJob.forceThemeImport`          | boolean         | false      | force re-import of themes                                                                                                                                                                |
+| `importJob.pvc`                       | string          | ""         | Volume `containing content-users.zip` and `frontend.zip`, used by `unpack-content-users-frontend`                                                                                        |
+| `importJob.themesAuth`                | object          | –          | Secret reference for authentication for downloading the `content-users.zip`                                                                                                              |
+| `importJob.themesAuth.password`       | String          | `password` | secret key for the password                                                                                                                                                              |
+| `importJob.themesAuth.secret`         | String          | ""         | name of the secret                                                                                                                                                                       |
+| `importJob.themesAuth.username`       | String          | `username` | secret key for the username                                                                                                                                                              |
+| `importJob.themesUrl`                 | string          | ""         | URL of the frontend.zip to be imported, used by `import-themes`                                                                                                                          |
+
+The `milestone` property determines at which milestone a configured job will be started. After the job has completed, the milestone will be advanced.
 
 ### Component `user-changes`
 

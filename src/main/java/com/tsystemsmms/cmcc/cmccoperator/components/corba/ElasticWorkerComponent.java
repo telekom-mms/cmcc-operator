@@ -43,4 +43,10 @@ public class ElasticWorkerComponent extends CorbaComponent implements HasService
         env.addAll(getSolrEnvVars("content", "studio"));
         return env;
     }
+
+    @Override
+    public String getUapiClientDefaultUsername() {
+        return "webserver";
+    }
+
 }

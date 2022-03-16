@@ -24,10 +24,7 @@ import lombok.SneakyThrows;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -46,7 +43,7 @@ public class Utils {
     }
 
     public static String defaultString(String... values) {
-        return Stream.of(values).filter(Objects::nonNull).findFirst().orElseThrow();
+        return Stream.of(values).filter(s -> s != null && !s.isBlank()).findFirst().orElseThrow();
     }
 
     /**
@@ -113,8 +110,8 @@ public class Utils {
      * serializable by Jackson.
      *
      * @param source object to be cloned
-     * @param clazz class of the object
-     * @param <T> class of the object
+     * @param clazz  class of the object
+     * @param <T>    class of the object
      * @return a deep clone of the object
      */
     @SneakyThrows
@@ -129,5 +126,34 @@ public class Utils {
 
     public static String decode64(String s) {
         return new String(Base64.getDecoder().decode(s), StandardCharsets.UTF_8);
+    }
+
+    /**
+     * Converts an object into a boolean. If the object is null, or its string representation is blank, return the
+     * default value. The return value is true if
+     * <ul>
+     *     <li>the object is a number, and the number is not zero</li>
+     *     <li>the objects string representation is "on", "true", or "yes"</li>
+     * </ul>
+     *
+     * @param o   object to be converted
+     * @param def default value
+     * @return the boolean value
+     */
+    public static boolean booleanOf(Object o, boolean def) {
+        String s;
+        long l = 0l;
+        if (o == null)
+            return def;
+        s = o.toString().toLowerCase(Locale.ROOT);
+        if (s.isBlank()) {
+            return def;
+        }
+        try {
+            l = Long.parseLong(s);
+        } catch (NumberFormatException e) {
+            // ignore
+        }
+        return l != 0 || s.equals("on") || s.equals("true") || s.equals("yes");
     }
 }

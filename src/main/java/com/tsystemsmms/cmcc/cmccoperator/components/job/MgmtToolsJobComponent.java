@@ -10,32 +10,50 @@
 
 package com.tsystemsmms.cmcc.cmccoperator.components.job;
 
+import com.tsystemsmms.cmcc.cmccoperator.components.Component;
+import com.tsystemsmms.cmcc.cmccoperator.components.HasUapiClient;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
+import com.tsystemsmms.cmcc.cmccoperator.crds.ImportJob;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 import com.tsystemsmms.cmcc.cmccoperator.utils.EnvVarSet;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import lombok.extern.slf4j.Slf4j;
+import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.Constructor;
 
 import java.util.LinkedList;
 import java.util.List;
 
-import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.*;
+import static com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState.DATABASE_SECRET_PASSWORD_KEY;
+import static com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState.DATABASE_SECRET_USERNAME_KEY;
+import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.EnvVarSecret;
+import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.EnvVarSimple;
 
 /**
  * Run the management-tools container to import content, users, themes, and workflows, and publish content.
- *
+ * <p>
  * In addition to the ComponentSpec, configuration is taken from the importJob property of the custom resource.
  */
+@Slf4j
 public class MgmtToolsJobComponent extends JobComponent {
     public static final String CONTENT_USERS_FRONTEND_VOLUME = "content-users-frontend";
     public static final String CONTENT_USERS_FRONTEND_PATH = "/" + CONTENT_USERS_FRONTEND_VOLUME;
+    public static final String EXTRA_CONFIG = "config";
+
+    private ImportJob importJob = null;
 
     public MgmtToolsJobComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec componentSpec) {
         super(kubernetesClient, targetState, componentSpec, "management-tools");
         activeDeadlineSeconds = 30 * 60L;
-        if (componentSpec.getArgs().size() == 0) {
-            componentSpec.setArgs(new LinkedList<>(getImportJob().getTasks()));
-        }
+    }
+
+    @Override
+    public Component updateComponentSpec(ComponentSpec newCs) {
+        super.updateComponentSpec(newCs);
+        if (importJob != null)
+            importJob = getImportJobFromExtra();
+        return this;
     }
 
     @Override
@@ -44,9 +62,19 @@ public class MgmtToolsJobComponent extends JobComponent {
 
         env.add(EnvVarSimple("JAVA_HEAP", ""));
         env.add(EnvVarSimple("JAVA_OPTS", "-XX:MinRAMPercentage=80 -XX:MaxRAMPercentage=95"));
+
         env.add(EnvVarSimple("CAP_CLIENT_SERVER_IOR_URL", getTargetState().getServiceUrlFor("content-server", "cms")));
         env.add(EnvVarSimple("DEV_MASTER_CAP_CLIENT_SERVER_IOR_URL", getTargetState().getServiceUrlFor("content-server", "mls")));
         env.add(EnvVarSimple("DEV_MANAGEMENT_CAP_CLIENT_SERVER_IOR_URL", getTargetState().getServiceUrlFor("content-server", "cms")));
+
+        if (getTargetState().isInitialPasswords()) {
+            env.add(EnvVarSecret("PASSWORD_ADMIN", HasUapiClient.getUapiClientAdminSecretName(), DATABASE_SECRET_PASSWORD_KEY));
+            env.add(EnvVarSimple("TOOLS_USER", "admin"));
+            env.add(EnvVarSimple("TOOLS_PASSWORD", "admin"));
+        } else {
+            env.add(EnvVarSecret("TOOLS_USER", HasUapiClient.getUapiClientAdminSecretName(), DATABASE_SECRET_USERNAME_KEY));
+            env.add(EnvVarSecret("TOOLS_PASSWORD", HasUapiClient.getUapiClientAdminSecretName(), DATABASE_SECRET_PASSWORD_KEY));
+        }
         env.add(EnvVarSimple("DEBUG_ENTRYPOINT", "true"));
         env.add(EnvVarSimple("IMPORT_DIR", "/coremedia/import"));
         if (getImportJob().isForceContentImport()) {
@@ -58,7 +86,7 @@ public class MgmtToolsJobComponent extends JobComponent {
         if (!getImportJob().getContentUsersThemesPvc().isBlank()) {
             env.add(EnvVarSimple("CONTENT_USERS_FRONTEND_PATH", CONTENT_USERS_FRONTEND_PATH));
         }
-        if ( getImportJob().isBlobServer()) {
+        if (getImportJob().isBlobServer()) {
             env.add(EnvVarSimple("BLOB_STORAGE_URL", getTargetState().getServiceUrlFor("blob-server")));
         }
         if (!getImportJob().getContentUsersUrl().isBlank()) {
@@ -102,24 +130,23 @@ public class MgmtToolsJobComponent extends JobComponent {
         env.add(EnvVarSecret("DEV_MANAGEMENT_JDBC_PASSWORD", details.getSecretName(), TargetState.DATABASE_SECRET_PASSWORD_KEY));
         env.add(EnvVarSimple("DEV_MANAGEMENT_JDBC_SCHEMA", details.getDatabaseSchema()));
         env.add(EnvVarSimple("DEV_MANAGEMENT_JDBC_URL", details.getJdbcUrl()));
-        env.add(EnvVarSecret("DEV_MANAGEMENT_JDBC_USER", details.getSecretName(), TargetState.DATABASE_SECRET_USERNAME_KEY));
+        env.add(EnvVarSecret("DEV_MANAGEMENT_JDBC_USER", details.getSecretName(), DATABASE_SECRET_USERNAME_KEY));
 
         details = getMySQLDetails("master");
         env.add(EnvVarSimple("DEV_MASTER_JDBC_DRIVER", "com.mysql.cj.jdbc.Driver"));
         env.add(EnvVarSecret("DEV_MASTER_JDBC_PASSWORD", details.getSecretName(), TargetState.DATABASE_SECRET_PASSWORD_KEY));
         env.add(EnvVarSimple("DEV_MASTER_JDBC_SCHEMA", details.getDatabaseSchema()));
         env.add(EnvVarSimple("DEV_MASTER_JDBC_URL", details.getJdbcUrl()));
-        env.add(EnvVarSecret("DEV_MASTER_JDBC_USER", details.getSecretName(), TargetState.DATABASE_SECRET_USERNAME_KEY));
+        env.add(EnvVarSecret("DEV_MASTER_JDBC_USER", details.getSecretName(), DATABASE_SECRET_USERNAME_KEY));
         return env;
     }
-
 
 
     @Override
     public List<Container> getInitContainers() {
         List<Container> containers = super.getInitContainers();
 
-        containers.add(getContainerWaitForIor(getTargetState().getServiceNameFor("workflow-server"), getTargetState().getServiceUrlFor("workflow-server")));
+//        containers.add(getContainerWaitForIor(getTargetState().getServiceNameFor("workflow-server"), getTargetState().getServiceUrlFor("workflow-server")));
         return containers;
     }
 
@@ -190,5 +217,16 @@ public class MgmtToolsJobComponent extends JobComponent {
         return securityContext;
     }
 
+    private ImportJob getImportJobFromExtra() {
+        Yaml yaml = new Yaml(new Constructor(ImportJob.class));
+        if (getComponentSpec().getExtra() == null || !getComponentSpec().getExtra().containsKey(EXTRA_CONFIG))
+            throw new IllegalArgumentException("Must specify " + EXTRA_CONFIG + " with job parameters for job \"" + getSpecName() + "\"");
+        return yaml.load(getComponentSpec().getExtra().get(EXTRA_CONFIG));
+    }
 
+    private ImportJob getImportJob() {
+        if (importJob == null)
+            importJob = getImportJobFromExtra();
+        return importJob;
+    }
 }

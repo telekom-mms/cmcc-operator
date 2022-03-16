@@ -16,8 +16,9 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 public enum Milestone {
     Created(0),
     DatabasesReady(1),
-    ManagementReady(2),
-    Ready(3),
+    ContentServerReady(2),
+    ManagementReady(3),
+    Ready(4),
     Never(999);
 
     private int milestone;

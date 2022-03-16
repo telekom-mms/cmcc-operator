@@ -41,4 +41,9 @@ public class ContentFeederComponent extends CorbaComponent {
         env.addAll(getSolrEnvVars("content", "studio"));
         return env;
     }
+
+    @Override
+    public String getUapiClientDefaultUsername() {
+        return "feeder";
+    }
 }

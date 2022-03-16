@@ -40,11 +40,22 @@ public interface TargetState {
     CmccIngressGeneratorFactory getCmccIngressGeneratorFactory();
 
     /**
+     * Returns true if the Content Server is using the initial passwords.
+     * <p>
+     * When the Content Server first comes up and initializes an empty database, it creates default users with
+     * default passwords. This flag can be queried to decide whether to use these default password ("admin"/"admin)
+     * or use the usernames and passwords from the respective secrets.
+     *
+     * @return true if default passwords are active
+     */
+    boolean isInitialPasswords();
+
+    /**
      * Owner references to be added to created resources.
      *
      * @return the owner reference
      */
-    OwnerReference getOwnerReferences();
+    OwnerReference getOutOwnerReference();
 
     /**
      * Construct the Kubernetes metadata for the given name.

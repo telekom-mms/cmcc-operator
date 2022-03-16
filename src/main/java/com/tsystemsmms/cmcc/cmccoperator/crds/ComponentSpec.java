@@ -15,13 +15,13 @@ import io.fabric8.kubernetes.api.model.EnvVar;
 import lombok.Data;
 
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
 @Data
 public class ComponentSpec {
     @JsonPropertyDescription("Type of the component")
-//    @javax.validation.constraints.NotNull
     private String type;
 
     @JsonPropertyDescription("Sub-type ('cms' or 'mls', or 'master' and 'replica', or 'preview' and 'live')")
@@ -30,18 +30,27 @@ public class ComponentSpec {
     @JsonPropertyDescription("Name to be used for k8s objects")
     private String name = "";
 
+    @JsonPropertyDescription("Args for the main pod container")
+    private List<String> args = new LinkedList<>();
+
+    @JsonPropertyDescription("Additional environment variables")
+    private List<EnvVar> env = new LinkedList<>();
+
+    @JsonPropertyDescription("Extra parameters (depends on component)")
+    private Map<String, String> extra = new HashMap<>();
+
     @JsonPropertyDescription("Image for main pod' main container")
-    private ImageSpec image;
+    private ImageSpec image = new ImageSpec();
 
     @JsonPropertyDescription("Make available with this milestone")
     private Milestone milestone = Milestone.ManagementReady;
 
-    @JsonPropertyDescription("Additional environment variables")
-    private List<EnvVar> env;
+    public void update(ComponentSpec that) {
+        this.setArgs(that.getArgs());
+        this.getEnv().addAll(that.getEnv());
+        this.getExtra().putAll(that.getExtra());
+        this.getImage().update(that.getImage());
+        this.setMilestone(that.getMilestone());
 
-    @JsonPropertyDescription("Args for the main pod container")
-    private List<String> args;
-
-    @JsonPropertyDescription("Extra parameters (depends on component")
-    private Map<String,String> extra;
+    }
 }

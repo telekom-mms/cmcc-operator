@@ -61,6 +61,12 @@ public class ComponentBeanFactories {
         return new ElasticWorkerComponent(kubernetesClient, targetState, cs);
     }
 
+    @Bean("component:management-tools")
+    @Scope(SCOPE_PROTOTYPE)
+    public MgmtToolsJobComponent mgmtToolsJobComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec cs) {
+        return new MgmtToolsJobComponent(kubernetesClient, targetState, cs);
+    }
+
     @Bean("component:mongodb")
     @Scope(SCOPE_PROTOTYPE)
     public MongoDBComponent mongoDBComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec cs) {
@@ -95,12 +101,6 @@ public class ComponentBeanFactories {
     @Scope(SCOPE_PROTOTYPE)
     public StudioServerComponent studioServerComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec cs) {
         return new StudioServerComponent(kubernetesClient, targetState, cs);
-    }
-
-    @Bean("component:tools")
-    @Scope(SCOPE_PROTOTYPE)
-    public MgmtToolsJobComponent mgmtToolsJobComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec cs) {
-        return new MgmtToolsJobComponent(kubernetesClient, targetState, cs);
     }
 
     @Bean("component:user-changes")

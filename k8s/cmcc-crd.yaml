@@ -45,32 +45,11 @@ spec:
                     name:
                       description: Name to be used for k8s objects
                       type: string
-                    image:
-                      description: Image for main pod' main container
-                      properties:
-                        registry:
-                          description: Image registry (default 'coremedia')
-                          type: string
-                        repository:
-                          description: Image repository (default differs between components)
-                          type: string
-                        tag:
-                          description: Image tag (default 'latest')
-                          type: string
-                        pullPolicy:
-                          description: Image pull policy (default 'IfNotPresent')
-                          type: string
-                      type: object
-                    milestone:
-                      description: Make available with this milestone
-                      enum:
-                      - Created
-                      - DatabasesReady
-                      - ManagementReady
-                      - Ready
-                      - Never
-                      - milestone
-                      type: string
+                    args:
+                      description: Args for the main pod container
+                      items:
+                        type: string
+                      type: array
                     env:
                       description: Additional environment variables
                       items:
@@ -121,16 +100,38 @@ spec:
                             type: object
                         type: object
                       type: array
-                    args:
-                      description: Args for the main pod container
-                      items:
-                        type: string
-                      type: array
                     extra:
                       additionalProperties:
                         type: string
-                      description: Extra parameters (depends on component
+                      description: Extra parameters (depends on component)
                       type: object
+                    image:
+                      description: Image for main pod' main container
+                      properties:
+                        registry:
+                          description: Image registry (default 'coremedia')
+                          type: string
+                        repository:
+                          description: Image repository (default differs between components)
+                          type: string
+                        tag:
+                          description: Image tag (default 'latest')
+                          type: string
+                        pullPolicy:
+                          description: Image pull policy (default 'IfNotPresent')
+                          type: string
+                      type: object
+                    milestone:
+                      description: Make available with this milestone
+                      enum:
+                      - Created
+                      - DatabasesReady
+                      - ContentServerReady
+                      - ManagementReady
+                      - Ready
+                      - Never
+                      - milestone
+                      type: string
                   type: object
                 type: array
               defaults:
@@ -369,21 +370,26 @@ spec:
             type: object
           status:
             properties:
-              milestone:
-                description: Which milestone has been reached in configuring all components
-                enum:
-                - Created
-                - DatabasesReady
-                - ManagementReady
-                - Ready
-                - Never
-                - milestone
-                type: string
               error:
                 description: "Error indication, or empty string"
                 type: string
               errorMessage:
                 description: Error message if state is error
+                type: string
+              flags:
+                additionalProperties:
+                  type: string
+                type: object
+              milestone:
+                description: Which milestone has been reached in configuring all components
+                enum:
+                - Created
+                - DatabasesReady
+                - ContentServerReady
+                - ManagementReady
+                - Ready
+                - Never
+                - milestone
                 type: string
               ownedResourceRefs:
                 description: Resources created by the operator

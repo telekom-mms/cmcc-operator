@@ -40,4 +40,8 @@ public class CoreMediaContentCloudSpec {
 
     @JsonPropertyDescription("Parameters for the content-users and frontend import")
     ImportJob importJob;
+
+    private ImportJob getImportJob() {
+        throw new IllegalArgumentException("Internal error, access to no longer supported property");
+    }
 }

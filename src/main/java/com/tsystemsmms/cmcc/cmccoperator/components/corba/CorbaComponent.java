@@ -10,10 +10,12 @@
 
 package com.tsystemsmms.cmcc.cmccoperator.components.corba;
 
+import com.tsystemsmms.cmcc.cmccoperator.components.HasUapiClient;
 import com.tsystemsmms.cmcc.cmccoperator.components.SpringBootComponent;
 import com.tsystemsmms.cmcc.cmccoperator.components.generic.MongoDBComponent;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
 import com.tsystemsmms.cmcc.cmccoperator.crds.SiteMapping;
+import com.tsystemsmms.cmcc.cmccoperator.targetstate.ClientSecretRef;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 import com.tsystemsmms.cmcc.cmccoperator.utils.EnvVarSet;
 import io.fabric8.kubernetes.api.model.*;
@@ -25,10 +27,12 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import static com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState.DATABASE_SECRET_PASSWORD_KEY;
+import static com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState.DATABASE_SECRET_USERNAME_KEY;
 import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.*;
 
 @Slf4j
-public abstract class CorbaComponent extends SpringBootComponent {
+public abstract class CorbaComponent extends SpringBootComponent implements HasUapiClient {
 
     public CorbaComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec componentSpec, String imageRepository) {
         super(kubernetesClient, targetState, componentSpec, imageRepository);
@@ -60,7 +64,7 @@ public abstract class CorbaComponent extends SpringBootComponent {
         properties.putAll(Map.of(
                 // needed in many applications
                 "com.coremedia.transform.blob Cache.basePath", "/coremedia/cache/persistent-transformed-blobcache",
-                "repository.blob-cache-path","/coremedia/cache/uapi-blobcache",
+                "repository.blob-cache-path", "/coremedia/cache/uapi-blobcache",
                 "repository.heap-cache-size", Integer.toString(128 * 1024 * 1024),
                 "repository.url", getTargetState().getServiceUrlFor("content-server", "cms"),
                 "management.health.diskspace.path", "/var/tmp"
@@ -69,8 +73,8 @@ public abstract class CorbaComponent extends SpringBootComponent {
     }
 
 
-    public Map<String,String> getSiteMappingProperties() {
-        HashMap<String,String> properties = new HashMap<>();
+    public Map<String, String> getSiteMappingProperties() {
+        HashMap<String, String> properties = new HashMap<>();
         String preview = "//" + getTargetState().getPreviewHostname();
 
         for (SiteMapping siteMapping : getSpec().getSiteMappings()) {
@@ -169,5 +173,4 @@ public abstract class CorbaComponent extends SpringBootComponent {
     public String getServiceUrl() {
         return "http://" + getResourceName() + ":8080/ior";
     }
-
 }

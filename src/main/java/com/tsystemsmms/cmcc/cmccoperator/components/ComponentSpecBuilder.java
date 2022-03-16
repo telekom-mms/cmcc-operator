@@ -16,6 +16,8 @@ import com.tsystemsmms.cmcc.cmccoperator.crds.Milestone;
 import com.tsystemsmms.cmcc.cmccoperator.utils.EnvVarSet;
 import io.fabric8.kubernetes.api.model.EnvVar;
 
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -76,13 +78,13 @@ public class ComponentSpecBuilder {
     }
 
     /**
-     * Specify the image field.
+     * Add extra information.
      *
-     * @param image the image spec
+     * @param extra the extra information
      * @return the builder
      */
     public ComponentSpecBuilder withExtra(Map<String, String> extra) {
-        componentSpec.setExtra(extra);
+        componentSpec.setExtra(new HashMap<>(extra));
         return this;
     }
 
@@ -115,7 +117,7 @@ public class ComponentSpecBuilder {
      * @return the builder
      */
     public ComponentSpecBuilder withEnv(List<EnvVar> env) {
-        componentSpec.setEnv(env);
+        componentSpec.setEnv(new LinkedList<>(env));
         return this;
     }
 
@@ -126,7 +128,7 @@ public class ComponentSpecBuilder {
      * @return the builder
      */
     public ComponentSpecBuilder withArgs(List<String> args) {
-        componentSpec.setArgs(args);
+        componentSpec.setArgs(new LinkedList<>(args));
         return this;
     }
 }

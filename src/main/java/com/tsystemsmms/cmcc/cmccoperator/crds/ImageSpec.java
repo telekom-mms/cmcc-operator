@@ -16,11 +16,22 @@ import lombok.Data;
 @Data
 public class ImageSpec {
     @JsonPropertyDescription("Image registry (default 'coremedia')")
-    String registry;
+    String registry = "";
     @JsonPropertyDescription("Image repository (default differs between components)")
-    String repository;
+    String repository = "";
     @JsonPropertyDescription("Image tag (default 'latest')")
-    String tag;
+    String tag = "";
     @JsonPropertyDescription("Image pull policy (default 'IfNotPresent')")
-    String pullPolicy;
+    String pullPolicy = "";
+
+    public void update(ImageSpec that) {
+        if (!that.registry.isBlank())
+            this.registry = that.registry;
+        if (!that.repository.isBlank())
+            this.repository = that.repository;
+        if (!that.tag.isBlank())
+            this.tag = that.tag;
+        if (!that.pullPolicy.isBlank())
+            this.pullPolicy = that.pullPolicy;
+    }
 }

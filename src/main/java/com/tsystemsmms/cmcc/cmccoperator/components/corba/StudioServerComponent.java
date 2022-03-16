@@ -135,4 +135,9 @@ public class StudioServerComponent extends CorbaComponent implements HasMySQLSch
         return generator.buildStudioResources();
     }
 
+    @Override
+    public String getUapiClientDefaultUsername() {
+        return "studio";
+    }
+
 }

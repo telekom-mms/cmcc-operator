@@ -17,21 +17,24 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.util.HashMap;
+
 @Getter
 @Setter
 @ToString
 public class CoreMediaContentCloudStatus extends ObservedGenerationAwareStatus {
-    // keep on top so it gets printed first
-    @PrinterColumn
-    @JsonPropertyDescription("Which milestone has been reached in configuring all components")
-    Milestone milestone = Milestone.Created;
-
     @PrinterColumn
     @JsonPropertyDescription("Error indication, or empty string")
     String error = "";
 
     @JsonPropertyDescription("Error message if state is error")
     String errorMessage = "";
+
+    HashMap<String, String> flags = new HashMap<>();
+
+    @PrinterColumn
+    @JsonPropertyDescription("Which milestone has been reached in configuring all components")
+    Milestone milestone = Milestone.Created;
 
     @JsonPropertyDescription("Resources created by the operator")
     String ownedResourceRefs = "[]";

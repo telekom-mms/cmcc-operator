@@ -10,6 +10,7 @@
 
 package com.tsystemsmms.cmcc.cmccoperator.components.job;
 
+import com.tsystemsmms.cmcc.cmccoperator.CoreMediaContentCloudReconciler;
 import com.tsystemsmms.cmcc.cmccoperator.components.SpringBootComponent;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
@@ -28,6 +29,11 @@ public abstract class JobComponent extends SpringBootComponent {
 
     public JobComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec componentSpec, String imageRepository) {
         super(kubernetesClient, targetState, componentSpec, imageRepository);
+    }
+
+    @Override
+    public boolean isBuildResources() {
+        return getCmcc().getStatus().getMilestone().compareTo(getComponentSpec().getMilestone()) == 0;
     }
 
     @Override
@@ -73,6 +79,12 @@ public abstract class JobComponent extends SpringBootComponent {
                 .build();
     }
 
+    @Override
+    public HashMap<String, String> getSelectorLabels() {
+        HashMap<String, String> labels = super.getSelectorLabels();
+        labels.putAll(getJobLabels());
+        return labels;
+    }
 
     public static Map<String, String> getJobLabels() {
         return Map.of("cmcc.tsystemsmms.com/job", JobComponent.class.getSimpleName().replaceAll("Component$", ""));

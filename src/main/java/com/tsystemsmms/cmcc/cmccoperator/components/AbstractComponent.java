@@ -12,6 +12,7 @@ package com.tsystemsmms.cmcc.cmccoperator.components;
 
 import com.tsystemsmms.cmcc.cmccoperator.CoreMediaContentCloudReconciler;
 import com.tsystemsmms.cmcc.cmccoperator.crds.*;
+import com.tsystemsmms.cmcc.cmccoperator.targetstate.ClientSecretRef;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 import com.tsystemsmms.cmcc.cmccoperator.utils.EnvVarSet;
 import io.fabric8.kubernetes.api.model.*;
@@ -25,6 +26,8 @@ import lombok.Setter;
 
 import java.util.*;
 
+import static com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState.DATABASE_SECRET_PASSWORD_KEY;
+import static com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState.DATABASE_SECRET_USERNAME_KEY;
 import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.concatOptional;
 import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.defaultString;
 
@@ -52,6 +55,25 @@ public abstract class AbstractComponent implements Component {
         this.imageRepository = imageRepository;
     }
 
+    @Override
+    public boolean isBuildResources() {
+        return getCmcc().getStatus().getMilestone().compareTo(getComponentSpec().getMilestone()) >= 0;
+    }
+
+    @Override
+    public Component updateComponentSpec(ComponentSpec newCs) {
+        if (!ComponentCollection.equalsSpec(getComponentSpec(), newCs)) {
+            throw new IllegalArgumentException("Internal error: cannot update existing component because type/kind/name do not match");
+        }
+        ComponentSpec cs = getComponentSpec();
+        cs.setArgs(newCs.getArgs());
+        cs.getEnv().addAll(newCs.getEnv());
+        cs.getExtra().putAll(newCs.getExtra());
+        cs.getImage().update(newCs.getImage());
+        cs.setMilestone(newCs.getMilestone());
+        return this;
+    }
+
     /**
      * Returns the custom resource this component is defined in,
      *
@@ -77,15 +99,6 @@ public abstract class AbstractComponent implements Component {
      */
     public ComponentDefaults getDefaults() {
         return targetState.getCmcc().getSpec().getDefaults();
-    }
-
-    /**
-     * Shorthand for getSpec().getImportJob().
-     *
-     * @return the spec
-     */
-    public ImportJob getImportJob() {
-        return targetState.getCmcc().getSpec().getImportJob();
     }
 
     @Override
@@ -212,16 +225,6 @@ public abstract class AbstractComponent implements Component {
                                 .build())
                         .build())
                 .build();
-    }
-
-    public ObjectMeta getResourceMetadata() {
-        return getResourceMetadataForName(getResourceName());
-    }
-
-    public ObjectMeta getResourceMetadataForName(String name) {
-        ObjectMeta metadata = getTargetState().getResourceMetadataForName(name);
-        metadata.getLabels().putAll(getSelectorLabels());
-        return metadata;
     }
 
     public long getTerminationGracePeriodSeconds() {
