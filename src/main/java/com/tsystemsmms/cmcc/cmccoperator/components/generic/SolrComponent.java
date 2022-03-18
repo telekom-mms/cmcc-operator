@@ -13,13 +13,14 @@ package com.tsystemsmms.cmcc.cmccoperator.components.generic;
 import com.tsystemsmms.cmcc.cmccoperator.components.AbstractComponent;
 import com.tsystemsmms.cmcc.cmccoperator.components.HasService;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
+import com.tsystemsmms.cmcc.cmccoperator.targetstate.CustomResourceConfigError;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 import com.tsystemsmms.cmcc.cmccoperator.utils.EnvVarSet;
 import io.fabric8.kubernetes.api.model.*;
-import io.fabric8.kubernetes.api.model.networking.v1.*;
 import io.fabric8.kubernetes.client.KubernetesClient;
 
-import java.util.*;
+import java.util.LinkedList;
+import java.util.List;
 
 import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.EnvVarSimple;
 
@@ -54,15 +55,15 @@ public class SolrComponent extends AbstractComponent implements HasService {
         env.add(EnvVarSimple("GC_TUNE", "-XX:+UseG1GC -XX:+PerfDisableSharedMem -XX:+ParallelRefProcEnabled -XX:MaxGCPauseMillis=250 -XX:+AlwaysPreTouch"));
         env.add(EnvVarSimple("SOLR_JAVA_MEM", "-XX:MinRAMPercentage=80 -XX:MaxRAMPercentage=95"));
         if (getComponentSpec().getKind() == null)
-            throw new IllegalArgumentException("kind must be set to either master or replica");
+            throw new CustomResourceConfigError("kind must be set to either master or replica");
         switch (getComponentSpec().getKind()) {
             case "leader":
                 env.add(EnvVarSimple("SOLR_LEADER", "true"));
                 break;
             case "follower":
-                throw new IllegalArgumentException("not yet implemented");
+                throw new CustomResourceConfigError("not yet implemented");
             default:
-                throw new IllegalArgumentException("kind must be set to either leader or follower, not " + getComponentSpec().getKind());
+                throw new CustomResourceConfigError("kind must be set to either leader or follower, not " + getComponentSpec().getKind());
         }
 
         return env;
@@ -75,7 +76,7 @@ public class SolrComponent extends AbstractComponent implements HasService {
         volumes.add(new VolumeBuilder()
                 .withName(SOLR_PERSISTENT_STORAGE)
                 .withPersistentVolumeClaim(new PersistentVolumeClaimVolumeSourceBuilder()
-                        .withClaimName(getResourceName())
+                        .withClaimName(getTargetState().getResourceNameFor(this))
                         .build())
                 .build());
         volumes.add(new VolumeBuilder()
@@ -168,6 +169,6 @@ public class SolrComponent extends AbstractComponent implements HasService {
 
     @Override
     public String getServiceUrl() {
-        return "http://" + getResourceName() + ":8983/solr";
+        return "http://" + getTargetState().getResourceNameFor(this) + ":8983/solr";
     }
 }

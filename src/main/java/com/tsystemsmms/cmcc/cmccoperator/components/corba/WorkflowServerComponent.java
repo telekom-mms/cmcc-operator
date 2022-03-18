@@ -10,7 +10,8 @@
 
 package com.tsystemsmms.cmcc.cmccoperator.components.corba;
 
-import com.tsystemsmms.cmcc.cmccoperator.components.HasMySQLSchema;
+import com.tsystemsmms.cmcc.cmccoperator.components.HasJdbcClient;
+import com.tsystemsmms.cmcc.cmccoperator.components.HasMongoDBClient;
 import com.tsystemsmms.cmcc.cmccoperator.components.HasService;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
@@ -19,10 +20,11 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
-import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.*;
+import static com.tsystemsmms.cmcc.cmccoperator.components.corba.ContentServerComponent.MANAGEMENT_SCHEMA;
+import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.EnvVarSimple;
 
 @Slf4j
-public class WorkflowServerComponent extends CorbaComponent implements HasMySQLSchema, HasService {
+public class WorkflowServerComponent extends CorbaComponent implements HasMongoDBClient, HasJdbcClient, HasService {
 
     @Getter
     final String databaseSchema;
@@ -33,40 +35,32 @@ public class WorkflowServerComponent extends CorbaComponent implements HasMySQLS
     }
 
     @Override
-    public String getDatabaseSecretName() {
-        return concatOptional(
-                getDefaults().getNamePrefix(),
-                getSpecName(),
-                "mysql",
-                getDatabaseSchema());
+    public void requestRequiredResources() {
+        super.requestRequiredResources();
+        getMongoDBClientSecretRef();
+        getJdbcClientSecretRef();
     }
 
     @Override
     public EnvVarSet getEnvVars() {
         EnvVarSet env = super.getEnvVars();
-        env.addAll(getMySqlEnvVars());
+        env.addAll(getJdbcClientEnvVars("SQL_STORE"));
         env.addAll(getMongoDBEnvVars());
-        env.add(EnvVarSimple("COM_COREMEDIA_CORBA_SERVER_HOST", getResourceName()));
+        env.add(EnvVarSimple("COM_COREMEDIA_CORBA_SERVER_HOST", getTargetState().getResourceNameFor(this)));
         env.add(EnvVarSimple("WORKFLOW_IOR_URL", getTargetState().getServiceUrlFor("content-server", "cms")));
+        env.addAll(getUapiClientEnvVars("WORKFLOW"));
+
         return env;
     }
 
-    /**
-     * Get a list of environment variables to configure the MySQL database connection of the component.
-     *
-     * @return list of env vars
-     */
-    public EnvVarSet getMySqlEnvVars() {
-        MySQLDetails details = getMySQLDetails(getDatabaseSchema());
-        EnvVarSet env = new EnvVarSet();
+    @Override
+    public String getJdbcClientDefaultSchema() {
+        return MANAGEMENT_SCHEMA;
+    }
 
-        env.add(EnvVarSimple("MYSQL_HOST", details.getHostName())); // needed for MySQL command line tools
-        env.add(EnvVarSimple("SQL_STORE_DRIVER", "com.mysql.cj.jdbc.Driver"));
-        env.add(EnvVarSecret("SQL_STORE_PASSWORD", details.getSecretName(), TargetState.DATABASE_SECRET_PASSWORD_KEY));
-        env.add(EnvVarSimple("SQL_STORE_SCHEMA", getDatabaseSchema()));
-        env.add(EnvVarSimple("SQL_STORE_URL", details.getJdbcUrl()));
-        env.add(EnvVarSecret("SQL_STORE_USER", details.getSecretName(), TargetState.DATABASE_SECRET_USERNAME_KEY));
-        return env;
+    @Override
+    public String getMongoDBClientDefaultCollectionPrefix() {
+        return "blueprint";
     }
 
     @Override

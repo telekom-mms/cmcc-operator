@@ -222,6 +222,16 @@ public class EnvVarSet implements Set<EnvVar> {
         envVars.values().forEach(action);
     }
 
+    /**
+     * Returns the variable with that name.
+     *
+     * @param key
+     * @return
+     */
+    public Optional<EnvVar> get(String key) {
+        return Optional.ofNullable(envVars.get(key));
+    }
+
     public static EnvVarSet of() {
         return new EnvVarSet();
     }

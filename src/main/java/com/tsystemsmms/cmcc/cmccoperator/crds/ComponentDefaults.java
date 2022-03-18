@@ -11,7 +11,6 @@
 package com.tsystemsmms.cmcc.cmccoperator.crds;
 
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
-import io.fabric8.crd.generator.Resources;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;

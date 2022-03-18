@@ -24,35 +24,35 @@ The `milestone` status column shows the creation status of the installation:
 
 The Custom Resource `CoreMediaContentClouds` (`cmcc` for short) `spec` field defines these properties to allow you to deploy a CoreMedia installation. Whenever possible, these properties have suitable defaults.
 
-| Property                              | Type            | Default                        | Description                                                                                                                                                                                |
-|---------------------------------------|-----------------|--------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `comment`                             | String          | ""                             | Arbitrary comment, can be used to force an update to the resource                                                                                                                          |
-| `components`                          | array           | []                             | List of CoreMedia components to be created. See below for available components and their parameters                                                                                        |
-| `defaults`                            | object          | –                              | Default values for components                                                                                                                                                              |
-| `defaults.curlImage`                  | String          | `docker.io/alpine/k8s:1.19.15` | A Docker image with curl available. Used in init containers to wait for Content Server components to become available.                                                                     |
-| `defaults.image`                      | object          | –                              | Defaults for the image specification                                                                                                                                                       |
-| `defaults.image.registry`             | String          | ""                             | Docker Image Registry to pull images from                                                                                                                                                  |
-| `defaults.image.tag`                  | String          | `latest`                       | Docker Image Tag to pull images from                                                                                                                                                       |
-| `defaults.image.pullPolicy`           | String          | `IfNotPresent`                 | default imagePullPolicy                                                                                                                                                                    |
-| `defaults.ingressDomain`              | String          | ""                             | Fully qualified domain name to append to ingress host names                                                                                                                                |
-| `defaults.insecureDatabasePassword`   | String          | ""                             | **DO NOT SET**. See below for more information.                                                                                                                                            |
-| `defaults.namePrefix`                 | String          | ""                             | Prefix resources with this name plus '-'.                                                                                                                                                  |
-| `defaults.previewHostname`            | String          | `preview`                      | Hostname of the preview CAE. Unless it is a fully-qualified domain name, the `namePrefix` and the `ingressDomain` will be pre- and appended.                                               |
-| `defaults.resources`                  | resources       | –                              | Default [resources to apply to component pods](https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/pod-v1/#resources)                                                   |
-| `defaults.studioHostname`             | String          | `studio`                       | Hostname of the Studio. Unless it is a fully-qualified domain name, the `namePrefix` and the `ingressDomain` will be pre- and appended.                                                    |
-| `importJob`                           | object          | –                              | Deprecated, not evaluated any more. See below for the `management-tools` component.                                                                                                        |
-| `licenseSecrets`                      | object          | –                              | Names of the secrets containing the license                                                                                                                                                |
-| `licenseSecrets.CMSLicense`           | String          | `license-cms`                  | Name of the secret containing a `license.zip` entry with the appropriate file contents                                                                                                     |
-| `licenseSecrets.MLSLicense`           | String          | `license-mls`                  | Name of the secret containing a `license.zip` entry with the appropriate file contents                                                                                                     |
-| `licenseSecrets.RLSLicense`           | String          | `license-rls`                  | Name of the secret containing a `license.zip` entry with the appropriate file contents                                                                                                     |
-| `siteMappings`                        | array           | –                              | Mappings between DNS names and site segments, see below                                                                                                                                    |
-| `with`                                | object          | –                              | Optional special components and configurations                                                                                                                                             |
-| `with.databases`                      | boolean         | false                          | Create both a MariaDB and MongoDB server, and schemas and secrets for all components that require them                                                                                     |
-| `with.delivery`                       | object          | –                              | Create all components required for a CoreMedia delivery stage                                                                                                                              |
-| `with.delivery.rls`                   | int             | 0                              | Number of Replication Live Servers to create                                                                                                                                               |
-| `with.delivery.minCae`                | int             | 0                              | Minimum number of CAEs per RLS                                                                                                                                                             |
-| `with.delivery.maxCae`                | int             | 0                              | Maximum number of CAEs per RLS                                                                                                                                                             |
-| `with.management`                     | boolean         | true                           | Create all components required for a CoreMedia management stage                                                                                                                            |
+| Property                            | Type                 | Default                        | Description                                                                                                                                  |
+|-------------------------------------|----------------------|--------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|
+| `comment`                           | String               | ""                             | Arbitrary comment, can be used to force an update to the resource                                                                            |
+| `components`                        | array                | []                             | List of CoreMedia components to be created. See below for available components and their parameters                                          |
+| `clientSecretRefs`                  | map of map of object | –                              | Pre-existing secrets to use, see below                                                                                                       |
+| `defaults`                          | object               | –                              | Default values for components                                                                                                                |
+| `defaults.curlImage`                | String               | `docker.io/alpine/k8s:1.19.15` | A Docker image with curl available. Used in init containers to wait for Content Server components to become available.                       |
+| `defaults.image`                    | object               | –                              | Defaults for the image specification                                                                                                         |
+| `defaults.image.registry`           | String               | ""                             | Docker Image Registry to pull images from                                                                                                    |
+| `defaults.image.tag`                | String               | `latest`                       | Docker Image Tag to pull images from                                                                                                         |
+| `defaults.image.pullPolicy`         | String               | `IfNotPresent`                 | default imagePullPolicy                                                                                                                      |
+| `defaults.ingressDomain`            | String               | ""                             | Fully qualified domain name to append to ingress host names                                                                                  |
+| `defaults.insecureDatabasePassword` | String               | ""                             | **DO NOT SET**. See below for more information.                                                                                              |
+| `defaults.namePrefix`               | String               | ""                             | Prefix resources with this name plus '-'.                                                                                                    |
+| `defaults.previewHostname`          | String               | `preview`                      | Hostname of the preview CAE. Unless it is a fully-qualified domain name, the `namePrefix` and the `ingressDomain` will be pre- and appended. |
+| `defaults.resources`                | resources            | –                              | Default [resources to apply to component pods](https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/pod-v1/#resources)     |
+| `defaults.studioHostname`           | String               | `studio`                       | Hostname of the Studio. Unless it is a fully-qualified domain name, the `namePrefix` and the `ingressDomain` will be pre- and appended.      |
+| `licenseSecrets`                    | object               | –                              | Names of the secrets containing the license                                                                                                  |
+| `licenseSecrets.CMSLicense`         | String               | `license-cms`                  | Name of the secret containing a `license.zip` entry with the appropriate file contents                                                       |
+| `licenseSecrets.MLSLicense`         | String               | `license-mls`                  | Name of the secret containing a `license.zip` entry with the appropriate file contents                                                       |
+| `licenseSecrets.RLSLicense`         | String               | `license-rls`                  | Name of the secret containing a `license.zip` entry with the appropriate file contents                                                       |
+| `siteMappings`                      | array                | –                              | Mappings between DNS names and site segments, see below                                                                                      |
+| `with`                              | object               | –                              | Optional special components and configurations                                                                                               |
+| `with.databases`                    | boolean              | false                          | Create both a MariaDB and MongoDB server, and schemas and secrets for all components that require them                                       |
+| `with.delivery`                     | object               | –                              | Create all components required for a CoreMedia delivery stage                                                                                |
+| `with.delivery.rls`                 | int                  | 0                              | Number of Replication Live Servers to create                                                                                                 |
+| `with.delivery.minCae`              | int                  | 0                              | Minimum number of CAEs per RLS                                                                                                               |
+| `with.delivery.maxCae`              | int                  | 0                              | Maximum number of CAEs per RLS                                                                                                               |
+| `with.management`                   | boolean              | true                           | Create all components required for a CoreMedia management stage                                                                              |
 
 
 ## Enabling Convenience Options `with`
@@ -111,6 +111,81 @@ components:
 
 You can override settings for individual components, for example the image specification, by declaring that component explicitly.
 
+## Using Pre-Existing Secrets
+
+Unless `with.databases` is enabled, you will need to provide secrets for all components for all connections: JDBC databases, MongoDB databases, and UAPI servers. You reference existing secrets in the custom resource by providing `clientSecretRef` entries. Each of the three entries contains a map of secret references, one entry per client or schema. Each entry can have these fields:
+
+| Key           | Default    | Key in the secret                         |
+|---------------|:-----------|-------------------------------------------|
+| `secretName`  | –          | name of the secret containing the details |
+| `driverKey`   | `driver`   | database driver class name (JDBC)         |
+| `hostnameKey` | `hostname` | hostname of the server                    |
+| `passwordKey` | `password` | password to log in to the server          |
+| `schemaKey`   | `schema`   | schema or client or service               |
+| `urlKey`      | `url`      | connection URL                            |
+| `usernameKey` | `username` | username to log in to the server          |
+
+Components receive secrets as environment variables. See the CoreMedia documentation (Deployment Manual) for the properties that the components take for database configuration. 
+
+### `clientSecretRef.jdbc`
+
+Depending on the component, different environment variables are set. All keys are used and must be specified for the database connection to work correctly.
+
+With the default set of components (`with.management` and `with.delivery`), you will need to provide these secret refs:
+* caefeeder
+* management
+* master
+* mcaefeeder
+* studio
+
+For example, to configure a secret for the Content Management Server which uses the `management` name:
+
+```yaml
+...
+clientSecretRef:
+  jdbc:
+    management:
+      secretName: mysql-management
+...
+```
+This using all the default keys for the secret (see above).
+
+For example, you can create a suitable secret on the command line, entering the appropriate details for your database server as needed:
+```shell
+kubectl create secret generic mysql-management \
+  --from-literal=username=cm_management \
+  --from-literal=password='s3cr3t' \
+  --from-literal=driver=com.mysql.cj.jdbc.Driver \
+  --from-literal=hostname=mysql.example.com
+  --from-literal=schema=cm_management
+  --from-literal=url=jdbc:mysql://mysql.example.com:3306/cm_management
+```
+
+### `clientSecretRef.mongodb`
+
+The components only use the `urlKey` to configure the MongoDB client. You must provide the authentication in the URL, if the MongoDB server requires it.
+
+### `clientSecretRef.uapi`
+
+Unless specified explictly here, the operator will create random passwords for the UAPI connection and will initialize both the Content Management Server and the Master Live Server with these secrets. This includes the `admin` user. If you would like to set a well-known admin password, create a secret:
+
+```shell
+kubectl create secret generic coremedia-admin \
+  --from-literal=username=admin \
+  --from-literal=password='s3cr3t'
+```
+
+Then reference it in the custom resource:
+```yaml
+...
+clientSecretRef:
+  uapi:
+    admin:
+      secretName: coremedia-admin
+      usernameKey: username
+      passwordKey: password
+...
+```
 
 ## Automatic Generation of Ingresses and Site Mappings `siteMappings`
 

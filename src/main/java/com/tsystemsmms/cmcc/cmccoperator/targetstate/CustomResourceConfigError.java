@@ -10,11 +10,12 @@
 
 package com.tsystemsmms.cmcc.cmccoperator.targetstate;
 
-import lombok.Data;
+public class CustomResourceConfigError extends RuntimeException {
+    public CustomResourceConfigError(String message) {
+        super(message);
+    }
 
-@Data
-public class DatabaseSecret {
-    final String schema;
-    final String username;
-    final String password;
+    public CustomResourceConfigError(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

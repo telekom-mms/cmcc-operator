@@ -8,19 +8,17 @@
  * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
  */
 
-package com.tsystemsmms.cmcc.cmccoperator.components;
+package com.tsystemsmms.cmcc.cmccoperator.targetstate;
 
-import com.tsystemsmms.cmcc.cmccoperator.utils.EnvVarSet;
-import io.fabric8.kubernetes.api.model.EnvVar;
-
-import java.util.List;
+import com.tsystemsmms.cmcc.cmccoperator.crds.ClientSecretRef;
+import io.fabric8.kubernetes.api.model.Secret;
+import lombok.Data;
 
 /**
- * A Component that requires a MySQL schema.
+ * Hold a secret reference and a secret when the operator is creating a default secret for a network client.
  */
-public interface HasMySQLSchema {
-    String getDatabaseSchema();
-    String getDatabaseSecretName();
-
-    EnvVarSet getMySqlEnvVars();
+@Data
+public class DefaultClientSecret {
+    final ClientSecretRef ref;
+    final Secret secret;
 }

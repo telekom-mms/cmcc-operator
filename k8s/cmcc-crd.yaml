@@ -126,14 +126,37 @@ spec:
                       enum:
                       - Created
                       - DatabasesReady
+                      - ContentServerInitialized
                       - ContentServerReady
                       - ManagementReady
                       - Ready
                       - Never
-                      - milestone
                       type: string
                   type: object
                 type: array
+              clientSecretRefs:
+                additionalProperties:
+                  additionalProperties:
+                    properties:
+                      driverKey:
+                        type: string
+                      hostnameKey:
+                        type: string
+                      passwordKey:
+                        type: string
+                      schemaKey:
+                        type: string
+                      secretName:
+                        type: string
+                      urlKey:
+                        type: string
+                      usernameKey:
+                        type: string
+                    type: object
+                  type: object
+                description: References to existing secrets for components connecting
+                  as clients to services
+                type: object
               defaults:
                 description: Default values for components
                 properties:
@@ -385,11 +408,11 @@ spec:
                 enum:
                 - Created
                 - DatabasesReady
+                - ContentServerInitialized
                 - ContentServerReady
                 - ManagementReady
                 - Ready
                 - Never
-                - milestone
                 type: string
               ownedResourceRefs:
                 description: Resources created by the operator

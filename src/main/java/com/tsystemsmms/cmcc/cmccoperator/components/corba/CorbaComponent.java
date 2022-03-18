@@ -10,12 +10,11 @@
 
 package com.tsystemsmms.cmcc.cmccoperator.components.corba;
 
+import com.tsystemsmms.cmcc.cmccoperator.components.HasService;
 import com.tsystemsmms.cmcc.cmccoperator.components.HasUapiClient;
 import com.tsystemsmms.cmcc.cmccoperator.components.SpringBootComponent;
-import com.tsystemsmms.cmcc.cmccoperator.components.generic.MongoDBComponent;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
 import com.tsystemsmms.cmcc.cmccoperator.crds.SiteMapping;
-import com.tsystemsmms.cmcc.cmccoperator.targetstate.ClientSecretRef;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 import com.tsystemsmms.cmcc.cmccoperator.utils.EnvVarSet;
 import io.fabric8.kubernetes.api.model.*;
@@ -27,12 +26,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import static com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState.DATABASE_SECRET_PASSWORD_KEY;
-import static com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState.DATABASE_SECRET_USERNAME_KEY;
-import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.*;
+import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.EnvVarSimple;
 
 @Slf4j
-public abstract class CorbaComponent extends SpringBootComponent implements HasUapiClient {
+public abstract class CorbaComponent extends SpringBootComponent implements HasService, HasUapiClient {
 
     public CorbaComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec componentSpec, String imageRepository) {
         super(kubernetesClient, targetState, componentSpec, imageRepository);
@@ -46,6 +43,13 @@ public abstract class CorbaComponent extends SpringBootComponent implements HasU
         return resources;
     }
 
+    @Override
+    public void requestRequiredResources() {
+        super.requestRequiredResources();
+        getUapiClientSecretRef();
+    }
+
+
     public EnvVarSet getEnvVars() {
         EnvVarSet env = super.getEnvVars();
 
@@ -53,6 +57,7 @@ public abstract class CorbaComponent extends SpringBootComponent implements HasU
         env.add(EnvVarSimple("SPRING_BOOT_EXPLODED_APP", "true"));
         env.add(EnvVarSimple("JAVA_HEAP", ""));
         env.add(EnvVarSimple("JAVA_OPTS", "-XX:MinRAMPercentage=75 -XX:MaxRAMPercentage=90"));
+        env.addAll(getUapiClientEnvVars("REPOSITORY"));
 
         return env;
     }
@@ -63,7 +68,7 @@ public abstract class CorbaComponent extends SpringBootComponent implements HasU
 
         properties.putAll(Map.of(
                 // needed in many applications
-                "com.coremedia.transform.blob Cache.basePath", "/coremedia/cache/persistent-transformed-blobcache",
+                "com.coremedia.transform.blobCache.basePath", "/coremedia/cache/persistent-transformed-blobcache",
                 "repository.blob-cache-path", "/coremedia/cache/uapi-blobcache",
                 "repository.heap-cache-size", Integer.toString(128 * 1024 * 1024),
                 "repository.url", getTargetState().getServiceUrlFor("content-server", "cms"),
@@ -123,13 +128,6 @@ public abstract class CorbaComponent extends SpringBootComponent implements HasU
                 new ServicePortBuilder().withName("corba").withPort(8083).withNewTargetPort("corba").build());
     }
 
-    EnvVarSet getMongoDBEnvVars() {
-        EnvVarSet env = new EnvVarSet();
-        env.add(EnvVarSecret("MONGODB_CLIENTURI", getTargetState().getServiceNameFor("mongodb"), MongoDBComponent.MONGODB_SECRET_URL_KEY));
-        env.add(EnvVarSimple("MONGODB_PREFIX", "blueprint"));
-        return env;
-    }
-
     EnvVarSet getSolrEnvVars(String component, String solrCollection) {
         EnvVarSet env = new EnvVarSet();
         env.add(EnvVarSimple("SOLR_URL", "http://" + getTargetState().getServiceNameFor("solr", "leader") + ":8983/solr"));
@@ -171,6 +169,6 @@ public abstract class CorbaComponent extends SpringBootComponent implements HasU
 
     @Override
     public String getServiceUrl() {
-        return "http://" + getResourceName() + ":8080/ior";
+        return "http://" + getTargetState().getResourceNameFor(this) + ":8080/ior";
     }
 }

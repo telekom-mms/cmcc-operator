@@ -10,6 +10,7 @@
 
 package com.tsystemsmms.cmcc.cmccoperator.components.corba;
 
+import com.tsystemsmms.cmcc.cmccoperator.components.HasMongoDBClient;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 import com.tsystemsmms.cmcc.cmccoperator.utils.EnvVarSet;
@@ -21,12 +22,17 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.LinkedList;
 import java.util.List;
 
-import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.concatOptional;
 @Slf4j
-public class UserChangesComponent extends CorbaComponent {
+public class UserChangesComponent extends CorbaComponent implements HasMongoDBClient {
 
     public UserChangesComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec componentSpec) {
         super(kubernetesClient, targetState, componentSpec, "user-changes");
+    }
+
+    @Override
+    public void requestRequiredResources() {
+        super.requestRequiredResources();
+        getMongoDBClientSecretRef();
     }
 
     @Override
@@ -39,7 +45,9 @@ public class UserChangesComponent extends CorbaComponent {
     @Override
     public EnvVarSet getEnvVars() {
         EnvVarSet env = super.getEnvVars();
+
         env.addAll(getMongoDBEnvVars());
+
         return env;
     }
 
@@ -52,8 +60,12 @@ public class UserChangesComponent extends CorbaComponent {
     }
 
     @Override
+    public String getMongoDBClientDefaultCollectionPrefix() {
+        return "blueprint";
+    }
+
+    @Override
     public String getUapiClientDefaultUsername() {
         return "studio";
     }
-
 }

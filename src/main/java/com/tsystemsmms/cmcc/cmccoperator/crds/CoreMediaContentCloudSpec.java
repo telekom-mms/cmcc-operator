@@ -13,10 +13,7 @@ package com.tsystemsmms.cmcc.cmccoperator.crds;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import lombok.Data;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Data
 public class CoreMediaContentCloudSpec {
@@ -25,6 +22,9 @@ public class CoreMediaContentCloudSpec {
 
     @JsonPropertyDescription("List of components (CMS, Solr, CAE, etc.)")
     List<ComponentSpec> components = Collections.emptyList();
+
+    @JsonPropertyDescription("References to existing secrets for components connecting as clients to services")
+    Map<String, Map<String, ClientSecretRef>> clientSecretRefs = new HashMap<>();
 
     @JsonPropertyDescription("Default values for components")
     ComponentDefaults defaults;
@@ -40,8 +40,4 @@ public class CoreMediaContentCloudSpec {
 
     @JsonPropertyDescription("Parameters for the content-users and frontend import")
     ImportJob importJob;
-
-    private ImportJob getImportJob() {
-        throw new IllegalArgumentException("Internal error, access to no longer supported property");
-    }
 }

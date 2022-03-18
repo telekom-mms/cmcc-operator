@@ -12,7 +12,6 @@ package com.tsystemsmms.cmcc.cmccoperator.components;
 
 import com.tsystemsmms.cmcc.cmccoperator.CoreMediaContentCloudReconciler;
 import com.tsystemsmms.cmcc.cmccoperator.crds.*;
-import com.tsystemsmms.cmcc.cmccoperator.targetstate.ClientSecretRef;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 import com.tsystemsmms.cmcc.cmccoperator.utils.EnvVarSet;
 import io.fabric8.kubernetes.api.model.*;
@@ -20,14 +19,11 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetSpecBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.util.*;
 
-import static com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState.DATABASE_SECRET_PASSWORD_KEY;
-import static com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState.DATABASE_SECRET_USERNAME_KEY;
 import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.concatOptional;
 import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.defaultString;
 
@@ -102,22 +98,21 @@ public abstract class AbstractComponent implements Component {
     }
 
     @Override
-    public String getResourceName() {
+    public String getBaseResourceName() {
         return getComponentName(null);
     }
 
     /**
-     * Build the compoents name. If set, the prefix, the name and the kind will be concatenated together. The optional
+     * Build the components name. If set, the prefix, the name and the kind will be concatenated together. The optional
      * kind parameter overrides the spec supplied one if set.
      *
-     * @param kind optinal override for the getSpec().getKind()
+     * @param kind optional override for the getSpec().getKind()
      * @return component name
      */
     public String getComponentName(String kind) {
         if (kind == null || kind.isBlank())
             kind = getComponentSpec().getKind();
         return concatOptional(
-                getDefaults().getNamePrefix(),
                 getSpecName(),
                 kind);
     }
@@ -175,7 +170,7 @@ public abstract class AbstractComponent implements Component {
         HashMap<String, String> labels = new HashMap<>();
         labels.put("cmcc.tsystemsmms.com/cmcc", getCmcc().getMetadata().getName());
         labels.put("cmcc.tsystemsmms.com/type", componentSpec.getType());
-        labels.put("cmcc.tsystemsmms.com/name", getResourceName());
+        labels.put("cmcc.tsystemsmms.com/name", getTargetState().getResourceNameFor(this));
         labels.putAll(CoreMediaContentCloudReconciler.OPERATOR_SELECTOR_LABELS);
         return labels;
     }
@@ -207,7 +202,7 @@ public abstract class AbstractComponent implements Component {
         return new StatefulSetBuilder()
                 .withMetadata(getResourceMetadata())
                 .withSpec(new StatefulSetSpecBuilder()
-                        .withServiceName(getResourceName())
+                        .withServiceName(getTargetState().getServiceNameFor(this))
                         .withSelector(new LabelSelectorBuilder()
                                 .withMatchLabels(getSelectorLabels())
                                 .build())
@@ -255,7 +250,7 @@ public abstract class AbstractComponent implements Component {
     }
 
     public PersistentVolumeClaim buildPvc() {
-        return buildPvc(getResourceName());
+        return buildPvc(getTargetState().getResourceNameFor(this));
     }
 
     public PersistentVolumeClaim buildPvc(String name) {
@@ -326,40 +321,6 @@ public abstract class AbstractComponent implements Component {
     }
 
     /**
-     * Service for this component.
-     *
-     * @return the service definition
-     */
-    public Service buildService() {
-        return new ServiceBuilder()
-                .withMetadata(getResourceMetadataForName(getServiceName()))
-                .withSpec(new ServiceSpecBuilder()
-                        .withSelector(getSelectorLabels())
-                        .withPorts(getServicePorts())
-                        .build())
-                .build();
-    }
-
-    /**
-     * Name by which the service of this component can be reached.
-     *
-     * @return name
-     */
-    public String getServiceName() {
-        return getResourceName();
-    }
-
-    /**
-     * Returns the URL for the (primary) service.
-     *
-     * @return URL of the primary service.
-     */
-    public String getServiceUrl() {
-        return "http://" + getResourceName() + ":8080";
-    }
-
-
-    /**
      * Wait for a service to become available. We can tell that the service is available by having at least one
      * endpoints resource with that name. kubectl will exit with a non-zero status if no resources were found. Requires
      * that the service account for the pod has list rights on endpoints.
@@ -409,27 +370,8 @@ public abstract class AbstractComponent implements Component {
     }
 
 
-    /**
-     * Build the hostname and secret name for the connection to a MySQL server.
-     *
-     * @param databaseSchema schema name
-     * @return connection details
-     */
-    public MySQLDetails getMySQLDetails(String databaseSchema) {
-        return new MySQLDetails(databaseSchema,
-                getTargetState().getServiceNameFor("mysql"),
-                concatOptional(getDefaults().getNamePrefix(), "mysql", databaseSchema)
-        );
-    }
-
-    @Data
-    public static class MySQLDetails {
-        private final String databaseSchema;
-        private final String hostName;
-        private final String secretName;
-
-        public String getJdbcUrl() {
-            return "jdbc:mysql://" + hostName + ":3306/" + databaseSchema;
-        }
+    @Override
+    public void requestRequiredResources() {
+        // default component does not reference any resources.
     }
 }

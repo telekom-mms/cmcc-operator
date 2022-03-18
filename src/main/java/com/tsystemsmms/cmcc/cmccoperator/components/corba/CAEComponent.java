@@ -10,26 +10,29 @@
 
 package com.tsystemsmms.cmcc.cmccoperator.components.corba;
 
+import com.tsystemsmms.cmcc.cmccoperator.components.HasMongoDBClient;
 import com.tsystemsmms.cmcc.cmccoperator.components.HasService;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
 import com.tsystemsmms.cmcc.cmccoperator.crds.SiteMapping;
+import com.tsystemsmms.cmcc.cmccoperator.targetstate.CustomResourceConfigError;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 import com.tsystemsmms.cmcc.cmccoperator.utils.EnvVarSet;
 import io.fabric8.kubernetes.api.model.*;
-import io.fabric8.kubernetes.api.model.networking.v1.*;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.concatOptional;
 
 @Slf4j
-public class CAEComponent extends CorbaComponent implements HasService {
+public class CAEComponent extends CorbaComponent implements HasMongoDBClient, HasService {
 
     public static final String KIND_LIVE = "live";
     public static final String KIND_PREVIEW = "preview";
-    public static final String PREVIEW_HOSTNAME = "preview";
 
     String solrCollection;
     String servletPathPattern;
@@ -37,7 +40,7 @@ public class CAEComponent extends CorbaComponent implements HasService {
     public CAEComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec componentSpec) {
         super(kubernetesClient, targetState, componentSpec, "cae-preview");
         if (getComponentSpec().getKind() == null)
-            throw new IllegalArgumentException("kind must be set to either " + KIND_LIVE + " or " + KIND_PREVIEW);
+            throw new CustomResourceConfigError("kind must be set to either " + KIND_LIVE + " or " + KIND_PREVIEW);
         switch (componentSpec.getKind()) {
             case KIND_LIVE:
                 solrCollection = "live";
@@ -47,9 +50,15 @@ public class CAEComponent extends CorbaComponent implements HasService {
                 solrCollection = "preview";
                 break;
             default:
-                throw new IllegalArgumentException("kind \"" + getComponentSpec().getKind() + "\" is illegal, must be either " + KIND_LIVE + " or " + KIND_PREVIEW);
+                throw new CustomResourceConfigError("kind \"" + getComponentSpec().getKind() + "\" is illegal, must be either " + KIND_LIVE + " or " + KIND_PREVIEW);
         }
         servletPathPattern = String.join("|", getDefaults().getServletNames());
+    }
+
+    @Override
+    public void requestRequiredResources() {
+        super.requestRequiredResources();
+        getMongoDBClientSecretRef();
     }
 
     @Override
@@ -71,6 +80,7 @@ public class CAEComponent extends CorbaComponent implements HasService {
     @Override
     public EnvVarSet getEnvVars() {
         EnvVarSet env = super.getEnvVars();
+
         env.addAll(getMongoDBEnvVars());
         env.addAll(getSolrEnvVars("cae", solrCollection));
 
@@ -140,7 +150,7 @@ public class CAEComponent extends CorbaComponent implements HasService {
         volumes.add(new VolumeBuilder()
                 .withName("coremedia-persistent-cache")
                 .withPersistentVolumeClaim(new PersistentVolumeClaimVolumeSourceBuilder()
-                        .withClaimName(getResourceName())
+                        .withClaimName(getTargetState().getResourceNameFor(this))
                         .build())
                 .build());
 
@@ -164,4 +174,8 @@ public class CAEComponent extends CorbaComponent implements HasService {
         return "webserver";
     }
 
+    @Override
+    public String getMongoDBClientDefaultCollectionPrefix() {
+        return "blueprint";
+    }
 }

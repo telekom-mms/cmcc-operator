@@ -10,11 +10,11 @@
 
 package com.tsystemsmms.cmcc.cmccoperator.components.corba;
 
+import com.tsystemsmms.cmcc.cmccoperator.components.HasMongoDBClient;
 import com.tsystemsmms.cmcc.cmccoperator.components.HasService;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 import com.tsystemsmms.cmcc.cmccoperator.utils.EnvVarSet;
-import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import lombok.extern.slf4j.Slf4j;
@@ -23,10 +23,16 @@ import java.util.LinkedList;
 import java.util.List;
 
 @Slf4j
-public class ElasticWorkerComponent extends CorbaComponent implements HasService {
+public class ElasticWorkerComponent extends CorbaComponent implements HasMongoDBClient, HasService {
 
     public ElasticWorkerComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec componentSpec) {
         super(kubernetesClient, targetState, componentSpec, "elastic-worker");
+    }
+
+    @Override
+    public void requestRequiredResources() {
+        super.requestRequiredResources();
+        getMongoDBClientSecretRef();
     }
 
     @Override
@@ -39,14 +45,20 @@ public class ElasticWorkerComponent extends CorbaComponent implements HasService
     @Override
     public EnvVarSet getEnvVars() {
         EnvVarSet env = super.getEnvVars();
+
         env.addAll(getMongoDBEnvVars());
         env.addAll(getSolrEnvVars("content", "studio"));
+
         return env;
+    }
+
+    @Override
+    public String getMongoDBClientDefaultCollectionPrefix() {
+        return "blueprint";
     }
 
     @Override
     public String getUapiClientDefaultUsername() {
         return "webserver";
     }
-
 }

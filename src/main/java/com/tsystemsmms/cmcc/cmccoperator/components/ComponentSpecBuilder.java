@@ -13,7 +13,6 @@ package com.tsystemsmms.cmcc.cmccoperator.components;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ImageSpec;
 import com.tsystemsmms.cmcc.cmccoperator.crds.Milestone;
-import com.tsystemsmms.cmcc.cmccoperator.utils.EnvVarSet;
 import io.fabric8.kubernetes.api.model.EnvVar;
 
 import java.util.HashMap;

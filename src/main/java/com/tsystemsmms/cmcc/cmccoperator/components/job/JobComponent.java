@@ -10,7 +10,6 @@
 
 package com.tsystemsmms.cmcc.cmccoperator.components.job;
 
-import com.tsystemsmms.cmcc.cmccoperator.CoreMediaContentCloudReconciler;
 import com.tsystemsmms.cmcc.cmccoperator.components.SpringBootComponent;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;

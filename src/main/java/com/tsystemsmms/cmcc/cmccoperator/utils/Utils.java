@@ -52,7 +52,7 @@ public class Utils {
      * @param strings List of strings to be concatenated
      * @return concatenated string
      */
-    public static String concatOptional(List<String> strings) {
+    public static String concatOptional(String joiner, List<String> strings) {
         StringBuilder sb = new StringBuilder();
 
         strings = strings.stream().filter(s -> s != null && !s.isBlank()).collect(Collectors.toList());
@@ -64,9 +64,19 @@ public class Utils {
         }
         sb.append(strings.get(0));
         for (String s : strings.subList(1, strings.size())) {
-            sb.append("-").append(s);
+            sb.append(joiner).append(s);
         }
         return sb.toString();
+    }
+
+    /**
+     * Combine the arguments into a string joined by "-". If an element is null or empty, it is skipped.
+     *
+     * @param strings strings to be concatenated
+     * @return concatenated string
+     */
+    public static String concatOptional(List<String> strings) {
+        return concatOptional("-", strings);
     }
 
     /**
@@ -76,7 +86,17 @@ public class Utils {
      * @return concatenated string
      */
     public static String concatOptional(String... strings) {
-        return concatOptional(Arrays.asList(strings));
+        return concatOptional("-", Arrays.asList(strings));
+    }
+
+    /**
+     * Combine the arguments into a string joined by a joiner. If an argument is null or empty, it is skipped.
+     *
+     * @param strings strings to be concatenated
+     * @return concatenated string
+     */
+    public static String concatOptionalWithJoiner(String joiner, String... strings) {
+        return concatOptional(joiner, Arrays.asList(strings));
     }
 
     /**

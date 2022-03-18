@@ -22,15 +22,17 @@ public class DefaultTargetStateFactory implements TargetStateFactory {
     private final BeanFactory beanFactory;
     private final KubernetesClient kubernetesClient;
     private final CmccIngressGeneratorFactory cmccIngressGeneratorFactory;
+    private final ResourceNamingProviderFactory resourceNamingProviderFactory;
 
-    public DefaultTargetStateFactory(BeanFactory beanFactory, KubernetesClient kubernetesClient, CmccIngressGeneratorFactory cmccIngressGeneratorFactory) {
+    public DefaultTargetStateFactory(BeanFactory beanFactory, KubernetesClient kubernetesClient, CmccIngressGeneratorFactory cmccIngressGeneratorFactory, ResourceNamingProviderFactory resourceNamingProviderFactory) {
         this.beanFactory = beanFactory;
         this.kubernetesClient = kubernetesClient;
         this.cmccIngressGeneratorFactory = cmccIngressGeneratorFactory;
+        this.resourceNamingProviderFactory = resourceNamingProviderFactory;
     }
 
     @Override
     public TargetState buildTargetState(CoreMediaContentCloud cmcc) {
-        return new DefaultTargetState(beanFactory, kubernetesClient, cmccIngressGeneratorFactory, cmcc);
+        return new DefaultTargetState(beanFactory, kubernetesClient, cmccIngressGeneratorFactory, resourceNamingProviderFactory, cmcc);
     }
 }

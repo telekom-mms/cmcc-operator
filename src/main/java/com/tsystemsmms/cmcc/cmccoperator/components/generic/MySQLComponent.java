@@ -12,25 +12,55 @@ package com.tsystemsmms.cmcc.cmccoperator.components.generic;
 
 import com.tsystemsmms.cmcc.cmccoperator.components.AbstractComponent;
 import com.tsystemsmms.cmcc.cmccoperator.components.HasService;
+import com.tsystemsmms.cmcc.cmccoperator.crds.ClientSecretRef;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
-import com.tsystemsmms.cmcc.cmccoperator.targetstate.DatabaseSecret;
+import com.tsystemsmms.cmcc.cmccoperator.targetstate.CustomResourceConfigError;
+import com.tsystemsmms.cmcc.cmccoperator.targetstate.DefaultClientSecret;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 import com.tsystemsmms.cmcc.cmccoperator.utils.EnvVarSet;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
+import static com.tsystemsmms.cmcc.cmccoperator.components.HasJdbcClient.JDBC_CLIENT_SECRET_REF_KIND;
 import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.EnvVarSecret;
+import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.format;
 
 /**
- * Build a MySQL deployment. Resources stolen from the Bitnami MySQl chart.
+ * Build a MySQL deployment.
  */
+@Slf4j
 public class MySQLComponent extends AbstractComponent implements HasService {
+    public static final String MYSQL_ROOT_USERNAME = "root";
+
     public MySQLComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec componentSpec) {
         super(kubernetesClient, targetState, componentSpec, "");
+    }
+
+    @Override
+    public void requestRequiredResources() {
+        String name = getTargetState().getSecretName(getComponentSpec().getType(), MYSQL_ROOT_USERNAME);
+        getTargetState().getClientSecretRef(getComponentSpec().getType(), MYSQL_ROOT_USERNAME, password ->
+                new DefaultClientSecret(ClientSecretRef.defaultClientSecretRef(name), getTargetState().buildSecret(name, Map.of(
+                        ClientSecretRef.DEFAULT_PASSWORD_KEY, password,
+                        ClientSecretRef.DEFAULT_USERNAME_KEY, MYSQL_ROOT_USERNAME
+                )))
+        );
+    }
+
+    @Override
+    public List<HasMetadata> buildResources() {
+        List<HasMetadata> resources = new LinkedList<>();
+        resources.add(buildPvc());
+        resources.add(buildStatefulSet());
+        resources.add(buildService());
+        resources.addAll(buildExtraConfigMaps());
+        return resources;
     }
 
     @Override
@@ -41,7 +71,7 @@ public class MySQLComponent extends AbstractComponent implements HasService {
     @Override
     public EnvVarSet getEnvVars() {
         EnvVarSet env = new EnvVarSet();
-        env.add(EnvVarSecret("MYSQL_ROOT_PASSWORD", getResourceName(), "password"));
+        env.add(EnvVarSecret("MYSQL_ROOT_PASSWORD", getTargetState().getResourceNameFor(this, MYSQL_ROOT_USERNAME), "password"));
         return env;
     }
 
@@ -100,22 +130,15 @@ public class MySQLComponent extends AbstractComponent implements HasService {
         LinkedList<Volume> volumes = new LinkedList<>(super.getVolumes());
 
         volumes.add(new VolumeBuilder()
-                .withName(getResourceName())
+                .withName(getTargetState().getResourceNameFor(this))
                 .withPersistentVolumeClaim(new PersistentVolumeClaimVolumeSourceBuilder()
-                        .withClaimName(getResourceName())
+                        .withClaimName(getTargetState().getResourceNameFor(this))
                         .build())
                 .build());
         volumes.add(new VolumeBuilder()
-                .withName(getResourceName() + "-config")
-                .withConfigMap(new ConfigMapVolumeSourceBuilder()
-                        .withName(getResourceName())
-                        .withDefaultMode(420)
-                        .build())
-                .build());
-        volumes.add(new VolumeBuilder()
-                .withName(getResourceName() + "-init")
-                .withConfigMap(new ConfigMapVolumeSourceBuilder()
-                        .withName(getResourceName() + "-extra")
+                .withName(getTargetState().getResourceNameFor(this, "init"))
+                .withSecret(new SecretVolumeSourceBuilder()
+                        .withSecretName(getTargetState().getResourceNameFor(this, "extra"))
                         .withDefaultMode(420)
                         .build())
                 .build());
@@ -132,16 +155,11 @@ public class MySQLComponent extends AbstractComponent implements HasService {
         LinkedList<VolumeMount> volumeMounts = new LinkedList<>(super.getVolumeMounts());
 
         volumeMounts.add(new VolumeMountBuilder()
-                .withName(getResourceName())
+                .withName(getTargetState().getResourceNameFor(this))
                 .withMountPath("/var/lib/mysql")
                 .build());
-//        volumeMounts.add(new VolumeMountBuilder()
-//                .withName(getResourceName() + "-config")
-//                .withMountPath("/opt/bitnami/mysql/conf/my.cnf")
-//                .withSubPath("my.cnf")
-//                .build());
         volumeMounts.add(new VolumeMountBuilder()
-                .withName(getResourceName() + "-init")
+                .withName(getTargetState().getResourceNameFor(this, "init"))
                 .withMountPath("/docker-entrypoint-initdb.d")
                 .build());
         volumeMounts.add(new VolumeMountBuilder()
@@ -152,28 +170,34 @@ public class MySQLComponent extends AbstractComponent implements HasService {
         return volumeMounts;
     }
 
-    Secret buildSecret() {
-        DatabaseSecret secret = getTargetState().getDatabaseSecret(getResourceName(), "root");
-        return getTargetState().buildDatabaseSecret(getResourceName(), secret);
-    }
-
-    List<ConfigMap> buildExtraConfigMaps() {
+    List<HasMetadata> buildExtraConfigMaps() {
         if (getComponentSpec().getExtra() == null || getComponentSpec().getExtra().size() == 0)
             return Collections.emptyList();
-        return Collections.singletonList(new ConfigMapBuilder()
-                .withMetadata(getResourceMetadataForName(getResourceName() + "-extra"))
-                .withData(getComponentSpec().getExtra())
+        return Collections.singletonList(new SecretBuilder()
+                .withMetadata(getResourceMetadataForName(getTargetState().getResourceNameFor(this) + "-extra"))
+                .withType("Opaque")
+                .withStringData(getComponentSpec().getExtra())
                 .build());
     }
 
-    @Override
-    public List<HasMetadata> buildResources() {
-        List<HasMetadata> resources = new LinkedList<>();
-        resources.add(buildPvc());
-        resources.add(buildStatefulSet());
-        resources.add(buildService());
-        resources.add(buildSecret());
-        resources.addAll(buildExtraConfigMaps());
-        return resources;
+    public static Map<String, String> createUsersFromClientSecrets(TargetState targetState) {
+        Map<String, DefaultClientSecret> secrets = targetState.getDefaultClientSecrets(JDBC_CLIENT_SECRET_REF_KIND);
+
+        if (secrets == null) {
+            throw new CustomResourceConfigError("No MySQL users to be created");
+        }
+
+        StringBuilder sql = new StringBuilder();
+        for (DefaultClientSecret dcs : secrets.values()) {
+            Map<String, String> data = dcs.getSecret().getStringData();
+            if (data.get(ClientSecretRef.DEFAULT_USERNAME_KEY).equals(MYSQL_ROOT_USERNAME))
+                continue;
+            sql.append(format("CREATE SCHEMA IF NOT EXISTS {} CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;\n", data.get(ClientSecretRef.DEFAULT_SCHEMA_KEY)));
+            sql.append(format("CREATE USER IF NOT EXISTS '{}'@'%' IDENTIFIED BY '{}';\n", data.get(ClientSecretRef.DEFAULT_USERNAME_KEY), data.get(ClientSecretRef.DEFAULT_PASSWORD_KEY)));
+            sql.append(format("ALTER USER '{}'@'%' IDENTIFIED BY '{}';\n", data.get(ClientSecretRef.DEFAULT_USERNAME_KEY), data.get(ClientSecretRef.DEFAULT_PASSWORD_KEY)));
+            sql.append(format("GRANT ALL PRIVILEGES ON {}.* TO '{}'@'%';\n", data.get(ClientSecretRef.DEFAULT_SCHEMA_KEY), data.get(ClientSecretRef.DEFAULT_USERNAME_KEY)));
+        }
+
+        return Map.of("create-default-users.sql", sql.toString());
     }
 }

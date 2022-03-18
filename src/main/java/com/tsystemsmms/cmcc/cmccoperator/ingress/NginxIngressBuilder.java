@@ -33,7 +33,7 @@ public class NginxIngressBuilder extends AbstractIngressBuilder {
 
     @Override
     public Collection<? extends HasMetadata> build() {
-        ObjectMeta metadata = targetState.getResourceMetadataForName(name);
+        ObjectMeta metadata = targetState.getResourceMetadataFor(name);
         metadata.getAnnotations().putAll(annotations);
 
         List<HTTPIngressPath> httpPaths = paths.stream().map(path -> withPath(new HTTPIngressPathBuilder(), path)

@@ -11,38 +11,47 @@
 package com.tsystemsmms.cmcc.cmccoperator.targetstate;
 
 import com.tsystemsmms.cmcc.cmccoperator.components.ComponentSpecBuilder;
-import com.tsystemsmms.cmcc.cmccoperator.components.HasService;
-import com.tsystemsmms.cmcc.cmccoperator.components.HasUapiClient;
+import com.tsystemsmms.cmcc.cmccoperator.components.generic.MongoDBComponent;
+import com.tsystemsmms.cmcc.cmccoperator.components.generic.MySQLComponent;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
 import com.tsystemsmms.cmcc.cmccoperator.crds.CoreMediaContentCloud;
 import com.tsystemsmms.cmcc.cmccoperator.crds.Milestone;
 import com.tsystemsmms.cmcc.cmccoperator.ingress.CmccIngressGeneratorFactory;
-import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.api.model.SecretBuilder;
-import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.BeanFactory;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
 
 import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.concatOptional;
-import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.format;
 
 /**
  * Create the runtime config based on the CRD data.
  */
 @Slf4j
 public class DefaultTargetState extends AbstractTargetState {
-    public DefaultTargetState(BeanFactory beanFactory, KubernetesClient kubernetesClient, CmccIngressGeneratorFactory cmccIngressGeneratorFactory, CoreMediaContentCloud cmcc) {
-        super(beanFactory, kubernetesClient, cmccIngressGeneratorFactory, cmcc);
+    public DefaultTargetState(BeanFactory beanFactory, KubernetesClient kubernetesClient, CmccIngressGeneratorFactory cmccIngressGeneratorFactory, ResourceNamingProviderFactory resourceNamingProviderFactory, CoreMediaContentCloud cmcc) {
+        super(beanFactory, kubernetesClient, cmccIngressGeneratorFactory, resourceNamingProviderFactory, cmcc);
     }
 
     @Override
     public boolean converge() {
         Milestone previousMilestone = getCmcc().getStatus().getMilestone();
+
+        if (cmcc.getSpec().getWith().getDatabases()) {
+            componentCollection.addAll(List.of(
+                    ComponentSpecBuilder.ofType("mongodb")
+                            .withMilestone(Milestone.Created)
+                            .build(),
+                    ComponentSpecBuilder.ofType("mysql")
+                            .withMilestone(Milestone.Created)
+                            .build()
+            ));
+        }
+
 
         if (cmcc.getSpec().getWith().getManagement()) {
             componentCollection.addAll(List.of(
@@ -57,7 +66,7 @@ public class DefaultTargetState extends AbstractTargetState {
                     ComponentSpecBuilder.ofType("studio-client").build(),
                     ComponentSpecBuilder.ofType("studio-server").build(),
                     ComponentSpecBuilder.ofType("user-changes").build(),
-                    ComponentSpecBuilder.ofType("workflow-server").withMilestone(Milestone.ManagementReady).build(),
+                    ComponentSpecBuilder.ofType("workflow-server").withMilestone(Milestone.ContentServerReady).build(),
                     ComponentSpecBuilder.ofType("overview").withMilestone(Milestone.ManagementReady).build(),
 
                     ComponentSpecBuilder.ofType("management-tools")
@@ -80,24 +89,18 @@ public class DefaultTargetState extends AbstractTargetState {
             ));
         }
 
-        if (cmcc.getSpec().getWith().getDatabases()) {
-            // collect the schema names from all components requiring a relational database schema
-            HashMap<String, DatabaseSecret> databaseSecrets = getDatabaseSecrets();
-            StringBuilder sql = new StringBuilder();
-            for (DatabaseSecret secret : databaseSecrets.values()) {
-                sql.append(format("CREATE SCHEMA IF NOT EXISTS {} CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;\n", secret.getSchema()));
-                sql.append(format("CREATE USER IF NOT EXISTS '{}'@'%' IDENTIFIED BY '{}';\n", secret.getUsername(), secret.getPassword()));
-                sql.append(format("ALTER USER '{}'@'%' IDENTIFIED BY '{}';\n", secret.getUsername(), secret.getPassword()));
-                sql.append(format("GRANT ALL PRIVILEGES ON {}.* TO '{}'@'%';\n", secret.getSchema(), secret.getUsername()));
-            }
+        // trigger components to request clientResourceRefs, so we can build the config maps for the database servers
+        requestRequiredResources();
 
+        if (cmcc.getSpec().getWith().getDatabases()) {
             componentCollection.addAll(List.of(
                     ComponentSpecBuilder.ofType("mongodb")
                             .withMilestone(Milestone.Created)
+                            .withExtra(MongoDBComponent.createUsersFromClientSecrets(this))
                             .build(),
                     ComponentSpecBuilder.ofType("mysql")
                             .withMilestone(Milestone.Created)
-                            .withExtra(Map.of("create-users.sql", sql.toString()))
+                            .withExtra(MySQLComponent.createUsersFromClientSecrets(this))
                             .build()
             ));
         }
@@ -122,17 +125,24 @@ public class DefaultTargetState extends AbstractTargetState {
                         ComponentSpecBuilder.ofType("content-server").withKind("mls").build() /*,
                         ComponentSpecBuilder.ofType("solr").withKind("leader").build(),
                         ComponentSpecBuilder.ofType("workflow-server").build()*/
-                ), Milestone.ContentServerReady);
+                ), Milestone.ContentServerInitialized);
                 break;
-            case ContentServerReady:
+            case ContentServerInitialized:
                 // secrets can be created right away at Created, the components simply won't use them until ManagementReady
                 if (isReady("initcms")) {
-                    cmcc.getStatus().setMilestone(Milestone.ManagementReady);
-                    cmcc.getStatus().getFlags().put(FLAG_INITIAL_PASSWORDS, "false");
+                    cmcc.getStatus().setMilestone(Milestone.ContentServerReady);
                     // as part of the transition, kick the content server by scaling it to 0; the next round will turn it up to 1 again
                     scaleComponent(componentCollection.getServiceNameFor("content-server", "cms"));
                     scaleComponent(componentCollection.getServiceNameFor("content-server", "mls"));
                 }
+                break;
+            case ContentServerReady:
+                advanceToMilestoneAfterComponentsReady(List.of(
+                        ComponentSpecBuilder.ofType("content-server").withKind("cms").build(),
+                        ComponentSpecBuilder.ofType("content-server").withKind("mls").build() ,
+                        ComponentSpecBuilder.ofType("solr").withKind("leader").build(),
+                        ComponentSpecBuilder.ofType("workflow-server").build()),
+                        Milestone.ManagementReady);
                 break;
             case ManagementReady:
                 if (componentCollection.containsName("import")) {
@@ -142,46 +152,6 @@ public class DefaultTargetState extends AbstractTargetState {
         }
 
         return previousMilestone == getCmcc().getStatus().getMilestone();
-    }
-
-    @Override
-    public LinkedList<HasMetadata> buildExtraResources() {
-        final LinkedList<HasMetadata> resources = new LinkedList<>();
-
-        if (cmcc.getSpec().getWith().getDatabases()) {
-            HashMap<String, DatabaseSecret> databaseSecrets = getDatabaseSecrets();
-            for (DatabaseSecret secret : databaseSecrets.values()) {
-                resources.add(buildDatabaseSchemaSecret(secret));
-            }
-        }
-
-        resources.addAll(buildUapiClientAdminSecrets());
-
-        // build secrets for the UAPI/Corba components
-        for (HasUapiClient client : componentCollection.getAllImplementing(HasUapiClient.class)) {
-            resources.addAll(buildClientSecret(client.getUapiClientSecretRef(), client::getDefaultUapiClientSecret));
-        }
-
-        return resources;
-    }
-
-    /**
-     * Builds the secret for the UAPI admin account.
-     *
-     * @return the secret
-     */
-    public Collection<HasMetadata> buildUapiClientAdminSecrets() {
-        String name = HasUapiClient.getUapiClientAdminSecretName();
-        // build secret for the admin users
-        return buildClientSecret(ClientSecretRef.builder()
-                        .secretName(name)
-                        .usernameKey(DATABASE_SECRET_USERNAME_KEY)
-                        .passwordKey(DATABASE_SECRET_PASSWORD_KEY)
-                        .build(),
-                password -> buildSecret(name, Map.of(
-                        DATABASE_SECRET_USERNAME_KEY, "admin",
-                        DATABASE_SECRET_PASSWORD_KEY, password
-                )));
     }
 
     /**

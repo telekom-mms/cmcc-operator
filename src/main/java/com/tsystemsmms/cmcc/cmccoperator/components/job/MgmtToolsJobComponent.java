@@ -12,8 +12,10 @@ package com.tsystemsmms.cmcc.cmccoperator.components.job;
 
 import com.tsystemsmms.cmcc.cmccoperator.components.Component;
 import com.tsystemsmms.cmcc.cmccoperator.components.HasUapiClient;
+import com.tsystemsmms.cmcc.cmccoperator.crds.ClientSecretRef;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ImportJob;
+import com.tsystemsmms.cmcc.cmccoperator.targetstate.CustomResourceConfigError;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 import com.tsystemsmms.cmcc.cmccoperator.utils.EnvVarSet;
 import io.fabric8.kubernetes.api.model.*;
@@ -25,8 +27,8 @@ import org.yaml.snakeyaml.constructor.Constructor;
 import java.util.LinkedList;
 import java.util.List;
 
-import static com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState.DATABASE_SECRET_PASSWORD_KEY;
-import static com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState.DATABASE_SECRET_USERNAME_KEY;
+import static com.tsystemsmms.cmcc.cmccoperator.components.HasUapiClient.UAPI_ADMIN_USERNAME;
+import static com.tsystemsmms.cmcc.cmccoperator.components.HasUapiClient.UAPI_CLIENT_SECRET_REF_KIND;
 import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.EnvVarSecret;
 import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.EnvVarSimple;
 
@@ -67,14 +69,12 @@ public class MgmtToolsJobComponent extends JobComponent {
         env.add(EnvVarSimple("DEV_MASTER_CAP_CLIENT_SERVER_IOR_URL", getTargetState().getServiceUrlFor("content-server", "mls")));
         env.add(EnvVarSimple("DEV_MANAGEMENT_CAP_CLIENT_SERVER_IOR_URL", getTargetState().getServiceUrlFor("content-server", "cms")));
 
-        if (getTargetState().isInitialPasswords()) {
-            env.add(EnvVarSecret("PASSWORD_ADMIN", HasUapiClient.getUapiClientAdminSecretName(), DATABASE_SECRET_PASSWORD_KEY));
-            env.add(EnvVarSimple("TOOLS_USER", "admin"));
-            env.add(EnvVarSimple("TOOLS_PASSWORD", "admin"));
-        } else {
-            env.add(EnvVarSecret("TOOLS_USER", HasUapiClient.getUapiClientAdminSecretName(), DATABASE_SECRET_USERNAME_KEY));
-            env.add(EnvVarSecret("TOOLS_PASSWORD", HasUapiClient.getUapiClientAdminSecretName(), DATABASE_SECRET_PASSWORD_KEY));
-        }
+        ClientSecretRef admin = getTargetState().getClientSecretRef(UAPI_CLIENT_SECRET_REF_KIND, UAPI_ADMIN_USERNAME,
+                password -> HasUapiClient.buildClientSecret(getTargetState().getResourceNameFor(this),
+                        getTargetState().getResourceMetadataFor(this),
+                        UAPI_ADMIN_USERNAME, password));
+        env.add(EnvVarSecret("TOOLS_USER", admin.getSecretName(), admin.getUsernameKey()));
+        env.add(EnvVarSecret("TOOLS_PASSWORD", admin.getSecretName(), admin.getPasswordKey()));
         env.add(EnvVarSimple("DEBUG_ENTRYPOINT", "true"));
         env.add(EnvVarSimple("IMPORT_DIR", "/coremedia/import"));
         if (getImportJob().isForceContentImport()) {
@@ -110,45 +110,14 @@ public class MgmtToolsJobComponent extends JobComponent {
             env.add(EnvVarSimple("THEMES_ARCHIVE_URL", "/coremedia/import/themes/frontend.zip"));
         }
 
-        env.addAll(getMySqlEnvVars());
+        env.addAll(getTargetState().getComponentCollection().getHasJdbcClientComponent("content-server", "cms")
+                .getJdbcClientEnvVars("DEV_MANAGEMENT_JDBC"));
+        env.addAll(getTargetState().getComponentCollection().getHasJdbcClientComponent("content-server", "mls")
+                .getJdbcClientEnvVars("DEV_MASTER_JDBC"));
 
         return env;
     }
 
-    /**
-     * Get a list of environment variables to configure the MySQL database connection of the component.
-     *
-     * @return list of env vars
-     */
-    public EnvVarSet getMySqlEnvVars() {
-        MySQLDetails details = getMySQLDetails("management");
-        EnvVarSet env = new EnvVarSet();
-
-        env.add(EnvVarSimple("MYSQL_HOST", details.getHostName())); // needed for MySQL command line tools
-
-        env.add(EnvVarSimple("DEV_MANAGEMENT_JDBC_DRIVER", "com.mysql.cj.jdbc.Driver"));
-        env.add(EnvVarSecret("DEV_MANAGEMENT_JDBC_PASSWORD", details.getSecretName(), TargetState.DATABASE_SECRET_PASSWORD_KEY));
-        env.add(EnvVarSimple("DEV_MANAGEMENT_JDBC_SCHEMA", details.getDatabaseSchema()));
-        env.add(EnvVarSimple("DEV_MANAGEMENT_JDBC_URL", details.getJdbcUrl()));
-        env.add(EnvVarSecret("DEV_MANAGEMENT_JDBC_USER", details.getSecretName(), DATABASE_SECRET_USERNAME_KEY));
-
-        details = getMySQLDetails("master");
-        env.add(EnvVarSimple("DEV_MASTER_JDBC_DRIVER", "com.mysql.cj.jdbc.Driver"));
-        env.add(EnvVarSecret("DEV_MASTER_JDBC_PASSWORD", details.getSecretName(), TargetState.DATABASE_SECRET_PASSWORD_KEY));
-        env.add(EnvVarSimple("DEV_MASTER_JDBC_SCHEMA", details.getDatabaseSchema()));
-        env.add(EnvVarSimple("DEV_MASTER_JDBC_URL", details.getJdbcUrl()));
-        env.add(EnvVarSecret("DEV_MASTER_JDBC_USER", details.getSecretName(), DATABASE_SECRET_USERNAME_KEY));
-        return env;
-    }
-
-
-    @Override
-    public List<Container> getInitContainers() {
-        List<Container> containers = super.getInitContainers();
-
-//        containers.add(getContainerWaitForIor(getTargetState().getServiceNameFor("workflow-server"), getTargetState().getServiceUrlFor("workflow-server")));
-        return containers;
-    }
 
     @Override
     public List<HasMetadata> buildResources() {
@@ -220,7 +189,7 @@ public class MgmtToolsJobComponent extends JobComponent {
     private ImportJob getImportJobFromExtra() {
         Yaml yaml = new Yaml(new Constructor(ImportJob.class));
         if (getComponentSpec().getExtra() == null || !getComponentSpec().getExtra().containsKey(EXTRA_CONFIG))
-            throw new IllegalArgumentException("Must specify " + EXTRA_CONFIG + " with job parameters for job \"" + getSpecName() + "\"");
+            throw new CustomResourceConfigError("Must specify " + EXTRA_CONFIG + " with job parameters for job \"" + getSpecName() + "\"");
         return yaml.load(getComponentSpec().getExtra().get(EXTRA_CONFIG));
     }
 

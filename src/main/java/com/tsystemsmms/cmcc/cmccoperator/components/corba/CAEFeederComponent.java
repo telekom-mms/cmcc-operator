@@ -10,8 +10,10 @@
 
 package com.tsystemsmms.cmcc.cmccoperator.components.corba;
 
-import com.tsystemsmms.cmcc.cmccoperator.components.HasMySQLSchema;
+import com.tsystemsmms.cmcc.cmccoperator.components.HasJdbcClient;
+import com.tsystemsmms.cmcc.cmccoperator.components.HasMongoDBClient;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
+import com.tsystemsmms.cmcc.cmccoperator.targetstate.CustomResourceConfigError;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 import com.tsystemsmms.cmcc.cmccoperator.utils.EnvVarSet;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -20,10 +22,10 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.HashMap;
 
-import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.*;
+import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.EnvVarSimple;
 
 @Slf4j
-public class CAEFeederComponent extends CorbaComponent implements HasMySQLSchema {
+public class CAEFeederComponent extends CorbaComponent implements HasMongoDBClient, HasJdbcClient {
 
     public static final String KIND_LIVE = "live";
     public static final String KIND_PREVIEW = "preview";
@@ -35,8 +37,8 @@ public class CAEFeederComponent extends CorbaComponent implements HasMySQLSchema
     public CAEFeederComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec componentSpec) {
         super(kubernetesClient, targetState, componentSpec, "cae-feeder");
         if (getComponentSpec().getKind() == null)
-            throw new IllegalArgumentException("kind must be set to either " + KIND_LIVE + " or " + KIND_PREVIEW);
-        switch(componentSpec.getKind()) {
+            throw new CustomResourceConfigError("kind must be set to either " + KIND_LIVE + " or " + KIND_PREVIEW);
+        switch (componentSpec.getKind()) {
             case KIND_LIVE:
                 databaseSchema = "mcaefeeder";
                 solrCollection = "live";
@@ -46,17 +48,15 @@ public class CAEFeederComponent extends CorbaComponent implements HasMySQLSchema
                 solrCollection = "preview";
                 break;
             default:
-                throw new IllegalArgumentException("kind \"" + getComponentSpec().getKind() + "\" is illegal, must be either " + KIND_LIVE + " or " + KIND_PREVIEW);
+                throw new CustomResourceConfigError("kind \"" + getComponentSpec().getKind() + "\" is illegal, must be either " + KIND_LIVE + " or " + KIND_PREVIEW);
         }
     }
 
     @Override
-    public String getDatabaseSecretName() {
-        return concatOptional(
-                getDefaults().getNamePrefix(),
-                getSpecName(),
-                "mysql",
-                getDatabaseSchema());
+    public void requestRequiredResources() {
+        super.requestRequiredResources();
+        getMongoDBClientSecretRef();
+        getJdbcClientSecretRef();
     }
 
     @Override
@@ -69,7 +69,8 @@ public class CAEFeederComponent extends CorbaComponent implements HasMySQLSchema
     @Override
     public EnvVarSet getEnvVars() {
         EnvVarSet env = super.getEnvVars();
-        env.addAll(getMySqlEnvVars());
+
+        env.addAll(getJdbcClientEnvVars("JDBC"));
         env.addAll(getMongoDBEnvVars());
         env.addAll(getSolrEnvVars("cae", solrCollection));
 
@@ -79,27 +80,18 @@ public class CAEFeederComponent extends CorbaComponent implements HasMySQLSchema
         return env;
     }
 
-    /**
-     * Get a list of environment variables to configure the MySQL database connection of the component.
-     *
-     * @return list of env vars
-     */
-    public EnvVarSet getMySqlEnvVars() {
-        MySQLDetails details = getMySQLDetails(getDatabaseSchema());
-        EnvVarSet env = new EnvVarSet();
+    @Override
+    public String getJdbcClientDefaultSchema() {
+        return databaseSchema;
+    }
 
-        env.add(EnvVarSimple("MYSQL_HOST", details.getHostName())); // needed for MySQL command line tools
-        env.add(EnvVarSimple("JDBC_DRIVER", "com.mysql.cj.jdbc.Driver"));
-        env.add(EnvVarSecret("JDBC_PASSWORD", details.getSecretName(), TargetState.DATABASE_SECRET_PASSWORD_KEY));
-        env.add(EnvVarSimple("JDBC_SCHEMA", databaseSchema));
-        env.add(EnvVarSimple("JDBC_URL", details.getJdbcUrl()));
-        env.add(EnvVarSecret("JDBC_USER", details.getSecretName(), TargetState.DATABASE_SECRET_USERNAME_KEY));
-        return env;
+    @Override
+    public String getMongoDBClientDefaultCollectionPrefix() {
+        return "blueprint";
     }
 
     @Override
     public String getUapiClientDefaultUsername() {
         return "feeder";
     }
-
 }

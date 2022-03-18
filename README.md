@@ -6,6 +6,21 @@
 
 [Kubernetes Operators](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) are specialized software packages that help manage applications and resources in a k8s cluster. This operator will create, initialize and run a CoreMedia Content Cloud application. A custom resource definition is used to define all relevant parameters.
 
+### Features
+
+The operator:
+* manages the creation and updating of all the Kubernetes resources required to run CoreMedia Content Cloud. Care has been taken to have sensible defaults for all parameters wherever possible.
+* can create a fresh installation from scratch, creating MariaDB and MongoDB database servers, and initialize the necessary database schemas and secrets.
+* can deploy against existing databases, using pre-existing secrets provided.
+* deploys the CoreMedia Content Cloud components step by step. This ensures that components that require other components are only started when the dependencies have been initialized successfully.
+* imports test users and contents initially.
+* creates random passwords for all components and configures them to use them (MariaDB, MongoDB, and UAPI/Corba).
+
+Planned features include:
+* Running additional jobs, for example to re-import content into a running installation.
+* Creating a scalable delivery stage automatically by simply providing the number of Replication Live Servers and minimum and maximum number of Content Application Engines.
+* Configure Solr clustering by specifying the number of replicas to create.
+
 ## Quick Links
 
 * [CoreMediaContentClouds custom resource documentation](docs/custom-resource.md)
@@ -33,11 +48,11 @@ Your cluster will need to have a load balancer available, so the ingress control
 
 ### Required DNS Names
 
-In order for users to be able to access the CoreMedia web sites, you will need to provide DNS names (ingress hostnames) and have them point at the ingress controllers IP address.
+In order for users to be able to access the CoreMedia websites, you will need to provide DNS names (ingress hostnames) and have them point at the ingress controllers IP address.
 
 If you don't have a domain handy for a development setup, for example on your local machine, you can use a DNS service like [nip.io](https://nip.io) or [sslip.io](https://sslip.io). This allows you to configure `defaults.ingressDomain: 127.0.0.1.nip.io`.
 
-All host names are built from three components: the `defaults.namePrefix`, the component name/site mapping name, and the `defaults.ingressDomain`. See below for [Site Mappings](#site-mappings). Examples:
+All host names are built from three components: the `defaults.namePrefix`, the component name/site mapping name, and the `defaults.ingressDomain`. See below for [Site Mappings](docs/custom-resource.md#site-mappings). Examples:
 
 | namePrefix | component/site | ingressDomain    | Resulting URL                         |
 |------------|----------------|------------------|---------------------------------------|
@@ -92,7 +107,7 @@ The license secrets need to be created in the same namespace you plan to install
 
 ### Creating a CoreMedia Installation
 
-You can createa a complete CoreMedia installation by creating the custom resource `CoreMediaContentClouds` with the desired properties. An example can be found in [`k8s/example.yaml`](k8s/example.yaml), and can be created in the cluster like this:
+You can create a complete CoreMedia installation by creating the custom resource `CoreMediaContentClouds` with the desired properties. An example can be found in [`k8s/example.yaml`](k8s/example.yaml), and can be created in the cluster like this:
 
 ```shell
 kubectl apply -f k8s/example.yaml

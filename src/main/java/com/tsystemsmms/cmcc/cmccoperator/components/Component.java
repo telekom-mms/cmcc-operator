@@ -27,11 +27,13 @@ public interface Component {
     List<HasMetadata> buildResources();
 
     /**
-     * The default resource name for resources built by this component.
+     * The base name to be used when building a resource for this component. The target state will use this name
+     * combined with additional information to compute the complete resource name.
      *
+     * @see TargetState#getResourceNameFor(Component, String...) 
      * @return the name
      */
-    String getResourceName();
+    String getBaseResourceName();
 
     /**
      * The name of the component.
@@ -53,7 +55,7 @@ public interface Component {
      * @return a name.
      */
     default ObjectMeta getResourceMetadata() {
-        return getResourceMetadataForName(getResourceName());
+        return getResourceMetadataForName(getTargetState().getResourceNameFor(this));
     }
 
     /**
@@ -63,7 +65,7 @@ public interface Component {
      * @return compound name
      */
     default ObjectMeta getResourceMetadataForName(String name) {
-        ObjectMeta metadata = getTargetState().getResourceMetadataForName(name);
+        ObjectMeta metadata = getTargetState().getResourceMetadataFor(name);
         metadata.getLabels().putAll(getSelectorLabels());
         return metadata;
     }
@@ -98,6 +100,12 @@ public interface Component {
     default boolean isReady() {
         return true;
     }
+
+    /**
+     * Called by the target state to trigger any callbacks to get references to required resource, like
+     * ClientSecretRefs. Called after configuration of the component, but before buildResources().
+     */
+    void requestRequiredResources();
 
     /**
      * Update the component spec. Re-computes any derived values. type, kind and name are immutable and cannot be changed.

@@ -11,12 +11,46 @@
 package com.tsystemsmms.cmcc.cmccoperator.components;
 
 import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.ServiceBuilder;
+import io.fabric8.kubernetes.api.model.ServicePort;
+import io.fabric8.kubernetes.api.model.ServiceSpecBuilder;
+
+import java.util.List;
 
 /**
  * A Component that has a service.
  */
 public interface HasService extends Component {
-    Service buildService();
-    String getServiceName();
-    String getServiceUrl();
+    /**
+     * Service for this component.
+     *
+     * @return the service definition
+     */
+    default Service buildService() {
+        return new ServiceBuilder()
+                .withMetadata(getTargetState().getResourceMetadataFor(this))
+                .withSpec(new ServiceSpecBuilder()
+                        .withSelector(getSelectorLabels())
+                        .withPorts(getServicePorts())
+                        .build())
+                .build();
+    }
+
+    /**
+     * Returns the list of ports this service offers.
+     *
+     * @return list of ports
+     */
+    List<ServicePort> getServicePorts();
+
+    /**
+     * Returns the URL for the (primary) service.
+     *
+     * @return URL of the primary service.
+     */
+    default String getServiceUrl() {
+        return "http://" + getTargetState().getResourceNameFor(this) + ":8080";
+    }
+
+
 }

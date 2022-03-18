@@ -10,6 +10,7 @@
 
 package com.tsystemsmms.cmcc.cmccoperator.components.corba;
 
+import com.tsystemsmms.cmcc.cmccoperator.components.HasMongoDBClient;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 import com.tsystemsmms.cmcc.cmccoperator.utils.EnvVarSet;
@@ -21,10 +22,16 @@ import java.util.LinkedList;
 import java.util.List;
 
 @Slf4j
-public class ContentFeederComponent extends CorbaComponent {
+public class ContentFeederComponent extends CorbaComponent implements HasMongoDBClient {
 
     public ContentFeederComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec componentSpec) {
         super(kubernetesClient, targetState, componentSpec, "content-feeder");
+    }
+
+    @Override
+    public void requestRequiredResources() {
+        super.requestRequiredResources();
+        getMongoDBClientSecretRef();
     }
 
     @Override
@@ -37,9 +44,16 @@ public class ContentFeederComponent extends CorbaComponent {
     @Override
     public EnvVarSet getEnvVars() {
         EnvVarSet env = super.getEnvVars();
+
         env.addAll(getMongoDBEnvVars());
         env.addAll(getSolrEnvVars("content", "studio"));
+
         return env;
+    }
+
+    @Override
+    public String getMongoDBClientDefaultCollectionPrefix() {
+        return "blueprint";
     }
 
     @Override

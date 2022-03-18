@@ -10,16 +10,17 @@
 
 package com.tsystemsmms.cmcc.cmccoperator.targetstate;
 
+import com.tsystemsmms.cmcc.cmccoperator.components.Component;
 import com.tsystemsmms.cmcc.cmccoperator.components.ComponentCollection;
+import com.tsystemsmms.cmcc.cmccoperator.crds.ClientSecretRef;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentDefaults;
 import com.tsystemsmms.cmcc.cmccoperator.crds.CoreMediaContentCloud;
 import com.tsystemsmms.cmcc.cmccoperator.ingress.CmccIngressGeneratorFactory;
-import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.fabric8.kubernetes.api.model.OwnerReference;
-import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.*;
 
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 
 import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.concatOptional;
 
@@ -31,41 +32,6 @@ public interface TargetState {
     String DATABASE_SECRET_PASSWORD_KEY = "password";
 
     /**
-     * Return the CoreMediaContentCloud custom resource this target state is working on.
-     *
-     * @return cmcc
-     */
-    CoreMediaContentCloud getCmcc();
-
-    CmccIngressGeneratorFactory getCmccIngressGeneratorFactory();
-
-    /**
-     * Returns true if the Content Server is using the initial passwords.
-     * <p>
-     * When the Content Server first comes up and initializes an empty database, it creates default users with
-     * default passwords. This flag can be queried to decide whether to use these default password ("admin"/"admin)
-     * or use the usernames and passwords from the respective secrets.
-     *
-     * @return true if default passwords are active
-     */
-    boolean isInitialPasswords();
-
-    /**
-     * Owner references to be added to created resources.
-     *
-     * @return the owner reference
-     */
-    OwnerReference getOutOwnerReference();
-
-    /**
-     * Construct the Kubernetes metadata for the given name.
-     *
-     * @param name resource name
-     * @return the metadata
-     */
-    ObjectMeta getResourceMetadataForName(String name);
-
-    /**
      * Build all k8s resources for the desired target state.
      *
      * @return list of resources
@@ -73,11 +39,140 @@ public interface TargetState {
     List<HasMetadata> buildResources();
 
     /**
+     * Build a secret.
+     *
+     * @param name    of the secret
+     * @param entries for the secret, will be base64 encoded
+     * @return the secret
+     */
+    default Secret buildSecret(String name, Map<String, String> entries) {
+        return buildSecret(getResourceMetadataFor(name), entries);
+    }
+
+    static Secret buildSecret(ObjectMeta metadata, Map<String, String> entries) {
+        return new SecretBuilder()
+                .withMetadata(metadata)
+                .withType("Opaque")
+                .withStringData(entries)
+                .build();
+    }
+
+    /**
+     * Returns a ClientSecretRef for a client connection. This allows a component to request the secret ref for a
+     * connection to a service, including the service address key, the username key, and the password key, so they
+     * can be added as environment variables to a pod.
+     * <p>
+     * This method triggers the creation of any secret that has not been listed in the custom resource as a managed
+     * object. For example, when configuring <tt>with.databases</tt>, the necessary secrets are created, and in turn,
+     * the database accounts created.
+     *
+     * @param kind               kind of network client, for example "jdbc", "mongodb", or "uapi".
+     * @param schema             schema or account name. Must be unique among all entries of a kind.
+     * @param buildDefaultSecret method that creates a suitable ClientSecret if there is no ClientSecretRef
+     * @return the secret reference
+     */
+    ClientSecretRef getClientSecretRef(String kind, String schema, Function<String, DefaultClientSecret> buildDefaultSecret);
+
+    /**
+     * Returns all default client secrets for the given kind. Can be used to create users in a server.
+     *
+     * @param kind kind of service
+     * @return default client secrets
+     */
+    Map<String, DefaultClientSecret> getDefaultClientSecrets(String kind);
+
+    /**
+     * Return the CoreMediaContentCloud custom resource this target state is working on.
+     *
+     * @return cmcc
+     */
+    CoreMediaContentCloud getCmcc();
+
+    /**
+     * Return the factory used for ingress generation.
+     *
+     * @return ingress generator factory.
+     */
+    CmccIngressGeneratorFactory getCmccIngressGeneratorFactory();
+
+    /**
      * Returns the component collection used to manage the components of the target state.
      *
      * @return component collection
      */
     ComponentCollection getComponentCollection();
+
+    /**
+     * Returns a hostname for the given name. If the name does not contain periods, extend it with the prefix and
+     * ingress domain; otherwise return it unchanged.
+     *
+     * @param name the name
+     * @return the hostname
+     */
+    default String getHostname(String name) {
+        ComponentDefaults defaults = getCmcc().getSpec().getDefaults();
+        String fqdn = name;
+        if (!fqdn.contains("."))
+            fqdn = concatOptional(defaults.getNamePrefix(), fqdn) + "." + defaults.getIngressDomain();
+        return fqdn;
+    }
+
+    /**
+     * Owner references to be added to created resources.
+     *
+     * @return the owner reference
+     */
+    OwnerReference getOurOwnerReference();
+
+    /**
+     * Returns the hostname the Preview is available under from the outside.
+     *
+     * @return hostname of the Preview.
+     */
+    default String getPreviewHostname() {
+        return getHostname(getCmcc().getSpec().getDefaults().getPreviewHostname());
+    }
+
+    /**
+     * Construct the Kubernetes metadata for the given name.
+     *
+     * @param name resource name
+     * @return the metadata
+     */
+    ObjectMeta getResourceMetadataFor(String name);
+
+    /**
+     * Construct the Kubernetes metadata for the given name.
+     *
+     * @param component  component
+     * @param additional additional qualifiers
+     * @return the metadata
+     */
+    ObjectMeta getResourceMetadataFor(Component component, String... additional);
+
+    /**
+     * Returns the name for the component.
+     *
+     * @param component  component
+     * @param additional additional qualifiers
+     * @return the resource name
+     * @see ResourceNamingProvider#nameFor(Component, String...)
+     */
+    String getResourceNameFor(Component component, String... additional);
+
+    /**
+     * Returns the name for the component.
+     *
+     * @param component  component
+     * @param additional additional qualifiers
+     * @return the resource name
+     * @see ResourceNamingProvider#nameFor(String, String...)
+     */
+    String getResourceNameFor(String component, String... additional);
+
+    default String getSecretName(String kind, String schema) {
+        return concatOptional(getCmcc().getSpec().getDefaults().getNamePrefix(), kind, schema);
+    }
 
     /**
      * Return the name of the service resource for the named component.
@@ -88,6 +183,18 @@ public interface TargetState {
      */
     default String getServiceNameFor(String name) {
         return getComponentCollection().getServiceNameFor(name);
+    }
+
+
+    /**
+     * Return the name of the service resource for the named component.
+     *
+     * @param component name
+     * @return service name
+     * @throws IllegalArgumentException if no component can be found, or the component doesn't implement HasService
+     */
+    default String getServiceNameFor(Component component) {
+        return getResourceNameFor(component);
     }
 
 
@@ -129,30 +236,6 @@ public interface TargetState {
     }
 
     /**
-     * Returns a hostname for the given name. If the name does not contain periods, extend it with the prefix and
-     * ingress domain; otherwise return it unchanged.
-     *
-     * @param name the name
-     * @return the hostname
-     */
-    default String getHostname(String name) {
-        ComponentDefaults defaults = getCmcc().getSpec().getDefaults();
-        String fqdn = name;
-        if (!fqdn.contains("."))
-            fqdn = concatOptional(defaults.getNamePrefix(), fqdn) + "." + defaults.getIngressDomain();
-        return fqdn;
-    }
-
-    /**
-     * Returns the hostname the Preview is available under from the outside.
-     *
-     * @return hostname of the Preview.
-     */
-    default String getPreviewHostname() {
-        return getHostname(getCmcc().getSpec().getDefaults().getPreviewHostname());
-    }
-
-    /**
      * Returns the hostname the Studio is available under from the outside.
      *
      * @return hostname of the Studio.
@@ -160,15 +243,4 @@ public interface TargetState {
     default String getStudioHostname() {
         return getHostname(getCmcc().getSpec().getDefaults().getStudioHostname());
     }
-
-    /**
-     * Returns a database secret value, either from an existing secret, or creating new values.
-     *
-     * @param name   name of the secret
-     * @param schema the schema and username to use when creating the new value
-     * @return database secret
-     */
-    DatabaseSecret getDatabaseSecret(String name, String schema);
-
-    Secret buildDatabaseSecret(String name, DatabaseSecret secret);
 }

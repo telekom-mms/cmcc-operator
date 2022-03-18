@@ -11,6 +11,7 @@
 package com.tsystemsmms.cmcc.cmccoperator.components;
 
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
+import com.tsystemsmms.cmcc.cmccoperator.targetstate.CustomResourceConfigError;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import lombok.Data;
@@ -97,10 +98,44 @@ public class ComponentCollection {
      */
     public Component createComponentByComponentSpec(ComponentSpec cs) {
         if (cs.getType() == null) {
-            throw new IllegalArgumentException("cmcc " + targetState.getCmcc().getMetadata().getName() + ": Unable to use component configuration " + cs.getType() + ": type must be set");
+            throw new CustomResourceConfigError("cmcc " + targetState.getCmcc().getMetadata().getName() + ": Unable to use component configuration " + cs.getType() + ": type must be set");
         }
         return (Component) beanFactory.getBean("component:" + cs.getType(), kubernetesClient, targetState, cs);
     }
+
+    /**
+     * Find a component implementing HasService based on the given predicate. If the component does not implement
+     * HasService, or no component can be found, throw an IllegalArgumentException.
+     *
+     * @param name component name
+     * @param kind component kind
+     * @return component
+     * @throws IllegalArgumentException if no suitable component can be found
+     */
+    public HasJdbcClient getHasJdbcClientComponent(String name, String kind) throws IllegalArgumentException {
+        return getHasJdbcClientComponent(c -> c.getSpecName().equals(name) && c.getComponentSpec().getKind().equals(kind));
+    }
+
+
+    /**
+     * Find a component implementing HasService based on the given predicate. If the component does not implement
+     * HasService, or no component can be found, throw an IllegalArgumentException.
+     *
+     * @param p predicate to find the component with
+     * @return service name
+     * @throws IllegalArgumentException if no suitable component can be found
+     */
+    public HasJdbcClient getHasJdbcClientComponent(Predicate<Component> p) throws IllegalArgumentException {
+        Optional<Component> component = getComponents().stream().filter(p).findAny();
+        if (component.isEmpty())
+            throw new IllegalArgumentException("not found");
+        if (component.get() instanceof HasJdbcClient) {
+            return (HasJdbcClient) component.get();
+        } else {
+            throw new IllegalArgumentException("exists but does not implement HasService");
+        }
+    }
+
 
     /**
      * Find a component implementing HasService based on the given predicate. If the component does not implement
@@ -182,7 +217,7 @@ public class ComponentCollection {
     public String getServiceNameFor(String name) {
         try {
             HasService component = getHasServiceComponent(c -> c.getSpecName().equals(name));
-            return component.getServiceName();
+            return targetState.getResourceNameFor(component);
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Component \"" + name + "\": " + e.getMessage());
         }
@@ -199,7 +234,7 @@ public class ComponentCollection {
     public String getServiceNameFor(String name, String kind) {
         try {
             HasService component = getHasServiceComponent(c -> c.getSpecName().equals(name) && c.getComponentSpec().getKind().equals(kind));
-            return component.getServiceName();
+            return targetState.getResourceNameFor(component);
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Component \"" + name + "\"/\"" + kind + "\": " + e.getMessage());
         }

@@ -14,9 +14,8 @@ import com.tsystemsmms.cmcc.cmccoperator.ingress.BlueprintCmccIngressGeneratorFa
 import com.tsystemsmms.cmcc.cmccoperator.ingress.CmccIngressGeneratorFactory;
 import com.tsystemsmms.cmcc.cmccoperator.ingress.IngressBuilderFactory;
 import com.tsystemsmms.cmcc.cmccoperator.ingress.NginxIngressBuilderFactory;
-import com.tsystemsmms.cmcc.cmccoperator.targetstate.DefaultTargetStateFactory;
+import com.tsystemsmms.cmcc.cmccoperator.targetstate.*;
 import com.tsystemsmms.cmcc.cmccoperator.resource.ResourceReconcilerManager;
-import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetStateFactory;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.boot.SpringApplication;
@@ -38,6 +37,11 @@ public class CMCCOperatorApplication {
     }
 
     @Bean
+    public ResourceNamingProviderFactory resourceNamingProviderFactory() {
+        return new DefaultResourceNamingProviderFactory();
+    }
+
+    @Bean
     public ResourceReconcilerManager resourceReconciler(KubernetesClient kubernetesClient) {
         return new ResourceReconcilerManager(kubernetesClient);
     }
@@ -53,8 +57,14 @@ public class CMCCOperatorApplication {
     }
 
     @Bean
-    public TargetStateFactory config(BeanFactory beanFactory, KubernetesClient kubernetesClient, CmccIngressGeneratorFactory cmccIngressGeneratorFactory) {
-        return new DefaultTargetStateFactory(beanFactory, kubernetesClient, cmccIngressGeneratorFactory);
+    public TargetStateFactory targetStateFactory(BeanFactory beanFactory,
+                                                 KubernetesClient kubernetesClient,
+                                                 CmccIngressGeneratorFactory cmccIngressGeneratorFactory,
+                                                 ResourceNamingProviderFactory resourceNamingProviderFactory) {
+        return new DefaultTargetStateFactory(beanFactory,
+                kubernetesClient,
+                cmccIngressGeneratorFactory,
+                resourceNamingProviderFactory);
     }
 
     public static void main(String[] args) {

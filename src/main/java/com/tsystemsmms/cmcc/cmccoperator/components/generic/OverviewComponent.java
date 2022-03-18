@@ -32,7 +32,7 @@ import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.EnvVarSimple;
 import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.concatOptional;
 
 /**
- * Creates a Overview web page. It creates an NGINX web server. The contents is mounted into the docroot from a
+ * Creates an Overview web page. It creates an NGINX web server. The contents are mounted into the docroot from a
  * ConfigMap that includes some HTML, JS and a generated JSON with relevant information.
  */
 @Slf4j
@@ -104,8 +104,9 @@ public class OverviewComponent extends AbstractComponent implements HasService {
 
     
     Collection<? extends HasMetadata> buildIngress() {
-        return getTargetState().getCmccIngressGeneratorFactory().instance(getTargetState(), getServiceName())
-                .builder(getResourceName(), getSpecName()).pathPrefix("/", getServiceName()).build();
+        String service = getTargetState().getServiceNameFor(this);
+        return getTargetState().getCmccIngressGeneratorFactory().instance(getTargetState(), service)
+                .builder(getTargetState().getResourceNameFor(this), getSpecName()).pathPrefix("/", service).build();
     }
 
 
@@ -186,7 +187,7 @@ public class OverviewComponent extends AbstractComponent implements HasService {
         volumes.add(new VolumeBuilder()
                 .withName("docroot")
                 .withConfigMap(new ConfigMapVolumeSourceBuilder()
-                        .withName(getResourceName())
+                        .withName(getTargetState().getResourceNameFor(this))
                         .build())
                 .build());
         volumes.add(new VolumeBuilder()

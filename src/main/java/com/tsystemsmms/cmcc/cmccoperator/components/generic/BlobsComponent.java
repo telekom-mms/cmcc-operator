@@ -73,7 +73,7 @@ public class BlobsComponent extends AbstractComponent implements HasService {
 
     @Override
     public String getServiceUrl() {
-        return "http://" + getResourceName() + ":8080/";
+        return "http://" + getTargetState().getResourceNameFor(this) + ":8080/";
     }
 
 

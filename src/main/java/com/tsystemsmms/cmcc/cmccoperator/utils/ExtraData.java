@@ -12,6 +12,7 @@ package com.tsystemsmms.cmcc.cmccoperator.utils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.tsystemsmms.cmcc.cmccoperator.targetstate.CustomResourceConfigError;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -35,10 +36,10 @@ public class ExtraData {
             try {
                 return Optional.ofNullable(objectMapper.readValue(objectMapper.writeValueAsString(o), clazz));
             } catch (JsonProcessingException e) {
-                throw new IllegalArgumentException("Unable to parse extra data of type " + o.getClass().getSimpleName(), e);
+                throw new CustomResourceConfigError("Unable to parse extra data of type " + o.getClass().getSimpleName(), e);
             }
         } else {
-            throw new IllegalArgumentException("Unable to parse extra data of type " + o.getClass().getSimpleName());
+            throw new CustomResourceConfigError("Unable to parse extra data of type " + o.getClass().getSimpleName());
         }
     }
 }

@@ -10,9 +10,11 @@
 
 package com.tsystemsmms.cmcc.cmccoperator.components.corba;
 
-import com.tsystemsmms.cmcc.cmccoperator.components.HasMySQLSchema;
+import com.tsystemsmms.cmcc.cmccoperator.components.HasJdbcClient;
 import com.tsystemsmms.cmcc.cmccoperator.components.HasService;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
+import com.tsystemsmms.cmcc.cmccoperator.targetstate.CustomResourceConfigError;
+import com.tsystemsmms.cmcc.cmccoperator.targetstate.DefaultClientSecret;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 import com.tsystemsmms.cmcc.cmccoperator.utils.EnvVarSet;
 import io.fabric8.kubernetes.api.model.*;
@@ -22,13 +24,19 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;
 
-import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.*;
+import static com.tsystemsmms.cmcc.cmccoperator.components.HasMongoDBClient.MONGODB_CLIENT_SECRET_REF_KIND;
+import static com.tsystemsmms.cmcc.cmccoperator.crds.ClientSecretRef.DEFAULT_PASSWORD_KEY;
+import static com.tsystemsmms.cmcc.cmccoperator.crds.ClientSecretRef.DEFAULT_USERNAME_KEY;
+import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.format;
 
 @Slf4j
-public class ContentServerComponent extends CorbaComponent implements HasMySQLSchema, HasService {
+public class ContentServerComponent extends CorbaComponent implements HasJdbcClient, HasService {
     public static final String KIND_CMS = "cms";
     public static final String KIND_MLS = "mls";
     public static final String KIND_RLS = "rls";
+
+    public static final String MANAGEMENT_SCHEMA = "management";
+    public static final String MASTER_SCHEMA = "master";
 
     public static final String LICENSE_VOLUME_NAME = "license";
 
@@ -39,52 +47,44 @@ public class ContentServerComponent extends CorbaComponent implements HasMySQLSc
     public ContentServerComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec componentSpec) {
         super(kubernetesClient, targetState, componentSpec, "content-server");
         if (getComponentSpec().getKind() == null)
-            throw new IllegalArgumentException("kind must be set to either " + KIND_CMS + ", " + KIND_MLS + ", or " + KIND_RLS);
+            throw new CustomResourceConfigError("kind must be set to either " + KIND_CMS + ", " + KIND_MLS + ", or " + KIND_RLS);
         switch (componentSpec.getKind()) {
             case KIND_CMS:
                 licenseSecretName = getSpec().getLicenseSecrets().getCMSLicense();
-                databaseSchema = "management";
+                databaseSchema = MANAGEMENT_SCHEMA;
                 break;
             case KIND_MLS:
                 licenseSecretName = getSpec().getLicenseSecrets().getMLSLicense();
-                databaseSchema = "master";
+                databaseSchema = MASTER_SCHEMA;
                 break;
             case KIND_RLS:
-                licenseSecretName = getSpec().getLicenseSecrets().getRLSLicense();
-                databaseSchema = "replication";
-                break;
+//                licenseSecretName = getSpec().getLicenseSecrets().getRLSLicense();
+//                databaseSchema = "replication";
+//                break;
+                throw new CustomResourceConfigError("not implemented yet");
             default:
-                throw new IllegalArgumentException("kind \"" + getComponentSpec().getKind() + "\" is illegal, must be either " + KIND_CMS + ", " + KIND_MLS + ", or " + KIND_RLS);
+                throw new CustomResourceConfigError("kind \"" + getComponentSpec().getKind() + "\" is illegal, must be either " + KIND_CMS + ", " + KIND_MLS + ", or " + KIND_RLS);
         }
     }
 
     @Override
-    public String getResourceName() {
-        String kind;
+    public void requestRequiredResources() {
+        super.requestRequiredResources();
+        getJdbcClientSecretRef();
+    }
 
+    @Override
+    public String getBaseResourceName() {
         switch (getComponentSpec().getKind()) {
             case KIND_CMS:
-                kind = "content-management-server";
-                break;
+                return "content-management-server";
             case KIND_MLS:
-                kind = "master-live-server";
-                break;
+                return "master-live-server";
             case KIND_RLS:
-                kind = "replication-live-server";
-                break;
+                return "replication-live-server";
             default:
-                throw new IllegalArgumentException("kind \"" + getComponentSpec().getKind() + "\" is illegal, must be either " + KIND_CMS + ", " + KIND_MLS + ", or " + KIND_RLS);
+                throw new CustomResourceConfigError("kind \"" + getComponentSpec().getKind() + "\" is illegal, must be either " + KIND_CMS + ", " + KIND_MLS + ", or " + KIND_RLS);
         }
-
-        return concatOptional(getDefaults().getNamePrefix(), kind);
-    }
-
-    @Override
-    public String getDatabaseSecretName() {
-        return concatOptional(
-                getDefaults().getNamePrefix(),
-                "mysql",
-                getDatabaseSchema());
     }
 
     @Override
@@ -107,7 +107,18 @@ public class ContentServerComponent extends CorbaComponent implements HasMySQLSc
     @Override
     public EnvVarSet getEnvVars() {
         EnvVarSet env = super.getEnvVars();
-        env.addAll(getMySqlEnvVars());
+
+        env.addAll(getJdbcClientEnvVars("SQL_STORE"));
+        switch (getComponentSpec().getKind()) {
+            case KIND_CMS:
+                env.addAll(getUapiClientEnvVars("PUBLISHER_TARGET_0"));
+                break;
+            case KIND_MLS:
+                break;
+            case KIND_RLS:
+                env.addAll(getUapiClientEnvVars("REPLICATOR"));
+                break;
+        }
 
         return env;
     }
@@ -117,38 +128,32 @@ public class ContentServerComponent extends CorbaComponent implements HasMySQLSc
 
         properties.putAll(Map.of(
                 "cap.server.license", "/coremedia/licenses/license.zip",
-                "com.coremedia.corba.server.host", this.getServiceName(),
+                "com.coremedia.corba.server.host", getTargetState().getResourceNameFor(this),
                 "cap.server.cache.resource-cache-size", "5000"
                 ));
         if (getComponentSpec().getKind().equals(KIND_CMS)) {
-            // can't use "publisher.target[0].iorUrl" because of the square brackets
             properties.put("publisher.target[0].iorUrl", getTargetState().getServiceUrlFor("content-server", "mls"));
         }
         if (getComponentSpec().getKind().equals(KIND_RLS)) {
             properties.put("replicator.publication-ior-url", getTargetState().getServiceUrlFor("content-server", "mls"));
         }
 
+        properties.putAll(getPasswordsAsProperties());
+
         return properties;
     }
 
-    /**
-     * Get a list of environment variables to configure the MySQL database connection of the component.
-     *
-     * @return list of env vars
-     */
-    public EnvVarSet getMySqlEnvVars() {
-        MySQLDetails details = getMySQLDetails(getDatabaseSchema());
-        EnvVarSet env = new EnvVarSet();
+    public Map<String, String> getPasswordsAsProperties() {
+        Map<String, DefaultClientSecret> secrets = getTargetState().getDefaultClientSecrets(UAPI_CLIENT_SECRET_REF_KIND);
+        Map<String, String> properties = new HashMap<>();
 
-        env.add(EnvVarSimple("MYSQL_HOST", details.getHostName())); // needed for MySQL command line tools
-        env.add(EnvVarSimple("SQL_STORE_DRIVER", "com.mysql.cj.jdbc.Driver"));
-        env.add(EnvVarSecret("SQL_STORE_PASSWORD", details.getSecretName(), TargetState.DATABASE_SECRET_PASSWORD_KEY));
-        env.add(EnvVarSimple("SQL_STORE_SCHEMA", getDatabaseSchema()));
-        env.add(EnvVarSimple("SQL_STORE_URL", details.getJdbcUrl()));
-        env.add(EnvVarSecret("SQL_STORE_USER", details.getSecretName(), TargetState.DATABASE_SECRET_USERNAME_KEY));
-        return env;
+        for (DefaultClientSecret dcs : secrets.values()) {
+            Map<String, String> data = dcs.getSecret().getStringData();
+            properties.put("cap.server.initialPassword." + data.get(DEFAULT_USERNAME_KEY),
+                    data.get(DEFAULT_PASSWORD_KEY));
+        }
+        return properties;
     }
-
 
     @Override
     public List<Volume> getVolumes() {
@@ -178,8 +183,12 @@ public class ContentServerComponent extends CorbaComponent implements HasMySQLSc
     }
 
     @Override
+    public String getJdbcClientDefaultSchema() {
+        return databaseSchema;
+    }
+
+    @Override
     public String getUapiClientDefaultUsername() {
         return "publisher";
     }
-
 }

@@ -10,7 +10,8 @@
 
 package com.tsystemsmms.cmcc.cmccoperator.components.corba;
 
-import com.tsystemsmms.cmcc.cmccoperator.components.HasMySQLSchema;
+import com.tsystemsmms.cmcc.cmccoperator.components.HasJdbcClient;
+import com.tsystemsmms.cmcc.cmccoperator.components.HasMongoDBClient;
 import com.tsystemsmms.cmcc.cmccoperator.components.HasService;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
 import com.tsystemsmms.cmcc.cmccoperator.ingress.CmccIngressGenerator;
@@ -18,7 +19,6 @@ import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 import com.tsystemsmms.cmcc.cmccoperator.utils.EnvVarSet;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Collection;
@@ -26,19 +26,24 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.*;
+import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.EnvVarSimple;
+import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.concatOptional;
 
 @Slf4j
-public class StudioServerComponent extends CorbaComponent implements HasMySQLSchema, HasService {
+public class StudioServerComponent extends CorbaComponent implements HasMongoDBClient, HasJdbcClient, HasService {
 
-    @Getter
-    final String databaseSchema;
     String solrCollection;
 
     public StudioServerComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec componentSpec) {
         super(kubernetesClient, targetState, componentSpec, "studio-server");
-        databaseSchema = "edcom";
         solrCollection = "studio";
+    }
+
+    @Override
+    public void requestRequiredResources() {
+        super.requestRequiredResources();
+        getMongoDBClientSecretRef();
+        getJdbcClientSecretRef();
     }
 
     @Override
@@ -56,20 +61,22 @@ public class StudioServerComponent extends CorbaComponent implements HasMySQLSch
     }
 
     @Override
-    public String getDatabaseSecretName() {
-        return concatOptional(
-                getDefaults().getNamePrefix(),
-                getSpecName(),
-                "mysql",
-                getDatabaseSchema());
-    }
-
-    @Override
     public EnvVarSet getEnvVars() {
         EnvVarSet env = super.getEnvVars();
+
         env.addAll(getMongoDBEnvVars());
-        env.addAll(getMySqlEnvVars());
+        env.addAll(getJdbcClientEnvVars("EDITORIAL_COMMENTS_DATASOURCE"));
+        env.addAll(getJdbcClientEnvVars("EDITORIAL_COMMENTS_DB"));
+        env.addAll(getJdbcClientEnvVars("EDITORIAL_COMMENTS_LIQUIBASE"));
+        // Studio Hibernate+Liquibase needs these additional settings
+        env.add(new EnvVarBuilder(env.get("EDITORIAL_COMMENTS_DATASOURCE_DRIVER").orElseThrow())
+                .withName("EDITORIAL_COMMENTS_DATASOURCE_DRIVER_CLASS_NAME").build());
+        env.add(new EnvVarBuilder(env.get("EDITORIAL_COMMENTS_DATASOURCE_SCHEMA").orElseThrow())
+                .withName("EDITORIAL_COMMENTS_JPA_PROPERTIES_HIBERNATE_DEFAULT_SCHEMA").build());
+        env.add(new EnvVarBuilder(env.get("EDITORIAL_COMMENTS_DATASOURCE_USER").orElseThrow())
+                .withName("EDITORIAL_COMMENTS_DATASOURCE_USERNAME").build());
         env.addAll(getSolrEnvVars("studio", solrCollection));
+
         return env;
     }
 
@@ -83,25 +90,6 @@ public class StudioServerComponent extends CorbaComponent implements HasMySQLSch
         properties.put("themeImporter.apiKeyStore.basePath", "/var/tmp/themeimporter");
 
         return properties;
-    }
-
-    /**
-     * Get a list of environment variables to configure the MySQL database connection of the component.
-     *
-     * @return list of env vars
-     */
-    public EnvVarSet getMySqlEnvVars() {
-        MySQLDetails details = getMySQLDetails(getDatabaseSchema());
-        EnvVarSet env = new EnvVarSet();
-
-        env.add(EnvVarSimple("MYSQL_HOST", details.getHostName())); // needed for MySQL command line tools
-        env.add(EnvVarSimple("EDITORIAL_COMMENTS_DATASOURCE_DRIVER", "com.mysql.cj.jdbc.Driver"));
-        env.add(EnvVarSecret("EDITORIAL_COMMENTS_DATASOURCE_PASSWORD", details.getSecretName(), TargetState.DATABASE_SECRET_PASSWORD_KEY));
-        env.add(EnvVarSimple("EDITORIAL_COMMENTS_DATASOURCE_URL", details.getJdbcUrl()));
-        env.add(EnvVarSecret("EDITORIAL_COMMENTS_DATASOURCE_USERNAME", details.getSecretName(), TargetState.DATABASE_SECRET_USERNAME_KEY));
-        env.add(EnvVarSimple("EDITORIAL_COMMENTS_DB_SCHEMA", getDatabaseSchema()));
-        env.add(EnvVarSimple("EDITORIAL_COMMENTS_JPA_PROPERTIES_HIBERNATE_DEFAULT_SCHEMA", getDatabaseSchema()));
-        return env;
     }
 
     @Override
@@ -131,13 +119,22 @@ public class StudioServerComponent extends CorbaComponent implements HasMySQLSch
      * @return the ingress definition
      */
     public Collection<? extends HasMetadata> buildIngress() {
-        CmccIngressGenerator generator = getTargetState().getCmccIngressGeneratorFactory().instance(getTargetState(), getServiceName());
+        CmccIngressGenerator generator = getTargetState().getCmccIngressGeneratorFactory().instance(getTargetState(), getTargetState().getServiceNameFor(this));
         return generator.buildStudioResources();
+    }
+
+    @Override
+    public String getJdbcClientDefaultSchema() {
+        return "studio";
+    }
+
+    @Override
+    public String getMongoDBClientDefaultCollectionPrefix() {
+        return "blueprint";
     }
 
     @Override
     public String getUapiClientDefaultUsername() {
         return "studio";
     }
-
 }
