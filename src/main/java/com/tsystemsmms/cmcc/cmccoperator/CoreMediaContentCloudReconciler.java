@@ -67,7 +67,7 @@ public class CoreMediaContentCloudReconciler implements Reconciler<CoreMediaCont
         Set<ResourceRef> abandonedResourceRefs = ResourceRef.fromJson(status.getOwnedResourceRefs());
         abandonedResourceRefs.removeAll(ownedResourceRefs);
 
-        log.info("Updating dependent resource of cmcc {}: {} new/updated, {} abandoned resources, milestone {}",
+        log.debug("Updating dependent resource of cmcc {}: {} new/updated, {} abandoned resources, milestone {}",
                 cmcc.getMetadata().getName(), newResources.size(), abandonedResourceRefs.size(), status.getMilestone());
 
         // apply new and updated resources

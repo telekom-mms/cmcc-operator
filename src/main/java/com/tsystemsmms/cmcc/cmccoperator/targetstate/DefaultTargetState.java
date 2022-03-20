@@ -66,7 +66,7 @@ public class DefaultTargetState extends AbstractTargetState {
                     ComponentSpecBuilder.ofType("studio-client").build(),
                     ComponentSpecBuilder.ofType("studio-server").build(),
                     ComponentSpecBuilder.ofType("user-changes").build(),
-                    ComponentSpecBuilder.ofType("workflow-server").withMilestone(Milestone.ContentServerReady).build(),
+                    ComponentSpecBuilder.ofType("workflow-server").build(),
                     ComponentSpecBuilder.ofType("overview").withMilestone(Milestone.ManagementReady).build(),
 
                     ComponentSpecBuilder.ofType("management-tools")
@@ -77,7 +77,6 @@ public class DefaultTargetState extends AbstractTargetState {
             ));
         }
 
-        // remember secrets for RLSs
         if (cmcc.getSpec().getWith().getDelivery().getRls() != 0
                 || cmcc.getSpec().getWith().getDelivery().getMinCae() > 1
                 || cmcc.getSpec().getWith().getDelivery().getMaxCae() > cmcc.getSpec().getWith().getDelivery().getMinCae()) {
@@ -108,69 +107,19 @@ public class DefaultTargetState extends AbstractTargetState {
         // allow explicitly declared components to override default ones
         componentCollection.addAll(cmcc.getSpec().getComponents());
 
-        switch (cmcc.getStatus().getMilestone()) {
-            case Created:
-                if (cmcc.getSpec().getWith().getDatabases()) {
-                    advanceToMilestoneAfterComponentsReady(List.of(
-                            ComponentSpecBuilder.ofType("mongodb").build(),
-                            ComponentSpecBuilder.ofType("mysql").build()
-                    ), Milestone.DatabasesReady);
-                } else {
-                    cmcc.getStatus().setMilestone(Milestone.DatabasesReady);
-                }
-                break;
-            case DatabasesReady:
-                advanceToMilestoneAfterComponentsReady(List.of(
-                        ComponentSpecBuilder.ofType("content-server").withKind("cms").build(),
-                        ComponentSpecBuilder.ofType("content-server").withKind("mls").build() /*,
-                        ComponentSpecBuilder.ofType("solr").withKind("leader").build(),
-                        ComponentSpecBuilder.ofType("workflow-server").build()*/
-                ), Milestone.ContentServerInitialized);
-                break;
-            case ContentServerInitialized:
-                // secrets can be created right away at Created, the components simply won't use them until ManagementReady
-                if (isReady("initcms")) {
-                    cmcc.getStatus().setMilestone(Milestone.ContentServerReady);
-                    // as part of the transition, kick the content server by scaling it to 0; the next round will turn it up to 1 again
-                    scaleComponent(componentCollection.getServiceNameFor("content-server", "cms"));
-                    scaleComponent(componentCollection.getServiceNameFor("content-server", "mls"));
-                }
-                break;
-            case ContentServerReady:
-                advanceToMilestoneAfterComponentsReady(List.of(
-                        ComponentSpecBuilder.ofType("content-server").withKind("cms").build(),
-                        ComponentSpecBuilder.ofType("content-server").withKind("mls").build() ,
-                        ComponentSpecBuilder.ofType("solr").withKind("leader").build(),
-                        ComponentSpecBuilder.ofType("workflow-server").build()),
-                        Milestone.ManagementReady);
-                break;
-            case ManagementReady:
-                if (componentCollection.containsName("import")) {
-                    advanceToMilestoneAfterJobSucceeds("import", Milestone.Ready);
-                }
-                break;
-        }
+        // move to the next milestone when everything is ready
+        advanceToNextMilestoneOnComponentsReady();
 
         return previousMilestone == getCmcc().getStatus().getMilestone();
     }
 
-    /**
-     * Check if the named job has completed successfully, then move to the desired milestone.
-     *
-     * @param jobName   component name of job
-     * @param milestone to advance to
-     */
-    private void advanceToMilestoneAfterJobSucceeds(String jobName, Milestone milestone) {
-        if (isReady(jobName)) {
-            log.debug("advancing milestone");
-            cmcc.getStatus().setMilestone(milestone);
-        }
-    }
-
-    private void advanceToMilestoneAfterComponentsReady(Collection<ComponentSpec> components, Milestone milestone) {
-        if (isReady(components)) {
-            log.debug("Advancing to {}", milestone);
-            cmcc.getStatus().setMilestone(milestone);
+    @Override
+    public void onMilestoneReached() {
+        super.onMilestoneReached();
+        if (cmcc.getStatus().getMilestone() == Milestone.ContentServerReady) {
+            log.info("[{}] Restarting CMS and MLS", getContextForLogging());
+            scaleComponent(componentCollection.getServiceNameFor("content-server", "cms"));
+            scaleComponent(componentCollection.getServiceNameFor("content-server", "mls"));
         }
     }
 
@@ -184,19 +133,5 @@ public class DefaultTargetState extends AbstractTargetState {
             log.debug("job {}: waiting for successful completion", jobName);
         }
         return ready;
-    }
-
-    private boolean isReady(Collection<ComponentSpec> components) {
-        LinkedList<ComponentSpec> notReady = new LinkedList<>();
-        for (ComponentSpec component : components) {
-            if (!isComponentStatefulSetReady(component))
-                notReady.add(component);
-        }
-        if (notReady.size() == 0) {
-            log.debug("Components are ready: {}", componentCollectionToString(components));
-        } else {
-            log.debug("Waiting for components to become ready: {}", componentCollectionToString(notReady));
-        }
-        return notReady.size() == 0;
     }
 }

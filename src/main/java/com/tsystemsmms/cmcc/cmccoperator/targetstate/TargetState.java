@@ -57,7 +57,18 @@ public interface TargetState {
                 .build();
     }
 
+    /**
+     * @param name
+     * @return
+     */
     Secret loadSecret(String name);
+
+    /**
+     * Returns the name of the custom resource this state is working on.
+     *
+     * @return resource name
+     */
+    String getContextForLogging();
 
     /**
      * Returns a ClientSecretRef for a client connection. This allows a component to request the secret ref for a
@@ -245,4 +256,21 @@ public interface TargetState {
     default String getStudioHostname() {
         return getHostname(getCmcc().getSpec().getDefaults().getStudioHostname());
     }
+
+    /**
+     * Checks if the given Job is ready. The Job has to exist, and it has to have at least one successful execution.
+     *
+     * @param name resource
+     * @return true if ready
+     */
+    boolean isJobReady(String name);
+
+    /**
+     * Checks if the given StatefulSet is ready. The StatefulSet has to exist, and its current number of replicas have
+     * to match the desired count.
+     *
+     * @param name resource
+     * @return true if ready
+     */
+    boolean isStatefulSetReady(String name);
 }

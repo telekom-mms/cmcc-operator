@@ -15,25 +15,28 @@ import com.tsystemsmms.cmcc.cmccoperator.components.*;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ClientSecretRef;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
 import com.tsystemsmms.cmcc.cmccoperator.crds.CoreMediaContentCloud;
+import com.tsystemsmms.cmcc.cmccoperator.crds.Milestone;
 import com.tsystemsmms.cmcc.cmccoperator.ingress.CmccIngressGeneratorFactory;
 import com.tsystemsmms.cmcc.cmccoperator.utils.RandomString;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetStatus;
+import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.BeanFactory;
 
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.tsystemsmms.cmcc.cmccoperator.components.HasUapiClient.UAPI_ADMIN_USERNAME;
 import static com.tsystemsmms.cmcc.cmccoperator.components.HasUapiClient.UAPI_CLIENT_SECRET_REF_KIND;
-import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.*;
+import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.concatOptional;
 
 @Slf4j
 public abstract class AbstractTargetState implements TargetState {
@@ -64,15 +67,48 @@ public abstract class AbstractTargetState implements TargetState {
         this.resourceNamingProvider = resourceNamingProviderFactory.instance(this);
     }
 
+    /**
+     * Check if all components are ready, and if so, advance to the next milestone.
+     */
+    public void advanceToNextMilestoneOnComponentsReady() {
+        int active = 0;
+        int ready = 0;
+        TreeSet<String> stillWaiting = new TreeSet<>();
+
+        for (Component component : componentCollection.getComponents()) {
+            if (component.isReady().isPresent()) {
+                active++;
+                if (!component.isReady().get()) {
+                    stillWaiting.add(component.getBaseResourceName());
+                } else {
+                    ready++;
+                }
+            }
+        }
+        if (ready == active) {
+            cmcc.getStatus().setMilestone(cmcc.getStatus().getMilestone().getNext());
+            log.info("[{}] Advancing to milestone {}", getContextForLogging(), getCmcc().getStatus().getMilestone());
+        } else {
+            log.info("[{}] Waiting for components, {} of {} ready: still waiting for {}", getContextForLogging(),
+                    ready,
+                    active,
+                    stillWaiting.stream().collect(Collectors.joining(", ")));
+        }
+    }
+
     @Override
     public List<HasMetadata> buildResources() {
         LinkedList<HasMetadata> resources = new LinkedList<>();
         int convergenceLoops = MAX_CONVERGENCE_LOOP;
+        Milestone previous = getCmcc().getStatus().getMilestone();
 
         buildClientSecretRefs();
 
         while (!converge() && convergenceLoops-- > 0) {
             log.debug("Not yet converged, {} more tries", convergenceLoops);
+        }
+        if (getCmcc().getStatus().getMilestone() != previous) {
+            onMilestoneReached();
         }
 
         resources.addAll(buildComponentResources());
@@ -101,7 +137,7 @@ public abstract class AbstractTargetState implements TargetState {
          */
         String name = getSecretName(UAPI_CLIENT_SECRET_REF_KIND, UAPI_ADMIN_USERNAME);
         getClientSecretRef(UAPI_CLIENT_SECRET_REF_KIND, UAPI_ADMIN_USERNAME, password ->
-                new DefaultClientSecret(ClientSecretRef.defaultClientSecretRef(name), buildSecret(name, Map.of(
+                new DefaultClientSecret(ClientSecretRef.defaultClientSecretRef(name), loadOrBuildSecret(name, Map.of(
                         ClientSecretRef.DEFAULT_PASSWORD_KEY, password,
                         ClientSecretRef.DEFAULT_USERNAME_KEY, UAPI_ADMIN_USERNAME
                 )))
@@ -137,7 +173,7 @@ public abstract class AbstractTargetState implements TargetState {
     public LinkedList<HasMetadata> buildExtraResources() {
         final LinkedList<HasMetadata> resources = new LinkedList<>();
 
-        for (Map.Entry<String, Map<String, DefaultClientSecret>> e: clientSecrets.entrySet()){
+        for (Map.Entry<String, Map<String, DefaultClientSecret>> e : clientSecrets.entrySet()) {
             resources.addAll(e.getValue().values().stream().map(DefaultClientSecret::getSecret).collect(Collectors.toList()));
         }
         return resources;
@@ -161,13 +197,31 @@ public abstract class AbstractTargetState implements TargetState {
 
 
     @Override
+    public String getContextForLogging() {
+        return getCmcc().getMetadata().getNamespace() + "/"
+                + concatOptional(getCmcc().getSpec().getDefaults().getNamePrefix(), getCmcc().getMetadata().getName()
+                + "@" + getCmcc().getStatus().getMilestone());
+    }
+
+    @Override
     public Map<String, DefaultClientSecret> getDefaultClientSecrets(String kind) {
-        return clientSecrets.get(kind);
+        Map<String, DefaultClientSecret> result = new HashMap<>();
+
+        if (clientSecrets.get(kind) == null) {
+            throw new IllegalArgumentException("Unknown clientSecretRef type \"" + kind + "\"");
+        }
+
+        for (Map.Entry<String, DefaultClientSecret> e : clientSecrets.get(kind).entrySet()) {
+            Secret secret = loadSecret(e.getValue().getRef().getSecretName());
+            result.put(e.getKey(), new DefaultClientSecret(e.getValue().getRef(), secret == null ? e.getValue().getSecret() : secret));
+        }
+        return result;
     }
 
 
     @Override
-    public ClientSecretRef getClientSecretRef(String kind, String schema, Function<String, DefaultClientSecret> buildDefaultClientSecret) {
+    public ClientSecretRef getClientSecretRef(String kind, String
+            schema, Function<String, DefaultClientSecret> buildDefaultClientSecret) {
         Map<String, ClientSecretRef> kindRefs = clientSecretRefs.get(kind);
         if (kindRefs == null || kindRefs.get(schema) == null) {
 //            throw new IllegalArgumentException("Component needs a client secret for " + kind + "/" + schema + ", but none exists");
@@ -181,6 +235,7 @@ public abstract class AbstractTargetState implements TargetState {
         }
         return kindRefs.get(schema);
     }
+
 
     /**
      * Returns a password for a client connection. By default, will generate a random password. If
@@ -290,14 +345,52 @@ public abstract class AbstractTargetState implements TargetState {
         return status.getReplicas() > 0 && status.getReadyReplicas().equals(status.getReplicas());
     }
 
-    /**
-     * Return a compact string representation of the list of components, mainly for logging purposes.
-     *
-     * @param components the components to represent
-     * @return short representation
-     */
-    public String componentCollectionToString(Collection<ComponentSpec> components) {
-        List<String> labels = components.stream().map(c -> c.getKind().isEmpty() ? c.getType() : c.getType() + "/" + c.getKind()).collect(Collectors.toList());
-        return String.join(", ", labels);
+    @Override
+    public boolean isJobReady(String name) {
+        Job job = kubernetesClient.batch().v1().jobs().inNamespace(cmcc.getMetadata().getNamespace()).withName(name).get();
+
+        if (job == null)
+            return false;
+
+        return job.getStatus() != null && job.getStatus().getSucceeded() != null && job.getStatus().getSucceeded() > 0;
     }
+
+    @Override
+    public boolean isStatefulSetReady(String name) {
+        StatefulSet sts = kubernetesClient.apps().statefulSets().inNamespace(getCmcc().getMetadata().getNamespace()).withName(name).get();
+
+        if (sts == null)
+            return false;
+
+        StatefulSetStatus status = sts.getStatus();
+        if (status.getReplicas() == null || status.getReadyReplicas() == null)
+            return false;
+        return status.getReplicas() > 0 && status.getReadyReplicas().equals(status.getReplicas());
+    }
+
+    /**
+     * Load a secret from the cluster. The stringData map will be populated.
+     *
+     * @param name resource
+     * @return secret
+     */
+    public Secret loadSecret(String name) {
+        Secret secret = kubernetesClient.secrets().inNamespace(getCmcc().getMetadata().getNamespace()).withName(name).get();
+        if (secret != null && secret.getStringData() == null) {
+            Map<String, String> stringData = new HashMap<>();
+            secret.setStringData(stringData);
+            for (Map.Entry<String, String> e : secret.getData().entrySet()) {
+                stringData.put(e.getKey(), new String(Base64.getDecoder().decode(e.getValue()), StandardCharsets.UTF_8));
+            }
+        }
+        return secret;
+    }
+
+    /**
+     * Called when a new milestone has been reached.
+     */
+    public void onMilestoneReached() {
+    }
+
+    ;
 }

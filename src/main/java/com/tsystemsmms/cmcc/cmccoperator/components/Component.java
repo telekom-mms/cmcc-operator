@@ -17,6 +17,7 @@ import io.fabric8.kubernetes.api.model.ObjectMeta;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public interface Component {
     /**
@@ -95,11 +96,11 @@ public interface Component {
      * Has this component started successfully? The target state might use this to decided when to move on to the next
      * milestone.
      *
+     * If the component is not active at the current milestone, return Optional.empty();
+     *
      * @return true if component has started successfully
      */
-    default boolean isReady() {
-        return true;
-    }
+    Optional<Boolean> isReady();
 
     /**
      * Called by the target state to trigger any callbacks to get references to required resource, like

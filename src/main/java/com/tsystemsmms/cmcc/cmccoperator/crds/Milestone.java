@@ -11,6 +11,7 @@
 package com.tsystemsmms.cmcc.cmccoperator.crds;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @JsonFormat(shape = JsonFormat.Shape.STRING)
 public enum Milestone {
@@ -20,5 +21,22 @@ public enum Milestone {
     ContentServerReady,
     ManagementReady,
     Ready,
-    Never
+    Never;
+
+    @JsonIgnore
+    private Milestone next = null;
+
+    static {
+        Milestone[] values = Milestone.values();
+        // the next value; when we reach the second to last value, we stay there.
+        for (int i = 0; i < values.length - 2; i++) {
+            values[i].next = values[i + 1];
+        }
+        values[values.length - 2].next = values[values.length - 2];
+        values[values.length - 1].next = values[values.length - 1];
+    }
+
+    public Milestone getNext() {
+        return this.next;
+    }
 }

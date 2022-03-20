@@ -131,6 +131,7 @@ spec:
                       - ManagementReady
                       - Ready
                       - Never
+                      - next
                       type: string
                   type: object
                 type: array
@@ -413,6 +414,7 @@ spec:
                 - ManagementReady
                 - Ready
                 - Never
+                - next
                 type: string
               ownedResourceRefs:
                 description: Resources created by the operator

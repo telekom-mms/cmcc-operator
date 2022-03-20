@@ -21,12 +21,14 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSetSpecBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;
 
 import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.concatOptional;
 import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.defaultString;
 
+@Slf4j
 public abstract class AbstractComponent implements Component {
     @Getter
     final TargetState targetState;
@@ -369,6 +371,19 @@ public abstract class AbstractComponent implements Component {
         return 1_000L;
     }
 
+
+    @Override
+    public Optional<Boolean> isReady() {
+        if (getCmcc().getStatus().getMilestone() == null) {
+            log.debug("foo");
+        }
+        if (getComponentSpec().getMilestone() == null) {
+            log.debug("foo");
+        }
+        if (getCmcc().getStatus().getMilestone().compareTo(getComponentSpec().getMilestone()) < 0)
+            return Optional.empty();
+        return Optional.of(getTargetState().isStatefulSetReady(getTargetState().getResourceNameFor(this)));
+    }
 
     @Override
     public void requestRequiredResources() {

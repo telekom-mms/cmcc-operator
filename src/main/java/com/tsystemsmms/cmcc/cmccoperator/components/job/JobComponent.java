@@ -22,6 +22,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public abstract class JobComponent extends SpringBootComponent {
     long activeDeadlineSeconds = 120L;
@@ -88,5 +89,14 @@ public abstract class JobComponent extends SpringBootComponent {
     public static Map<String, String> getJobLabels() {
         return Map.of("cmcc.tsystemsmms.com/job", JobComponent.class.getSimpleName().replaceAll("Component$", ""));
     }
+
+    @Override
+    public Optional<Boolean> isReady() {
+        // job is only active during one milestone
+        if (getCmcc().getStatus().getMilestone().compareTo(getComponentSpec().getMilestone()) != 0)
+            return Optional.empty();
+        return Optional.of(getTargetState().isJobReady(getTargetState().getResourceNameFor(this)));
+    }
+
 
 }

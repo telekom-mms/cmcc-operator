@@ -13,7 +13,7 @@
     <Appenders>
         <Console name="Console" target="SYSTEM_OUT">
             <PatternLayout
-                    pattern="%style{%d{ISO8601}}{black} %highlight{%-5level }[%style{%t}{bright,blue}] %style{%C{1.}}{bright,yellow}: %msg%n%throwable" />
+                    pattern="%d{ISO8601} %-5level %C{1.}: %msg%n%throwable" />
         </Console>
     </Appenders>
 
@@ -22,6 +22,6 @@
             <AppenderRef ref="Console" />
         </Root>
 
-        <Logger name="com.tsystemsmms.cmcc" level="trace"/>
+<!--        <Logger name="com.tsystemsmms.cmcc" level="trace"/>-->
     </Loggers>
 </Configuration>
