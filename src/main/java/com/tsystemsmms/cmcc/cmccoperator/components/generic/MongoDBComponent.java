@@ -47,7 +47,7 @@ public class MongoDBComponent extends AbstractComponent implements HasService {
     public void requestRequiredResources() {
         String name = getTargetState().getSecretName(MONGODB_CLIENT_SECRET_REF_KIND, MONGODB_ROOT_USERNAME);
         getTargetState().getClientSecretRef(MONGODB_CLIENT_SECRET_REF_KIND, MONGODB_ROOT_USERNAME, password ->
-                new DefaultClientSecret(ClientSecretRef.defaultClientSecretRef(name), getTargetState().buildSecret(name, Map.of(
+                new DefaultClientSecret(ClientSecretRef.defaultClientSecretRef(name), getTargetState().loadOrBuildSecret(name, Map.of(
                         DEFAULT_PASSWORD_KEY, password,
                         DEFAULT_USERNAME_KEY, MONGODB_ROOT_USERNAME
                 )))

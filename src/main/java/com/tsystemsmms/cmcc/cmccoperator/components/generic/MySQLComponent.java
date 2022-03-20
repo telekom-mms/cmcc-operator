@@ -46,7 +46,7 @@ public class MySQLComponent extends AbstractComponent implements HasService {
     public void requestRequiredResources() {
         String name = getTargetState().getSecretName(getComponentSpec().getType(), MYSQL_ROOT_USERNAME);
         getTargetState().getClientSecretRef(getComponentSpec().getType(), MYSQL_ROOT_USERNAME, password ->
-                new DefaultClientSecret(ClientSecretRef.defaultClientSecretRef(name), getTargetState().buildSecret(name, Map.of(
+                new DefaultClientSecret(ClientSecretRef.defaultClientSecretRef(name), getTargetState().loadOrBuildSecret(name, Map.of(
                         ClientSecretRef.DEFAULT_PASSWORD_KEY, password,
                         ClientSecretRef.DEFAULT_USERNAME_KEY, MYSQL_ROOT_USERNAME
                 )))

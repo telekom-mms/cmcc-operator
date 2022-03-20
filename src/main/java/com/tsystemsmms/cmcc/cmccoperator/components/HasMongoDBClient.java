@@ -49,7 +49,7 @@ public interface HasMongoDBClient extends Component {
         }
         return getTargetState().getClientSecretRef(MONGODB_CLIENT_SECRET_REF_KIND, schemaName, password ->
                 new DefaultClientSecret(ClientSecretRef.defaultClientSecretRef(secretName),
-                        getTargetState().buildSecret(secretName, Map.of(
+                        getTargetState().loadOrBuildSecret(secretName, Map.of(
                                 ClientSecretRef.DEFAULT_PASSWORD_KEY, password,
                                 ClientSecretRef.DEFAULT_SCHEMA_KEY, schemaName,
                                 ClientSecretRef.DEFAULT_URL_KEY, "mongodb://" + schemaName + ":" + password + "@" + serviceName + ":27017/" + schemaName,

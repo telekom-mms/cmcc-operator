@@ -52,7 +52,7 @@ public interface HasJdbcClient extends Component {
         }
         return getTargetState().getClientSecretRef(JDBC_CLIENT_SECRET_REF_KIND, schemaName, password ->
                 new DefaultClientSecret(ClientSecretRef.defaultClientSecretRef(secretName),
-                        getTargetState().buildSecret(secretName, Map.of(
+                        getTargetState().loadOrBuildSecret(secretName, Map.of(
                                 ClientSecretRef.DEFAULT_DRIVER_KEY, "com.mysql.cj.jdbc.Driver",
                                 ClientSecretRef.DEFAULT_HOSTNAME_KEY, serviceName,
                                 ClientSecretRef.DEFAULT_PASSWORD_KEY, password,

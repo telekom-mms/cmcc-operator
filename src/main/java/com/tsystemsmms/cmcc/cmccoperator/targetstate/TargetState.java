@@ -45,17 +45,19 @@ public interface TargetState {
      * @param entries for the secret, will be base64 encoded
      * @return the secret
      */
-    default Secret buildSecret(String name, Map<String, String> entries) {
-        return buildSecret(getResourceMetadataFor(name), entries);
-    }
-
-    static Secret buildSecret(ObjectMeta metadata, Map<String, String> entries) {
+    default Secret loadOrBuildSecret(String name, Map<String, String> entries) {
+        Secret secret = loadSecret(name);
+        if (secret != null) {
+            return secret;
+        }
         return new SecretBuilder()
-                .withMetadata(metadata)
+                .withMetadata(getResourceMetadataFor(name))
                 .withType("Opaque")
                 .withStringData(entries)
                 .build();
     }
+
+    Secret loadSecret(String name);
 
     /**
      * Returns a ClientSecretRef for a client connection. This allows a component to request the secret ref for a

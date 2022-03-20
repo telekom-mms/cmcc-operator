@@ -66,11 +66,11 @@ public interface HasUapiClient extends Component {
         String secretName = getTargetState().getSecretName(UAPI_CLIENT_SECRET_REF_KIND, schemaName);
 
         if (!getTargetState().getCmcc().getSpec().getWith().getDatabases()) {
-            throw new CustomResourceConfigError("No MongoDB client secret reference found for " + schemaName + ", and with.databases is false");
+            throw new CustomResourceConfigError("No UAPI client secret reference found for " + schemaName + ", and with.databases is false");
         }
         return getTargetState().getClientSecretRef(UAPI_CLIENT_SECRET_REF_KIND, schemaName, password ->
                 new DefaultClientSecret(ClientSecretRef.defaultClientSecretRef(secretName),
-                        getTargetState().buildSecret(secretName, Map.of(
+                        getTargetState().loadOrBuildSecret(secretName, Map.of(
                                 ClientSecretRef.DEFAULT_PASSWORD_KEY, password,
                                 ClientSecretRef.DEFAULT_SCHEMA_KEY, schemaName,
                                 ClientSecretRef.DEFAULT_USERNAME_KEY, schemaName
@@ -80,30 +80,12 @@ public interface HasUapiClient extends Component {
     }
 
     /**
-     * Builds a secret for a UAPI client outside of a component. Used for the admin account.
+     * Return the client secret refs as the standard environment variables. The names get appended to the optional
+     * prefix.
      *
-     * @param secretName name of the secret
-     * @param metadata   secret metadata
-     * @param username   username
-     * @param password   password
-     * @return both the reference and a generated secret
+     * @param prefix name prefix, or empty string or null.
+     * @return a set of environment variables
      */
-    static DefaultClientSecret buildClientSecret(String secretName, ObjectMeta metadata, String username, String password) {
-        return new DefaultClientSecret(ClientSecretRef.builder()
-                .secretName(secretName)
-                .schemaKey("schema")
-                .usernameKey("username")
-                .passwordKey("password")
-                .urlKey("url")
-                .build(),
-                TargetState.buildSecret(metadata, Map.of(
-                        "password", password,
-                        "schema", username,
-                        "username", username
-                ))
-        );
-    }
-
     default EnvVarSet getUapiClientEnvVars(String prefix) {
         EnvVarSet env = new EnvVarSet();
         ClientSecretRef csr = getUapiClientSecretRef();
@@ -113,4 +95,5 @@ public interface HasUapiClient extends Component {
                 csr.toEnvVar(prefix, "USER", csr.getUsernameKey())
         ));
         return env;
-    }}
+    }
+}

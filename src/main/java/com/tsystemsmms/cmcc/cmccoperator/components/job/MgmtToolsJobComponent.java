@@ -38,7 +38,7 @@ import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.EnvVarSimple;
  * In addition to the ComponentSpec, configuration is taken from the importJob property of the custom resource.
  */
 @Slf4j
-public class MgmtToolsJobComponent extends JobComponent {
+public class MgmtToolsJobComponent extends JobComponent implements HasUapiClient {
     public static final String CONTENT_USERS_FRONTEND_VOLUME = "content-users-frontend";
     public static final String CONTENT_USERS_FRONTEND_PATH = "/" + CONTENT_USERS_FRONTEND_VOLUME;
     public static final String EXTRA_CONFIG = "config";
@@ -69,12 +69,7 @@ public class MgmtToolsJobComponent extends JobComponent {
         env.add(EnvVarSimple("DEV_MASTER_CAP_CLIENT_SERVER_IOR_URL", getTargetState().getServiceUrlFor("content-server", "mls")));
         env.add(EnvVarSimple("DEV_MANAGEMENT_CAP_CLIENT_SERVER_IOR_URL", getTargetState().getServiceUrlFor("content-server", "cms")));
 
-        ClientSecretRef admin = getTargetState().getClientSecretRef(UAPI_CLIENT_SECRET_REF_KIND, UAPI_ADMIN_USERNAME,
-                password -> HasUapiClient.buildClientSecret(getTargetState().getResourceNameFor(this),
-                        getTargetState().getResourceMetadataFor(this),
-                        UAPI_ADMIN_USERNAME, password));
-        env.add(EnvVarSecret("TOOLS_USER", admin.getSecretName(), admin.getUsernameKey()));
-        env.add(EnvVarSecret("TOOLS_PASSWORD", admin.getSecretName(), admin.getPasswordKey()));
+        env.addAll(getUapiClientEnvVars("TOOLS"));
         env.add(EnvVarSimple("DEBUG_ENTRYPOINT", "true"));
         env.add(EnvVarSimple("IMPORT_DIR", "/coremedia/import"));
         if (getImportJob().isForceContentImport()) {
@@ -197,5 +192,10 @@ public class MgmtToolsJobComponent extends JobComponent {
         if (importJob == null)
             importJob = getImportJobFromExtra();
         return importJob;
+    }
+
+    @Override
+    public String getUapiClientDefaultUsername() {
+        return UAPI_ADMIN_USERNAME;
     }
 }
