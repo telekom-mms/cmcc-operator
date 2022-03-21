@@ -374,12 +374,6 @@ public abstract class AbstractComponent implements Component {
 
     @Override
     public Optional<Boolean> isReady() {
-        if (getCmcc().getStatus().getMilestone() == null) {
-            log.debug("foo");
-        }
-        if (getComponentSpec().getMilestone() == null) {
-            log.debug("foo");
-        }
         if (getCmcc().getStatus().getMilestone().compareTo(getComponentSpec().getMilestone()) < 0)
             return Optional.empty();
         return Optional.of(getTargetState().isStatefulSetReady(getTargetState().getResourceNameFor(this)));

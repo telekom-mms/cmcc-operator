@@ -22,6 +22,6 @@
             <AppenderRef ref="Console" />
         </Root>
 
-<!--        <Logger name="com.tsystemsmms.cmcc" level="trace"/>-->
+        <Logger name="com.tsystemsmms.cmcc" level="trace"/>
     </Loggers>
 </Configuration>

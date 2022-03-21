@@ -18,8 +18,11 @@ import com.tsystemsmms.cmcc.cmccoperator.crds.CoreMediaContentCloud;
 import com.tsystemsmms.cmcc.cmccoperator.ingress.CmccIngressGeneratorFactory;
 import io.fabric8.kubernetes.api.model.*;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.concatOptional;
@@ -39,27 +42,26 @@ public interface TargetState {
     List<HasMetadata> buildResources();
 
     /**
-     * Build a secret.
+     * Fill in the secret in the ClientSecret. Either load the secret from the cluster, or generate a secret from the
+     * given maps.
      *
-     * @param name    of the secret
+     * @param cs      the secret reference
      * @param entries for the secret, will be base64 encoded
-     * @return the secret
      */
-    default Secret loadOrBuildSecret(String name, Map<String, String> entries) {
-        Secret secret = loadSecret(name);
-        if (secret != null) {
-            return secret;
-        }
-        return new SecretBuilder()
-                .withMetadata(getResourceMetadataFor(name))
+    default void loadOrBuildSecret(ClientSecret cs, Map<String, String> entries) {
+        Secret secret = loadSecret(cs.getRef().getSecretName());
+        cs.setSecret(secret != null ? secret : new SecretBuilder()
+                .withMetadata(getResourceMetadataFor(cs.getRef().getSecretName()))
                 .withType("Opaque")
                 .withStringData(entries)
-                .build();
+                .build());
     }
 
     /**
-     * @param name
-     * @return
+     * Load a secret from the cluster.
+     *
+     * @param name resource
+     * @return secret or null
      */
     Secret loadSecret(String name);
 
@@ -79,12 +81,29 @@ public interface TargetState {
      * object. For example, when configuring <tt>with.databases</tt>, the necessary secrets are created, and in turn,
      * the database accounts created.
      *
-     * @param kind               kind of network client, for example "jdbc", "mongodb", or "uapi".
-     * @param schema             schema or account name. Must be unique among all entries of a kind.
-     * @param buildDefaultSecret method that creates a suitable ClientSecret if there is no ClientSecretRef
+     * @param kind              kind of network client, for example "jdbc", "mongodb", or "uapi".
+     * @param schema            schema or account name. Must be unique among all entries of a kind.
+     * @param buildOrLoadSecret method that creates a suitable ClientSecret if there is no ClientSecretRef
      * @return the secret reference
      */
-    ClientSecretRef getClientSecretRef(String kind, String schema, Function<String, DefaultClientSecret> buildDefaultSecret);
+    ClientSecretRef getClientSecretRef(String kind, String schema, BiConsumer<ClientSecret, String> buildOrLoadSecret);
+
+    /**
+     * Returns all requested client secret refs of a kind.
+     *
+     * @param kind tpye of client
+     * @return collection of client secret refs
+     */
+    Collection<ClientSecretRef> getClientSecretRefs(String kind);
+
+    /**
+     * Returns a client secrets for the given kind amd schema.
+     *
+     * @param kind   kind of service
+     * @param schema the schema/user
+     * @return default client secrets
+     */
+    ClientSecret getClientSecret(String kind, String schema);
 
     /**
      * Returns all default client secrets for the given kind. Can be used to create users in a server.
@@ -92,7 +111,7 @@ public interface TargetState {
      * @param kind kind of service
      * @return default client secrets
      */
-    Map<String, DefaultClientSecret> getDefaultClientSecrets(String kind);
+    Map<String, ClientSecret> getClientSecrets(String kind);
 
     /**
      * Return the CoreMediaContentCloud custom resource this target state is working on.

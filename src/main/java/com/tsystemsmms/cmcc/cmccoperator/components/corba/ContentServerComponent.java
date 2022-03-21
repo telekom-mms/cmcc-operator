@@ -12,11 +12,9 @@ package com.tsystemsmms.cmcc.cmccoperator.components.corba;
 
 import com.tsystemsmms.cmcc.cmccoperator.components.HasJdbcClient;
 import com.tsystemsmms.cmcc.cmccoperator.components.HasService;
-import com.tsystemsmms.cmcc.cmccoperator.components.HasUapiClient;
-import com.tsystemsmms.cmcc.cmccoperator.crds.ClientSecretRef;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.CustomResourceConfigError;
-import com.tsystemsmms.cmcc.cmccoperator.targetstate.DefaultClientSecret;
+import com.tsystemsmms.cmcc.cmccoperator.targetstate.ClientSecret;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 import com.tsystemsmms.cmcc.cmccoperator.utils.EnvVarSet;
 import io.fabric8.kubernetes.api.model.*;
@@ -26,10 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;
 
-import static com.tsystemsmms.cmcc.cmccoperator.components.HasMongoDBClient.MONGODB_CLIENT_SECRET_REF_KIND;
-import static com.tsystemsmms.cmcc.cmccoperator.crds.ClientSecretRef.DEFAULT_PASSWORD_KEY;
-import static com.tsystemsmms.cmcc.cmccoperator.crds.ClientSecretRef.DEFAULT_USERNAME_KEY;
-import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.format;
+import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.EnvVarSecret;
 
 @Slf4j
 public class ContentServerComponent extends CorbaComponent implements HasJdbcClient, HasService {
@@ -122,6 +117,18 @@ public class ContentServerComponent extends CorbaComponent implements HasJdbcCli
                 break;
         }
 
+        for (ClientSecret cs : getTargetState().getClientSecrets(UAPI_CLIENT_SECRET_REF_KIND).values()) {
+            Secret secret = cs.getSecret().orElseThrow(() -> new CustomResourceConfigError("Unable to find secret for clientSecretRef \"" + cs.getRef().getSecretName() + "\""));
+            String username = secret.getStringData().get(cs.getRef().getUsernameKey());
+            if (cs.getRef().getUsernameKey() == null || username == null) {
+                throw new CustomResourceConfigError("Secret \"" + secret.getMetadata().getName()
+                        + "\" does not contain the field \"" + cs.getRef().getUsernameKey()
+                        + "\" for the username, or it is null");
+            }
+            env.add(EnvVarSecret("CAP_SERVER_INITIALPASSWORD_" + username.toUpperCase(Locale.ROOT),
+                    cs.getRef().getSecretName(), cs.getRef().getPasswordKey()));
+        }
+
         return env;
     }
 
@@ -140,20 +147,6 @@ public class ContentServerComponent extends CorbaComponent implements HasJdbcCli
             properties.put("replicator.publication-ior-url", getTargetState().getServiceUrlFor("content-server", "mls"));
         }
 
-        properties.putAll(getPasswordsAsProperties());
-
-        return properties;
-    }
-
-    public Map<String, String> getPasswordsAsProperties() {
-        Map<String, DefaultClientSecret> secrets = getTargetState().getDefaultClientSecrets(UAPI_CLIENT_SECRET_REF_KIND);
-        Map<String, String> properties = new HashMap<>();
-
-        for (DefaultClientSecret dcs : secrets.values()) {
-            Map<String, String> data = dcs.getSecret().getStringData();
-            properties.put("cap.server.initialPassword." + data.get(DEFAULT_USERNAME_KEY),
-                    data.get(DEFAULT_PASSWORD_KEY));
-        }
         return properties;
     }
 

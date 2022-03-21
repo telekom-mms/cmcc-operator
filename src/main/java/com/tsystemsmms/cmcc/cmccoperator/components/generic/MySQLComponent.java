@@ -15,7 +15,7 @@ import com.tsystemsmms.cmcc.cmccoperator.components.HasService;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ClientSecretRef;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.CustomResourceConfigError;
-import com.tsystemsmms.cmcc.cmccoperator.targetstate.DefaultClientSecret;
+import com.tsystemsmms.cmcc.cmccoperator.targetstate.ClientSecret;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 import com.tsystemsmms.cmcc.cmccoperator.utils.EnvVarSet;
 import io.fabric8.kubernetes.api.model.*;
@@ -44,12 +44,11 @@ public class MySQLComponent extends AbstractComponent implements HasService {
 
     @Override
     public void requestRequiredResources() {
-        String name = getTargetState().getSecretName(getComponentSpec().getType(), MYSQL_ROOT_USERNAME);
-        getTargetState().getClientSecretRef(getComponentSpec().getType(), MYSQL_ROOT_USERNAME, password ->
-                new DefaultClientSecret(ClientSecretRef.defaultClientSecretRef(name), getTargetState().loadOrBuildSecret(name, Map.of(
+        getTargetState().getClientSecretRef(getComponentSpec().getType(), MYSQL_ROOT_USERNAME,
+                (clientSecret, password) -> getTargetState().loadOrBuildSecret(clientSecret, Map.of(
                         ClientSecretRef.DEFAULT_PASSWORD_KEY, password,
                         ClientSecretRef.DEFAULT_USERNAME_KEY, MYSQL_ROOT_USERNAME
-                )))
+                ))
         );
     }
 
@@ -181,15 +180,15 @@ public class MySQLComponent extends AbstractComponent implements HasService {
     }
 
     public static Map<String, String> createUsersFromClientSecrets(TargetState targetState) {
-        Map<String, DefaultClientSecret> secrets = targetState.getDefaultClientSecrets(JDBC_CLIENT_SECRET_REF_KIND);
+        Map<String, ClientSecret> secrets = targetState.getClientSecrets(JDBC_CLIENT_SECRET_REF_KIND);
 
         if (secrets == null) {
             throw new CustomResourceConfigError("No MySQL users to be created");
         }
 
         StringBuilder sql = new StringBuilder();
-        for (DefaultClientSecret dcs : secrets.values()) {
-            Map<String, String> data = dcs.getSecret().getStringData();
+        for (ClientSecret cs : secrets.values()) {
+            Map<String, String> data = cs.getStringData();
             if (data.get(ClientSecretRef.DEFAULT_USERNAME_KEY).equals(MYSQL_ROOT_USERNAME))
                 continue;
             sql.append(format("CREATE SCHEMA IF NOT EXISTS {} CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;\n", data.get(ClientSecretRef.DEFAULT_SCHEMA_KEY)));

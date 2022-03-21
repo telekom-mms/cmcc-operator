@@ -13,17 +13,13 @@ package com.tsystemsmms.cmcc.cmccoperator.targetstate;
 import com.tsystemsmms.cmcc.cmccoperator.components.ComponentSpecBuilder;
 import com.tsystemsmms.cmcc.cmccoperator.components.generic.MongoDBComponent;
 import com.tsystemsmms.cmcc.cmccoperator.components.generic.MySQLComponent;
-import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
 import com.tsystemsmms.cmcc.cmccoperator.crds.CoreMediaContentCloud;
 import com.tsystemsmms.cmcc.cmccoperator.crds.Milestone;
 import com.tsystemsmms.cmcc.cmccoperator.ingress.CmccIngressGeneratorFactory;
-import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.BeanFactory;
 
-import java.util.Collection;
-import java.util.LinkedList;
 import java.util.List;
 
 import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.concatOptional;
@@ -110,28 +106,20 @@ public class DefaultTargetState extends AbstractTargetState {
         // move to the next milestone when everything is ready
         advanceToNextMilestoneOnComponentsReady();
 
-        return previousMilestone == getCmcc().getStatus().getMilestone();
+        if (!getCmcc().getStatus().getMilestone().equals(previousMilestone)) {
+            onMilestoneReached();
+        }
+
+        return previousMilestone.equals(getCmcc().getStatus().getMilestone());
     }
 
     @Override
     public void onMilestoneReached() {
         super.onMilestoneReached();
-        if (cmcc.getStatus().getMilestone() == Milestone.ContentServerReady) {
+        if (cmcc.getStatus().getMilestone().equals(Milestone.ContentServerReady)) {
             log.info("[{}] Restarting CMS and MLS", getContextForLogging());
-            scaleComponent(componentCollection.getServiceNameFor("content-server", "cms"));
-            scaleComponent(componentCollection.getServiceNameFor("content-server", "mls"));
+            restartStatefulSet(componentCollection.getServiceNameFor("content-server", "cms"));
+            restartStatefulSet(componentCollection.getServiceNameFor("content-server", "mls"));
         }
-    }
-
-    private boolean isReady(String jobName) {
-        jobName = concatOptional(cmcc.getSpec().getDefaults().getNamePrefix(), jobName);
-        Job job = kubernetesClient.batch().v1().jobs().inNamespace(cmcc.getMetadata().getNamespace()).withName(jobName).get();
-        boolean ready = job != null && job.getStatus() != null && job.getStatus().getSucceeded() != null && job.getStatus().getSucceeded() > 0;
-        if (ready) {
-            log.debug("job {}: has succeeded", jobName);
-        } else {
-            log.debug("job {}: waiting for successful completion", jobName);
-        }
-        return ready;
     }
 }

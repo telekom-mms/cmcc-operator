@@ -25,10 +25,8 @@ public class JobReconciler implements Reconciler {
     @Override
     public void reconcile(KubernetesClient kubernetesClient, String namespace, HasMetadata resource) {
         Resource<Job> existing = kubernetesClient.batch().v1().jobs().inNamespace(namespace).withName(resource.getMetadata().getName());
-        if (existing.get() != null) {
-//            log.debug("skipping {}/{}", resource.getKind(), resource.getMetadata().getName());
-        } else {
-//            log.debug("reconciling {}/{}", resource.getKind(), resource.getMetadata().getName());
+        if (existing.get() == null) {
+            log.debug("starting {}/{}", resource.getKind(), resource.getMetadata().getName());
             kubernetesClient.resource(resource).inNamespace(namespace).createOrReplace();
         }
     }

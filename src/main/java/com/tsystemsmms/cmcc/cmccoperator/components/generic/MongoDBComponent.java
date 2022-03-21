@@ -12,10 +12,9 @@ package com.tsystemsmms.cmcc.cmccoperator.components.generic;
 
 import com.tsystemsmms.cmcc.cmccoperator.components.AbstractComponent;
 import com.tsystemsmms.cmcc.cmccoperator.components.HasService;
-import com.tsystemsmms.cmcc.cmccoperator.crds.ClientSecretRef;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.CustomResourceConfigError;
-import com.tsystemsmms.cmcc.cmccoperator.targetstate.DefaultClientSecret;
+import com.tsystemsmms.cmcc.cmccoperator.targetstate.ClientSecret;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 import com.tsystemsmms.cmcc.cmccoperator.utils.EnvVarSet;
 import io.fabric8.kubernetes.api.model.*;
@@ -45,12 +44,11 @@ public class MongoDBComponent extends AbstractComponent implements HasService {
 
     @Override
     public void requestRequiredResources() {
-        String name = getTargetState().getSecretName(MONGODB_CLIENT_SECRET_REF_KIND, MONGODB_ROOT_USERNAME);
-        getTargetState().getClientSecretRef(MONGODB_CLIENT_SECRET_REF_KIND, MONGODB_ROOT_USERNAME, password ->
-                new DefaultClientSecret(ClientSecretRef.defaultClientSecretRef(name), getTargetState().loadOrBuildSecret(name, Map.of(
+        getTargetState().getClientSecretRef(MONGODB_CLIENT_SECRET_REF_KIND, MONGODB_ROOT_USERNAME,
+                (clientSecret, password) -> getTargetState().loadOrBuildSecret(clientSecret, Map.of(
                         DEFAULT_PASSWORD_KEY, password,
                         DEFAULT_USERNAME_KEY, MONGODB_ROOT_USERNAME
-                )))
+                ))
         );
     }
 
@@ -180,7 +178,7 @@ public class MongoDBComponent extends AbstractComponent implements HasService {
     }
 
     public static Map<String, String> createUsersFromClientSecrets(TargetState targetState) {
-        Map<String, DefaultClientSecret> secrets = targetState.getDefaultClientSecrets(MONGODB_CLIENT_SECRET_REF_KIND);
+        Map<String, ClientSecret> secrets = targetState.getClientSecrets(MONGODB_CLIENT_SECRET_REF_KIND);
 
         if (secrets == null) {
             log.warn("No MongoDB users to be created");
@@ -188,18 +186,18 @@ public class MongoDBComponent extends AbstractComponent implements HasService {
         }
 
         StringBuilder createUsersJs = new StringBuilder();
-        DefaultClientSecret root = secrets.get(MONGODB_ROOT_USERNAME);
-        if (root == null)
+        ClientSecret rootClientSecret = secrets.get(MONGODB_ROOT_USERNAME);
+        if (rootClientSecret == null)
             throw new CustomResourceConfigError("No secret available for MongoDB root user");
 
         // log in as root
-        Map<String, String> rootDetails = root.getSecret().getStringData();
+        Map<String, String> rootData = rootClientSecret.getStringData();
         createUsersJs.append("db = db.getSiblingDB('admin');\n");
         createUsersJs.append(format("db.auth('{}', '{}');\n",
-                rootDetails.get(DEFAULT_USERNAME_KEY), rootDetails.get(DEFAULT_PASSWORD_KEY)));
+                rootData.get(DEFAULT_USERNAME_KEY), rootData.get(DEFAULT_PASSWORD_KEY)));
 
-        for (DefaultClientSecret dcs : secrets.values()) {
-            Map<String, String> data = dcs.getSecret().getStringData();
+        for (ClientSecret cs : secrets.values()) {
+            Map<String, String> data = cs.getStringData();
             if (data.get(DEFAULT_USERNAME_KEY).equals(MONGODB_ROOT_USERNAME))
                 continue;
             // we would like to give client only rights to a specific database, but CM requires the right to create multiple databases (or somehow know which DBs will be created; the list is undocumented, however.

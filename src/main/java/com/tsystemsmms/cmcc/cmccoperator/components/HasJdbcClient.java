@@ -12,7 +12,6 @@ package com.tsystemsmms.cmcc.cmccoperator.components;
 
 import com.tsystemsmms.cmcc.cmccoperator.crds.ClientSecretRef;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.CustomResourceConfigError;
-import com.tsystemsmms.cmcc.cmccoperator.targetstate.DefaultClientSecret;
 import com.tsystemsmms.cmcc.cmccoperator.utils.EnvVarSet;
 
 import java.util.List;
@@ -50,16 +49,15 @@ public interface HasJdbcClient extends Component {
         if (!getTargetState().getCmcc().getSpec().getWith().getDatabases()) {
             throw new CustomResourceConfigError("No MySQL client secret reference found for " + schemaName + ", and with.databases is false");
         }
-        return getTargetState().getClientSecretRef(JDBC_CLIENT_SECRET_REF_KIND, schemaName, password ->
-                new DefaultClientSecret(ClientSecretRef.defaultClientSecretRef(secretName),
-                        getTargetState().loadOrBuildSecret(secretName, Map.of(
+        return getTargetState().getClientSecretRef(JDBC_CLIENT_SECRET_REF_KIND, schemaName,
+                (clientSecret, password) -> getTargetState().loadOrBuildSecret(clientSecret, Map.of(
                                 ClientSecretRef.DEFAULT_DRIVER_KEY, "com.mysql.cj.jdbc.Driver",
                                 ClientSecretRef.DEFAULT_HOSTNAME_KEY, serviceName,
                                 ClientSecretRef.DEFAULT_PASSWORD_KEY, password,
                                 ClientSecretRef.DEFAULT_SCHEMA_KEY, schemaName,
                                 ClientSecretRef.DEFAULT_URL_KEY, "jdbc:mysql://" + serviceName + ":3306/" + schemaName,
                                 ClientSecretRef.DEFAULT_USERNAME_KEY, schemaName
-                        ))
+                        )
                 )
         );
     }

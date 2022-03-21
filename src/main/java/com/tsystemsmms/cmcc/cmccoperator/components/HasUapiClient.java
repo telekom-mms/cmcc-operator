@@ -12,10 +12,7 @@ package com.tsystemsmms.cmcc.cmccoperator.components;
 
 import com.tsystemsmms.cmcc.cmccoperator.crds.ClientSecretRef;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.CustomResourceConfigError;
-import com.tsystemsmms.cmcc.cmccoperator.targetstate.DefaultClientSecret;
-import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 import com.tsystemsmms.cmcc.cmccoperator.utils.EnvVarSet;
-import io.fabric8.kubernetes.api.model.ObjectMeta;
 
 import java.util.List;
 import java.util.Map;
@@ -68,14 +65,12 @@ public interface HasUapiClient extends Component {
         if (!getTargetState().getCmcc().getSpec().getWith().getDatabases()) {
             throw new CustomResourceConfigError("No UAPI client secret reference found for " + schemaName + ", and with.databases is false");
         }
-        return getTargetState().getClientSecretRef(UAPI_CLIENT_SECRET_REF_KIND, schemaName, password ->
-                new DefaultClientSecret(ClientSecretRef.defaultClientSecretRef(secretName),
-                        getTargetState().loadOrBuildSecret(secretName, Map.of(
-                                ClientSecretRef.DEFAULT_PASSWORD_KEY, password,
-                                ClientSecretRef.DEFAULT_SCHEMA_KEY, schemaName,
-                                ClientSecretRef.DEFAULT_USERNAME_KEY, schemaName
-                        ))
-                )
+        return getTargetState().getClientSecretRef(UAPI_CLIENT_SECRET_REF_KIND, schemaName,
+                (clientSecret, password) -> getTargetState().loadOrBuildSecret(clientSecret, Map.of(
+                        ClientSecretRef.DEFAULT_PASSWORD_KEY, password,
+                        ClientSecretRef.DEFAULT_SCHEMA_KEY, schemaName,
+                        ClientSecretRef.DEFAULT_USERNAME_KEY, schemaName
+                ))
         );
     }
 
