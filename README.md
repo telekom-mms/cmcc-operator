@@ -22,6 +22,7 @@ Planned features include:
 * Configure Solr clustering by specifying the number of replicas to create.
 * Use a ConfigMap instead of the Custom Resource, so the operator can be used in clusters where installation of cluster-wide resources (like the CRD) is not possible.
 * Support for Traefik ingress resource (in addition to the NGINX ingress).
+* Admission webhook that verifies consistency of the custom resource, and can migrate between CRD versions.
 
 ## Quick Links
 
