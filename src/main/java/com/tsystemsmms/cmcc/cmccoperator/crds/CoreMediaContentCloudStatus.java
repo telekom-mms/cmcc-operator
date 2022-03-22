@@ -40,6 +40,7 @@ public class CoreMediaContentCloudStatus extends ObservedGenerationAwareStatus {
     @JsonPropertyDescription("Which milestone has been reached in configuring all components")
     Milestone milestone = Milestone.Created;
 
-    @JsonPropertyDescription("Resources created by the operator")
+    @JsonPropertyDescription("Unused")
+    @Deprecated
     String ownedResourceRefs = "[]";
 }

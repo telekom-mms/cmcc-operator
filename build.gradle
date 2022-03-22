@@ -7,14 +7,10 @@ plugins {
 
 group = 'com.tsystemsmms'
 version = '0.0.1-SNAPSHOT'
-sourceCompatibility = '11'
 
 configurations {
 	compileOnly {
 		extendsFrom annotationProcessor
-	}
-	all {
-		exclude group: 'org.springframework.boot', module: 'spring-boot-starter-logging'
 	}
 }
 
@@ -30,7 +26,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 	implementation 'io.javaoperatorsdk:operator-framework-spring-boot-starter:2.0.1'
 	implementation 'org.bouncycastle:bcpkix-jdk15on:1.70' // required for the fabric8 k8s client to grok k3d certificates
-	implementation 'org.springframework.boot:spring-boot-starter-log4j2'
+	implementation 'org.springframework.boot:spring-boot-starter'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 	annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
 	compileOnly 'org.projectlombok:lombok'

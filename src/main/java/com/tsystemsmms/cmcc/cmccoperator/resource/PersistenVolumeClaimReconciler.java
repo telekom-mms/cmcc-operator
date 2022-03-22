@@ -27,6 +27,7 @@ public class PersistenVolumeClaimReconciler implements Reconciler {
         Resource<PersistentVolumeClaim> existing = kubernetesClient.persistentVolumeClaims().inNamespace(namespace).withName(resource.getMetadata().getName());
         if (existing.get() != null) {
             Quantity storage = pvc.getSpec().getResources().getRequests().get("storage");
+            //noinspection StatementWithEmptyBody
             if (storage.equals(existing.get().getSpec().getResources().getRequests().get("storage"))) {
 //                log.debug("skipping unchanged {}/{}", resource.getKind(), resource.getMetadata().getName());
             } else {

@@ -17,7 +17,6 @@ import com.tsystemsmms.cmcc.cmccoperator.targetstate.CustomResourceConfigError;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 public class ExtraData {
     private static final ObjectMapper objectMapper = new ObjectMapper();

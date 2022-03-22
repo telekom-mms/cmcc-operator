@@ -1,0 +1,21 @@
+logging:
+  pattern:
+    console: "%d{HH:mm:ss.SSS} %-5level %logger{36} - %msg%n"
+spring:
+  devtools:
+    add-properties: false
+  application:
+    name: cmcc-operator
+  main:
+    banner-mode: off
+---
+logging:
+  level:
+    com:
+      tsystemsmms: debug
+spring:
+  config:
+    activate:
+      on-profile: dev
+  devtools:
+    add-properties: true

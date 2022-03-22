@@ -10,21 +10,17 @@
 
 package com.tsystemsmms.cmcc.cmccoperator.utils;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
-import com.tsystemsmms.cmcc.cmccoperator.crds.CoreMediaContentCloud;
-import com.tsystemsmms.cmcc.cmccoperator.crds.ImageSpec;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarSource;
 import io.fabric8.kubernetes.api.model.SecretKeySelector;
-import io.fabric8.kubernetes.client.utils.Serialization;
 import lombok.SneakyThrows;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -162,7 +158,7 @@ public class Utils {
      */
     public static boolean booleanOf(Object o, boolean def) {
         String s;
-        long l = 0l;
+        long l = 0L;
         if (o == null)
             return def;
         s = o.toString().toLowerCase(Locale.ROOT);

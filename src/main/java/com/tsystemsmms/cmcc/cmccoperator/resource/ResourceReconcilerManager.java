@@ -24,7 +24,7 @@ import java.util.HashMap;
 
 @Slf4j
 public class ResourceReconcilerManager {
-    KubernetesClient kubernetesClient;
+    final KubernetesClient kubernetesClient;
 
     final HashMap<Class<? extends HasMetadata>, Reconciler> reconcilers;
 

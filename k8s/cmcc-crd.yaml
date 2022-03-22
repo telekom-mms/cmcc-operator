@@ -335,7 +335,7 @@ spec:
                 - next
                 type: string
               ownedResourceRefs:
-                description: Resources created by the operator
+                description: Unused
                 type: string
               observedGeneration:
                 type: integer

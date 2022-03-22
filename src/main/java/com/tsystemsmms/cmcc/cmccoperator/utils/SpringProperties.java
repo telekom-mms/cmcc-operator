@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
  */
 public class SpringProperties {
     // make sure the serialization is reproducible, so resources don't get recreated unnecessarily
-    static ObjectMapper objectMapper;
+    final static ObjectMapper objectMapper;
 
     static {
         objectMapper = new ObjectMapper();

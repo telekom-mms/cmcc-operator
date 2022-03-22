@@ -11,7 +11,6 @@
 package com.tsystemsmms.cmcc.cmccoperator.ingress;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.openshift.api.model.Ingress;
 
 import java.util.Collection;
 

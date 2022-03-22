@@ -12,7 +12,6 @@ package com.tsystemsmms.cmcc.cmccoperator.components.job;
 
 import com.tsystemsmms.cmcc.cmccoperator.components.Component;
 import com.tsystemsmms.cmcc.cmccoperator.components.HasUapiClient;
-import com.tsystemsmms.cmcc.cmccoperator.crds.ClientSecretRef;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ImportJob;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.CustomResourceConfigError;
@@ -27,8 +26,6 @@ import org.yaml.snakeyaml.constructor.Constructor;
 import java.util.LinkedList;
 import java.util.List;
 
-import static com.tsystemsmms.cmcc.cmccoperator.components.HasUapiClient.UAPI_ADMIN_USERNAME;
-import static com.tsystemsmms.cmcc.cmccoperator.components.HasUapiClient.UAPI_CLIENT_SECRET_REF_KIND;
 import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.EnvVarSecret;
 import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.EnvVarSimple;
 

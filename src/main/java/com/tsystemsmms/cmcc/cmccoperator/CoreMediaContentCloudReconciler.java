@@ -10,9 +10,6 @@
 
 package com.tsystemsmms.cmcc.cmccoperator;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.tsystemsmms.cmcc.cmccoperator.components.job.MgmtToolsJobComponent;
 import com.tsystemsmms.cmcc.cmccoperator.crds.CoreMediaContentCloud;
 import com.tsystemsmms.cmcc.cmccoperator.crds.CoreMediaContentCloudStatus;
@@ -20,21 +17,25 @@ import com.tsystemsmms.cmcc.cmccoperator.resource.ResourceReconcilerManager;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetStateFactory;
 import com.tsystemsmms.cmcc.cmccoperator.utils.Utils;
-import io.fabric8.kubernetes.api.model.*;
+import io.fabric8.kubernetes.api.model.DeletionPropagation;
+import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.KubernetesList;
+import io.fabric8.kubernetes.api.model.KubernetesListBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.dsl.MixedOperation;
-import io.fabric8.kubernetes.client.dsl.Resource;
-import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
-import lombok.Data;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
+
+import static com.tsystemsmms.cmcc.cmccoperator.utils.KubernetesUtils.getAllResourcesMatchingLabels;
+import static com.tsystemsmms.cmcc.cmccoperator.utils.KubernetesUtils.isMetadataContains;
 
 @ControllerConfiguration
 @Slf4j
@@ -59,24 +60,24 @@ public class CoreMediaContentCloudReconciler implements Reconciler<CoreMediaCont
 
         // create new desired state and its resources
         TargetState targetState = targetStateFactory.buildTargetState(deepCopy);
-        List<HasMetadata> newResources = targetState.buildResources();
+        List<HasMetadata> builtResources = targetState.buildResources();
 
-        // compute resources no longer desired
-        Set<ResourceRef> ownedResourceRefs = newResources.stream().map(ResourceRef::new).collect(Collectors.toSet());
-        Set<ResourceRef> abandonedResourceRefs = ResourceRef.fromJson(status.getOwnedResourceRefs());
-        abandonedResourceRefs.removeAll(ownedResourceRefs);
+        Set<HasMetadata> existingResources = getAllResourcesMatchingLabels(kubernetesClient, cmcc.getMetadata().getNamespace(), targetState.getSelectorLabels())
+                .stream().filter(targetState::isWeOwnThis).collect(Collectors.toSet());
+        Set<HasMetadata> newResources = builtResources.stream().filter(r -> !isMetadataContains(existingResources, r)).collect(Collectors.toSet());
+        Set<HasMetadata> changedResources = builtResources.stream().filter(r -> isMetadataContains(existingResources, r)).collect(Collectors.toSet());
+        Set<HasMetadata> abandonedResources = existingResources.stream().filter(r -> !isMetadataContains(builtResources, r)).collect(Collectors.toSet());
 
-        log.debug("Updating dependent resource of cmcc {}: {} new/updated, {} abandoned resources, milestone {}",
-                deepCopy.getMetadata().getName(), newResources.size(), abandonedResourceRefs.size(), status.getMilestone());
+        log.debug("[{}] Updating dependent resources: {} new, {} updated, {} abandoned resources",
+                targetState.getContextForLogging(),
+                newResources.size(), changedResources.size(), abandonedResources.size());
 
-        // apply new and updated resources
-        KubernetesList list = new KubernetesListBuilder().withItems(newResources).build();
+        abandonedResources.forEach(r -> kubernetesClient.resource(r).withPropagationPolicy(DeletionPropagation.BACKGROUND).delete());
+
+        KubernetesList list = new KubernetesListBuilder().withItems(builtResources).build();
         resourceReconcilerManager.createPatchUpdate(deepCopy.getMetadata().getNamespace(), list);
-        // remove resources no longer in desired state
-        deleteResources(deepCopy.getMetadata().getNamespace(), abandonedResourceRefs);
 
-        // save state
-        status.setOwnedResourceRefs(ResourceRef.toJson(ownedResourceRefs));
+        status.setOwnedResourceRefs("");
         status.setError("");
         status.setErrorMessage("");
         if (!deepCopy.getStatus().getJob().isBlank()) {
@@ -91,15 +92,6 @@ public class CoreMediaContentCloudReconciler implements Reconciler<CoreMediaCont
 
     @Override
     public DeleteControl cleanup(CoreMediaContentCloud cmcc, Context context) {
-        CoreMediaContentCloudStatus status = new CoreMediaContentCloudStatus();
-        Set<ResourceRef> abandonedResourceRefs = ResourceRef.fromJson(cmcc.getStatus().getOwnedResourceRefs());
-
-        log.info("Deleting dependent resource of cmcc \"{}\": {} abandoned resources", cmcc.getMetadata().getName(), abandonedResourceRefs.size());
-
-        deleteResources(cmcc.getMetadata().getNamespace(), abandonedResourceRefs);
-        status.setOwnedResourceRefs("[]");
-        cmcc.setStatus(status);
-
         return DeleteControl.defaultDelete();
     }
 
@@ -112,58 +104,9 @@ public class CoreMediaContentCloudReconciler implements Reconciler<CoreMediaCont
         return Optional.of(resource);
     }
 
-    private void deleteResources(String namespace, Collection<ResourceRef> resources) {
-        if (resources == null)
-            return;
-        for (ResourceRef resource : resources) {
-            MixedOperation<GenericKubernetesResource, GenericKubernetesResourceList, Resource<GenericKubernetesResource>> op = kubernetesClient.genericKubernetesResources(resource.getApiVersion(), resource.getKind());
-            Resource<GenericKubernetesResource> r = op.inNamespace(namespace).withName(resource.getName());
-//            log.debug("Deleting {}/{}", resource.getKind(), resource.getName());
-            r.withPropagationPolicy(DeletionPropagation.BACKGROUND).delete();
-        }
-    }
-
-
     @Override
     public List<EventSource> prepareEventSources(EventSourceContext<CoreMediaContentCloud> context) {
         return List.of(new InformerEventSource<>(kubernetesClient.batch().v1().jobs().inAnyNamespace().withLabels(MgmtToolsJobComponent.getJobLabels()).runnableInformer(1200), Mappers.fromOwnerReference()),
                 new InformerEventSource<>(kubernetesClient.apps().statefulSets().inAnyNamespace().withLabels(OPERATOR_SELECTOR_LABELS).runnableInformer(1200), Mappers.fromOwnerReference()));
-    }
-
-    @Data
-    public static class ResourceRef {
-        // make sure the serialization is reproducible, so resources don't get recreated unnecessarily
-        static ObjectMapper objectMapper;
-
-        static {
-            objectMapper = new ObjectMapper();
-            objectMapper.configure(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS, true);
-        }
-
-        String apiVersion;
-        String kind;
-        String name;
-
-        /**
-         * Default constructor. Needed for Jackson.
-         */
-        @SuppressWarnings("unused")
-        public ResourceRef() {}
-
-        public ResourceRef(HasMetadata resource) {
-            this.apiVersion = resource.getApiVersion();
-            this.kind = resource.getKind();
-            this.name = resource.getMetadata().getName();
-        }
-
-        @SneakyThrows
-        static Set<ResourceRef> fromJson(String json) {
-            return objectMapper.readValue(json, new TypeReference<>() {});
-        }
-
-        @SneakyThrows
-        static String toJson(Set<ResourceRef> refs) {
-            return objectMapper.writeValueAsString(refs);
-        }
     }
 }

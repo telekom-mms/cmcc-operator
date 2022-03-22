@@ -26,13 +26,12 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.EnvVarSimple;
 import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.concatOptional;
 
 @Slf4j
 public class StudioServerComponent extends CorbaComponent implements HasMongoDBClient, HasJdbcClient, HasService {
 
-    String solrCollection;
+    final String solrCollection;
 
     public StudioServerComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec componentSpec) {
         super(kubernetesClient, targetState, componentSpec, "studio-server");

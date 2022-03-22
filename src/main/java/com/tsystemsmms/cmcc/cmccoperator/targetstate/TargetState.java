@@ -10,6 +10,7 @@
 
 package com.tsystemsmms.cmcc.cmccoperator.targetstate;
 
+import com.tsystemsmms.cmcc.cmccoperator.CoreMediaContentCloudReconciler;
 import com.tsystemsmms.cmcc.cmccoperator.components.Component;
 import com.tsystemsmms.cmcc.cmccoperator.components.ComponentCollection;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ClientSecretRef;
@@ -19,11 +20,10 @@ import com.tsystemsmms.cmcc.cmccoperator.ingress.CmccIngressGeneratorFactory;
 import io.fabric8.kubernetes.api.model.*;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.BiConsumer;
-import java.util.function.Function;
 
 import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.concatOptional;
 
@@ -202,8 +202,27 @@ public interface TargetState {
      */
     String getResourceNameFor(String component, String... additional);
 
+    /**
+     * Get the name for a secret.
+     *
+     * @param kind   kind of secret, see clientSecret
+     * @param schema schema, service or username
+     * @return name
+     */
     default String getSecretName(String kind, String schema) {
         return concatOptional(getCmcc().getSpec().getDefaults().getNamePrefix(), kind, schema);
+    }
+
+    /**
+     * Returns a map of labels that can be used to identify resources created from the custom resource.
+     *
+     * @return labels
+     */
+    default HashMap<String, String> getSelectorLabels() {
+        HashMap<String, String> labels = new HashMap<>();
+        labels.putAll(CoreMediaContentCloudReconciler.OPERATOR_SELECTOR_LABELS);
+        labels.put("cmcc.tsystemsmms.com/cmcc", getCmcc().getMetadata().getName());
+        return labels;
     }
 
     /**
@@ -292,4 +311,12 @@ public interface TargetState {
      * @return true if ready
      */
     boolean isStatefulSetReady(String name);
+
+    /**
+     * Returns true if this resource is owned by the operator.
+     *
+     * @param resource to check
+     * @return true if we own this
+     */
+    boolean isWeOwnThis(HasMetadata resource);
 }

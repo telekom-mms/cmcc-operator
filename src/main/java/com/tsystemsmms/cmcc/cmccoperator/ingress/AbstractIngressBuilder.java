@@ -10,17 +10,14 @@
 
 package com.tsystemsmms.cmcc.cmccoperator.ingress;
 
-import io.fabric8.kubernetes.api.model.HasMetadata;
 import lombok.Data;
-
-import java.util.Collection;
 
 public abstract class AbstractIngressBuilder implements IngressBuilder{
 
-    public static enum PathType {
+    public enum PathType {
         EXACT,
         PREFIX,
-        PATTERN;
+        PATTERN
     }
     @Data
     public static class Path {

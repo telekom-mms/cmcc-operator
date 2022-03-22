@@ -10,7 +10,6 @@
 
 package com.tsystemsmms.cmcc.cmccoperator.components;
 
-import com.tsystemsmms.cmcc.cmccoperator.CoreMediaContentCloudReconciler;
 import com.tsystemsmms.cmcc.cmccoperator.crds.*;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 import com.tsystemsmms.cmcc.cmccoperator.utils.EnvVarSet;
@@ -169,11 +168,9 @@ public abstract class AbstractComponent implements Component {
      * @return list of labels
      */
     public HashMap<String, String> getSelectorLabels() {
-        HashMap<String, String> labels = new HashMap<>();
-        labels.put("cmcc.tsystemsmms.com/cmcc", getCmcc().getMetadata().getName());
+        HashMap<String, String> labels = getTargetState().getSelectorLabels();
         labels.put("cmcc.tsystemsmms.com/type", componentSpec.getType());
         labels.put("cmcc.tsystemsmms.com/name", getTargetState().getResourceNameFor(this));
-        labels.putAll(CoreMediaContentCloudReconciler.OPERATOR_SELECTOR_LABELS);
         return labels;
     }
 

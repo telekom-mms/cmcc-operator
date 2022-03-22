@@ -10,7 +10,6 @@
 
 package com.tsystemsmms.cmcc.cmccoperator.targetstate;
 
-import com.tsystemsmms.cmcc.cmccoperator.CoreMediaContentCloudReconciler;
 import com.tsystemsmms.cmcc.cmccoperator.components.Component;
 import com.tsystemsmms.cmcc.cmccoperator.components.ComponentCollection;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ClientSecretRef;
@@ -311,18 +310,6 @@ public abstract class AbstractTargetState implements TargetState {
                 .build();
     }
 
-    /**
-     * Get a set of labels suitable to distinguish pods, services, etc. of this component from others.
-     *
-     * @return list of labels
-     */
-    public HashMap<String, String> getSelectorLabels() {
-        HashMap<String, String> labels = new HashMap<>();
-        labels.putAll(CoreMediaContentCloudReconciler.OPERATOR_SELECTOR_LABELS);
-        labels.put("cmcc.tsystemsmms.com/cmcc", getCmcc().getMetadata().getName());
-        return labels;
-    }
-
     @Override
     public ObjectMeta getResourceMetadataFor(String name) {
         return new ObjectMetaBuilder()
@@ -364,12 +351,7 @@ public abstract class AbstractTargetState implements TargetState {
         return status.getReplicas() > 0 && status.getReadyReplicas().equals(status.getReplicas());
     }
 
-    /**
-     * Returns true if this resource is owned by the operator.
-     *
-     * @param resource to check
-     * @return true if we own this
-     */
+    @Override
     public boolean isWeOwnThis(HasMetadata resource) {
         OwnerReference us = getOurOwnerReference();
         for (OwnerReference them : resource.getMetadata().getOwnerReferences()) {
