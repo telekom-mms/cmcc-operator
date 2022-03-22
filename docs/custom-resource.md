@@ -1,28 +1,32 @@
 # Custom Resource CoreMediaContentClouds
 
+The Custom Resource `CoreMediaContentClouds` (`cmcc` for short) defines all aspects of a CoreMedia Content Cloud installation to be deployed. This document explains all properties and their use.
+
 ## Custom Resource Properties Status
 
 The `status` property of the custom resource has these fields:
 
-| Property         | Type   | Description                                                         |
-|------------------|--------|---------------------------------------------------------------------|
-| `milestone`      | enum   | Which milestone has been reached in configuring all components      |
-| `error`          | String | A one-line error message, or empty string                           |
-| `errorMessage`   | String | A longer error message (if any)                                     |
-| `ownedResources` | String | Used internally by the operator to keep track of created resources. |
+| Property         | Type   | Description                                                            |
+|------------------|--------|------------------------------------------------------------------------|
+| `milestone`      | enum   | Which milestone has been reached in configuring all components         |
+| `error`          | String | A one-line error message, or empty string                              |
+| `errorMessage`   | String | A longer error message (if any)                                        |
+| `job`            | String | The name of the job component currently executing, or an empty string. |
+| `ownedResources` | String | Used internally by the operator to keep track of created resources.    |
 
 The `milestone` status column shows the creation status of the installation:
 1. `Created`: The initial databases are being created (if requested by `with.databases`)
-2. `DatabasesReady`: The databases are running, all schema s have been created. The core management components are being started (CMS, MLS).
-3. `ContentserverReady`: The Content Management Server and the Master Live Server are running. The default passwords are being replaced based on secrets.
-4. `ManagementReady`: The core management components are running. All remaining component are being started, including the content import.
-5. `Ready`: The content import has completed, all components are up and running.
-6. `Never`: Special state that will never be reached, can be used on components to define them, but have the operator never create the resources for them.
+2. `DatabasesReady`: The databases are running, all schemas have been created. The core management components are being started (CMS, MLS).
+3. `ContentserverInitialized`: The Content Management Server and the Master Live Server have started for the first time. An initial job can be run to import users or do other basic housekeeping for a fresh instance. Once this milestone has completed all jobs, the CMS and the MLS will be restarted.
+4. `ContentserverReady`: The Content Management Server and the Master Live Server are running.
+5. `ManagementReady`: The core management components are running. All remaining component are being started, including the content import.
+6. `Ready`: The content import has completed, all components are up and running.
+7. `Never`: Special state that will never be reached, can be used on components to define them, but have the operator never create the resources for them. See below [Running Additional Jobs](#running-additional-jobs).
 
 
 ## Custom Resource Properties Specification
 
-The Custom Resource `CoreMediaContentClouds` (`cmcc` for short) `spec` field defines these properties to allow you to deploy a CoreMedia installation. Whenever possible, these properties have suitable defaults.
+The `spec` field defines these properties to allow you to deploy a CoreMedia installation. Whenever possible, these properties have suitable defaults.
 
 | Property                            | Type                 | Default                        | Description                                                                                                                                  |
 |-------------------------------------|----------------------|--------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|
@@ -41,6 +45,7 @@ The Custom Resource `CoreMediaContentClouds` (`cmcc` for short) `spec` field def
 | `defaults.previewHostname`          | String               | `preview`                      | Hostname of the preview CAE. Unless it is a fully-qualified domain name, the `namePrefix` and the `ingressDomain` will be pre- and appended. |
 | `defaults.resources`                | resources            | –                              | Default [resources to apply to component pods](https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/pod-v1/#resources)     |
 | `defaults.studioHostname`           | String               | `studio`                       | Hostname of the Studio. Unless it is a fully-qualified domain name, the `namePrefix` and the `ingressDomain` will be pre- and appended.      |
+| `job`                               | String               | ""                             | name of a component to run as a job, see below                                                                                               |
 | `licenseSecrets`                    | object               | –                              | Names of the secrets containing the license                                                                                                  |
 | `licenseSecrets.CMSLicense`         | String               | `license-cms`                  | Name of the secret containing a `license.zip` entry with the appropriate file contents                                                       |
 | `licenseSecrets.MLSLicense`         | String               | `license-mls`                  | Name of the secret containing a `license.zip` entry with the appropriate file contents                                                       |
@@ -127,6 +132,25 @@ Unless `with.databases` is enabled, you will need to provide secrets for all com
 
 Components receive secrets as environment variables. See the CoreMedia documentation (Deployment Manual) for the properties that the components take for database configuration. 
 
+### Overview of Secrets for Components
+
+This tables shows the component types and the client secrets they use.
+
+| Component type/kind    | `jdbc`        | `mongodb`   | `uapi`      | Description |
+|------------------------|---------------|-------------|-------------|-------------|
+| `content-server`/`cms` | `management`  |             | `publisher` | To the MLS  |
+| `content-server`/`mls` | `master`      |             |             |             |
+| `content-server`/`rls` | `replication` |             | `publisher` | To the MLS  |
+| `cae`/`live`           |               | `blueprint` | `webserver` |             |
+| `cae`/`preview`        |               | `blueprint` | `webserver` |             |
+| `cae-feeder`/`live`    |               | `blueprint` | `webserver` |             |
+| `cae-feeder`/`preview` |               | `blueprint` | `webserver` |             |
+| `content-feeder`       |               | `blueprint` | `feeder`    |             |
+| `elastic-worker`       |               | `blueprint` | `webserver` |             |
+| `studio-server`        | `studio`      | `blueprint` | `studio`    |             |
+| `user-changes`         |               | `blueprint` | `studio`    |             |
+| `workflow-server`      | `management`  | `blueprint` | `workflow`  |             |
+
 ### `clientSecretRef.jdbc`
 
 Depending on the component, different environment variables are set. All keys are used and must be specified for the database connection to work correctly.
@@ -167,7 +191,7 @@ The components only use the `urlKey` to configure the MongoDB client. You must p
 
 ### `clientSecretRef.uapi`
 
-Unless specified explictly here, the operator will create random passwords for the UAPI connection and will initialize both the Content Management Server and the Master Live Server with these secrets. This includes the `admin` user. If you would like to set a well-known admin password, create a secret:
+Unless specified explicitly here, the operator will create random passwords for the UAPI connection and will initialize both the Content Management Server and the Master Live Server with these secrets. This includes the `admin` user. If you would like to set a well-known admin password, create a secret:
 
 ```shell
 kubectl create secret generic coremedia-admin \
@@ -186,6 +210,59 @@ clientSecretRef:
       passwordKey: password
 ...
 ```
+
+## Running Additional Jobs
+
+You can add jobs to the components to be run. By default, there is one job type `management-tools` that runs the `global/management-tools` image to import content, themes, and users, and publish imported content. See [Running the Tools](https://documentation.coremedia.com/cmcc-11/artifacts/2201/webhelp/deployment-en/content/_running_the_tools.html) in the Deployment Manual for details.
+
+Jobs can take additional configuration options. See [Component `management-tools`](#component-management-tools) for the configuration of that job type.
+
+### Running a Job During Deployment
+To run a job during deployment, simply add it to the list of components, like so:
+
+```yaml
+  - name: import
+    type: management-tools
+    milestone: ManagementReady
+    args:
+      - use-remote-content-archive 
+      - import-themes
+      - import-content
+      - publish-content
+    extra:
+      config: |
+        contentUsersUrl: "http://gitlab.example.com/..."
+        themesUrl: "http://gitlab.example.com/..."
+```
+
+The `milestone` defines when to run this job.
+
+### Running a Job After Deployment
+
+If you'd like to run a job after the initial deployment has succeeded, and the milestone `Ready` has been reached, you can define the job template for the job using the milestone `Never` when adding it to the list of components.
+
+```yaml
+  - name: reimport
+    type: management-tools
+    milestone: Never
+    args:
+      - use-remote-content-archive 
+      - import-themes
+      - import-content
+      - publish-content
+    extra:
+      config: |
+        contentUsersUrl: "http://gitlab.example.com/..."
+        themesUrl: "http://gitlab.example.com/..."
+```
+
+To trigger running the job, set the `job` property to the name of the job you'd like to run. You can use `kubectl patch` to set this property.
+
+```shell
+kubectl patch cmcc example --type merge --patch "{\"spec\":{\"job\":\"reimport\"}}"
+```
+
+While the job is running, the milestone will be `RunJob`. Once the job completes, the milestone will return to `Ready`.
 
 ## Automatic Generation of Ingresses and Site Mappings `siteMappings`
 

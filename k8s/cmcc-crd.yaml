@@ -130,6 +130,7 @@ spec:
                       - ContentServerReady
                       - ManagementReady
                       - Ready
+                      - RunJob
                       - Never
                       - next
                       type: string
@@ -139,19 +140,29 @@ spec:
                 additionalProperties:
                   additionalProperties:
                     properties:
+                      secretName:
+                        description: resource name of the secret
+                        type: string
                       driverKey:
+                        description: entry in the secret for the driver class or name
                         type: string
                       hostnameKey:
+                        description: entry in the secret for hostname of the server
                         type: string
                       passwordKey:
+                        description: entry in the secret for the password to authenticate
+                          with
                         type: string
                       schemaKey:
-                        type: string
-                      secretName:
+                        description: "entry in the secret for the schema, database\
+                          \ or service to use"
                         type: string
                       urlKey:
+                        description: entry in the secret for the url to connect to
                         type: string
                       usernameKey:
+                        description: entry in the secret for the username to authenticate
+                          with
                         type: string
                     type: object
                   type: object
@@ -290,107 +301,9 @@ spec:
                     description: Create default components for the management stage
                     type: boolean
                 type: object
-              importJob:
-                description: Parameters for the content-users and frontend import
-                properties:
-                  blobServer:
-                    description: "URL of the blob-data.zip to be imported, used by\
-                      \ 'content-import'"
-                    type: boolean
-                  contentUsersAuth:
-                    description: Secret for authentication for the contentUsersUrl
-                    properties:
-                      secret:
-                        type: string
-                      username:
-                        type: string
-                      password:
-                        type: string
-                    type: object
-                  contentUsersThemesPvc:
-                    description: "Volume containing content-users.zip and frontend.zip,\
-                      \ used by 'unpack-content-users-frontend'"
-                    type: string
-                  contentUsersUrl:
-                    description: "URL of the content-users.zip to be imported, used\
-                      \ by 'use-remote-content-archive'"
-                    type: string
-                  env:
-                    description: Additional environment variables
-                    items:
-                      properties:
-                        name:
-                          type: string
-                        value:
-                          type: string
-                        valueFrom:
-                          properties:
-                            configMapKeyRef:
-                              properties:
-                                key:
-                                  type: string
-                                name:
-                                  type: string
-                                optional:
-                                  type: boolean
-                              type: object
-                            fieldRef:
-                              properties:
-                                apiVersion:
-                                  type: string
-                                fieldPath:
-                                  type: string
-                              type: object
-                            resourceFieldRef:
-                              properties:
-                                containerName:
-                                  type: string
-                                divisor:
-                                  anyOf:
-                                  - type: integer
-                                  - type: string
-                                  x-kubernetes-int-or-string: true
-                                resource:
-                                  type: string
-                              type: object
-                            secretKeyRef:
-                              properties:
-                                key:
-                                  type: string
-                                name:
-                                  type: string
-                                optional:
-                                  type: boolean
-                              type: object
-                          type: object
-                      type: object
-                    type: array
-                  forceContentImport:
-                    description: Force re-import of content and users
-                    type: boolean
-                  forceThemeImport:
-                    description: Force re-import of themes
-                    type: boolean
-                  tasks:
-                    description: List of tasks (entrypoint scripts) to be run by management-tools
-                    items:
-                      type: string
-                    type: array
-                  themesAuth:
-                    description: Secret for authentication for the frontendUrl
-                    properties:
-                      secret:
-                        type: string
-                      username:
-                        type: string
-                      password:
-                        type: string
-                    type: object
-                  themesUrl:
-                    description: "URL of the frontend.zip to be imported, used by\
-                      \ 'import-themes'"
-                    type: string
-                type: object
+              job:
+                description: Run this job component once from Ready
+                type: string
             type: object
           status:
             properties:
@@ -403,7 +316,11 @@ spec:
               flags:
                 additionalProperties:
                   type: string
+                description: Additional state flags
                 type: object
+              job:
+                description: Currently executing job
+                type: string
               milestone:
                 description: Which milestone has been reached in configuring all components
                 enum:
@@ -413,6 +330,7 @@ spec:
                 - ContentServerReady
                 - ManagementReady
                 - Ready
+                - RunJob
                 - Never
                 - next
                 type: string

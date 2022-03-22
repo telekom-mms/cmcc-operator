@@ -46,7 +46,8 @@ public class ComponentCollection {
         ComponentReference cr = new ComponentReference(componentSpec);
         Component c = components.get(cr);
         if (c == null) {
-            components.put(cr, createComponentByComponentSpec(componentSpec));
+            c = createComponentByComponentSpec(componentSpec);
+            components.put(cr, c);
         } else {
             c.updateComponentSpec(componentSpec);
         }
@@ -60,10 +61,6 @@ public class ComponentCollection {
      */
     public void addAll(Collection<ComponentSpec> specs) {
         specs.forEach(this::add);
-    }
-
-    public boolean containsName(String name) {
-        return components.values().stream().anyMatch(c -> c.getComponentSpec().getName().equals(name));
     }
 
     /**

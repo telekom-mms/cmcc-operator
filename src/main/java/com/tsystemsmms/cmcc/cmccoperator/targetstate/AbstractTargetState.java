@@ -15,15 +15,14 @@ import com.tsystemsmms.cmcc.cmccoperator.components.Component;
 import com.tsystemsmms.cmcc.cmccoperator.components.ComponentCollection;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ClientSecretRef;
 import com.tsystemsmms.cmcc.cmccoperator.crds.CoreMediaContentCloud;
+import com.tsystemsmms.cmcc.cmccoperator.crds.Milestone;
 import com.tsystemsmms.cmcc.cmccoperator.ingress.CmccIngressGeneratorFactory;
 import com.tsystemsmms.cmcc.cmccoperator.utils.RandomString;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
-import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetStatus;
 import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.BeanFactory;
@@ -39,7 +38,7 @@ import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.concatOptional;
 
 @Slf4j
 public abstract class AbstractTargetState implements TargetState {
-    public static int MAX_CONVERGENCE_LOOP = 5;
+    public static final int MAX_CONVERGENCE_LOOP = 5;
 
     private static final RandomString randomDatabasePassword = new RandomString(16);
 
@@ -144,7 +143,33 @@ public abstract class AbstractTargetState implements TargetState {
      *
      * @return true if converged
      */
-    public abstract boolean converge();
+    public boolean converge() {
+        Milestone previousMilestone = getCmcc().getStatus().getMilestone();
+
+        convergeDefaultComponents();
+        requestRequiredResources();
+        componentCollection.addAll(cmcc.getSpec().getComponents());
+        convergeOverrideResources();
+        advanceToNextMilestoneOnComponentsReady();
+
+        if (!getCmcc().getStatus().getMilestone().equals(previousMilestone)) {
+            onMilestoneReached();
+        }
+
+        return previousMilestone.equals(getCmcc().getStatus().getMilestone());
+    }
+
+    /**
+     * Called from the converge loop at the beginning, to create default components based on options.
+     */
+    public abstract void convergeDefaultComponents();
+
+    /**
+     * Called from the converge loop after the default and declared components have been added, and
+     * requestRequiredResources has been called. This can be used to create additional components that use generated
+     * secrets to create a database service with the appropriate accounts.
+     */
+    public abstract void convergeOverrideResources();
 
     /**
      * Based on the collection of components, build all resources.
@@ -384,14 +409,9 @@ public abstract class AbstractTargetState implements TargetState {
      * @param name name of the StatefulSet
      */
     public void restartStatefulSet(String name) {
-        RollableScalableResource<StatefulSet> sts = kubernetesClient.apps().statefulSets().
-                inNamespace(cmcc.getMetadata().getNamespace())
-                .withName(name);
-        if (sts == null) {
-            throw new IllegalArgumentException("No such StatefulSet " + name);
-        }
-        sts.edit(r -> new StatefulSetBuilder(r).editOrNewSpec().withReplicas(0).endSpec().build());
+        kubernetesClient.apps().statefulSets().
+                inNamespace(cmcc.getMetadata().getNamespace()).withName(name)
+                .rolling().restart();
     }
-
 
 }

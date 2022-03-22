@@ -13,16 +13,17 @@ package com.tsystemsmms.cmcc.cmccoperator.targetstate;
 import com.tsystemsmms.cmcc.cmccoperator.components.ComponentSpecBuilder;
 import com.tsystemsmms.cmcc.cmccoperator.components.generic.MongoDBComponent;
 import com.tsystemsmms.cmcc.cmccoperator.components.generic.MySQLComponent;
+import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
 import com.tsystemsmms.cmcc.cmccoperator.crds.CoreMediaContentCloud;
 import com.tsystemsmms.cmcc.cmccoperator.crds.Milestone;
 import com.tsystemsmms.cmcc.cmccoperator.ingress.CmccIngressGeneratorFactory;
+import com.tsystemsmms.cmcc.cmccoperator.utils.Utils;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.BeanFactory;
 
 import java.util.List;
-
-import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.concatOptional;
+import java.util.Optional;
 
 /**
  * Create the runtime config based on the CRD data.
@@ -34,9 +35,7 @@ public class DefaultTargetState extends AbstractTargetState {
     }
 
     @Override
-    public boolean converge() {
-        Milestone previousMilestone = getCmcc().getStatus().getMilestone();
-
+    public void convergeDefaultComponents() {
         if (cmcc.getSpec().getWith().getDatabases()) {
             componentCollection.addAll(List.of(
                     ComponentSpecBuilder.ofType("mongodb")
@@ -47,7 +46,6 @@ public class DefaultTargetState extends AbstractTargetState {
                             .build()
             ));
         }
-
 
         if (cmcc.getSpec().getWith().getManagement()) {
             componentCollection.addAll(List.of(
@@ -83,10 +81,10 @@ public class DefaultTargetState extends AbstractTargetState {
                     ComponentSpecBuilder.ofType("cae").withKind("live").build()
             ));
         }
+    }
 
-        // trigger components to request clientResourceRefs, so we can build the config maps for the database servers
-        requestRequiredResources();
-
+    @Override
+    public void convergeOverrideResources() {
         if (cmcc.getSpec().getWith().getDatabases()) {
             componentCollection.addAll(List.of(
                     ComponentSpecBuilder.ofType("mongodb")
@@ -100,26 +98,39 @@ public class DefaultTargetState extends AbstractTargetState {
             ));
         }
 
-        // allow explicitly declared components to override default ones
-        componentCollection.addAll(cmcc.getSpec().getComponents());
-
-        // move to the next milestone when everything is ready
-        advanceToNextMilestoneOnComponentsReady();
-
-        if (!getCmcc().getStatus().getMilestone().equals(previousMilestone)) {
-            onMilestoneReached();
+        if (cmcc.getStatus().getMilestone() == Milestone.Ready && !getCmcc().getSpec().getJob().isBlank()) {
+            log.info("[{}] starting job \"{}\"", getContextForLogging(), getCmcc().getSpec().getJob());
+            getCmcc().getStatus().setJob(getCmcc().getSpec().getJob());
+            getCmcc().getStatus().setMilestone(Milestone.RunJob);
+            getCmcc().getSpec().setJob("");
         }
 
-        return previousMilestone.equals(getCmcc().getStatus().getMilestone());
+        // add job after the custom jobs, so the modified job overrides the template in components
+        if (cmcc.getStatus().getMilestone() == Milestone.RunJob && !getCmcc().getStatus().getJob().isBlank()) {
+            Optional<ComponentSpec> toRun = cmcc.getSpec().getComponents().stream().filter(c -> c.getName().equals(getCmcc().getStatus().getJob())).findAny();
+            if (toRun.isEmpty()) {
+                getCmcc().getStatus().setJob("");
+                throw new CustomResourceConfigError("No such job \"" + getCmcc().getStatus().getJob() + "\"");
+            }
+            ComponentSpec job = Utils.deepClone(toRun.get(), ComponentSpec.class);
+            job.setMilestone(Milestone.RunJob);
+            componentCollection.add(job);
+        }
     }
 
     @Override
     public void onMilestoneReached() {
         super.onMilestoneReached();
-        if (cmcc.getStatus().getMilestone().equals(Milestone.ContentServerReady)) {
+
+        if (cmcc.getStatus().getMilestone() == Milestone.ContentServerReady) {
             log.info("[{}] Restarting CMS and MLS", getContextForLogging());
             restartStatefulSet(componentCollection.getServiceNameFor("content-server", "cms"));
             restartStatefulSet(componentCollection.getServiceNameFor("content-server", "mls"));
+            try {
+                Thread.sleep(5_000L);
+            } catch (InterruptedException e) {
+                //
+            }
         }
     }
 }

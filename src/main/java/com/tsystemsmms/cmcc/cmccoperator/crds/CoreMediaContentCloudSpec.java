@@ -38,6 +38,6 @@ public class CoreMediaContentCloudSpec {
     @JsonPropertyDescription("Optional special components and configurations")
     WithOptions with = new WithOptions();
 
-    @JsonPropertyDescription("Parameters for the content-users and frontend import")
-    ImportJob importJob;
+    @JsonPropertyDescription("Run this job component once from Ready")
+    String job = "";
 }

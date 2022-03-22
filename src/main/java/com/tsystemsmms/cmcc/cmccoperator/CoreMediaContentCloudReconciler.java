@@ -10,7 +10,6 @@
 
 package com.tsystemsmms.cmcc.cmccoperator;
 
-import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -55,11 +54,11 @@ public class CoreMediaContentCloudReconciler implements Reconciler<CoreMediaCont
 
     @Override
     public UpdateControl<CoreMediaContentCloud> reconcile(CoreMediaContentCloud cmcc, Context context) {
-        cmcc = Utils.deepClone(cmcc, CoreMediaContentCloud.class);
-        CoreMediaContentCloudStatus status = cmcc.getStatus();
+        CoreMediaContentCloud deepCopy = Utils.deepClone(cmcc, CoreMediaContentCloud.class);
+        CoreMediaContentCloudStatus status = deepCopy.getStatus();
 
         // create new desired state and its resources
-        TargetState targetState = targetStateFactory.buildTargetState(cmcc);
+        TargetState targetState = targetStateFactory.buildTargetState(deepCopy);
         List<HasMetadata> newResources = targetState.buildResources();
 
         // compute resources no longer desired
@@ -68,21 +67,26 @@ public class CoreMediaContentCloudReconciler implements Reconciler<CoreMediaCont
         abandonedResourceRefs.removeAll(ownedResourceRefs);
 
         log.debug("Updating dependent resource of cmcc {}: {} new/updated, {} abandoned resources, milestone {}",
-                cmcc.getMetadata().getName(), newResources.size(), abandonedResourceRefs.size(), status.getMilestone());
+                deepCopy.getMetadata().getName(), newResources.size(), abandonedResourceRefs.size(), status.getMilestone());
 
         // apply new and updated resources
         KubernetesList list = new KubernetesListBuilder().withItems(newResources).build();
-        resourceReconcilerManager.createPatchUpdate(cmcc.getMetadata().getNamespace(), list);
+        resourceReconcilerManager.createPatchUpdate(deepCopy.getMetadata().getNamespace(), list);
         // remove resources no longer in desired state
-        deleteResources(cmcc.getMetadata().getNamespace(), abandonedResourceRefs);
+        deleteResources(deepCopy.getMetadata().getNamespace(), abandonedResourceRefs);
 
         // save state
         status.setOwnedResourceRefs(ResourceRef.toJson(ownedResourceRefs));
         status.setError("");
         status.setErrorMessage("");
-        cmcc.setStatus(status);
-
-        return UpdateControl.updateStatus(cmcc);
+        if (!deepCopy.getStatus().getJob().isBlank()) {
+            cmcc.getSpec().setJob("");
+            cmcc.setStatus(status);
+            return UpdateControl.updateResourceAndStatus(cmcc);
+        } else {
+            deepCopy.setStatus(status);
+            return UpdateControl.updateStatus(deepCopy);
+        }
     }
 
     @Override
@@ -140,6 +144,10 @@ public class CoreMediaContentCloudReconciler implements Reconciler<CoreMediaCont
         String kind;
         String name;
 
+        /**
+         * Default constructor. Needed for Jackson.
+         */
+        @SuppressWarnings("unused")
         public ResourceRef() {}
 
         public ResourceRef(HasMetadata resource) {
@@ -150,7 +158,7 @@ public class CoreMediaContentCloudReconciler implements Reconciler<CoreMediaCont
 
         @SneakyThrows
         static Set<ResourceRef> fromJson(String json) {
-            return objectMapper.readValue(json, new TypeReference<Set<ResourceRef>>() {});
+            return objectMapper.readValue(json, new TypeReference<>() {});
         }
 
         @SneakyThrows

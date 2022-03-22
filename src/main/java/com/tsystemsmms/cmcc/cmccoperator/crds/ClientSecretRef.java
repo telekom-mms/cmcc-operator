@@ -10,8 +10,8 @@
 
 package com.tsystemsmms.cmcc.cmccoperator.crds;
 
+import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import io.fabric8.kubernetes.api.model.EnvVar;
-import lombok.Builder;
 import lombok.Data;
 
 import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.EnvVarSecret;
@@ -30,33 +30,37 @@ public class ClientSecretRef {
     public static final String DEFAULT_URL_KEY = "url";
     public static final String DEFAULT_USERNAME_KEY = "username";
 
-    String driverKey = DEFAULT_DRIVER_KEY;
-    String hostnameKey = DEFAULT_HOSTNAME_KEY;
-    String passwordKey = DEFAULT_PASSWORD_KEY;
-    String schemaKey = DEFAULT_SCHEMA_KEY;
+    @JsonPropertyDescription("resource name of the secret")
     String secretName;
-    String urlKey = DEFAULT_URL_KEY;
-    String usernameKey = DEFAULT_USERNAME_KEY;
+    @JsonPropertyDescription("entry in the secret for the driver class or name")
+    String driverKey;
+    @JsonPropertyDescription("entry in the secret for hostname of the server")
+    String hostnameKey;
+    @JsonPropertyDescription("entry in the secret for the password to authenticate with")
+    String passwordKey;
+    @JsonPropertyDescription("entry in the secret for the schema, database or service to use")
+    String schemaKey;
+    @JsonPropertyDescription("entry in the secret for the url to connect to")
+    String urlKey;
+    @JsonPropertyDescription("entry in the secret for the username to authenticate with")
+    String usernameKey;
 
-    public ClientSecretRef() {
-    }
-
-    public static ClientSecretRefBuilder builder() {
-        return new ClientSecretRefBuilder();
-    }
-
-    public ClientSecretRef(ClientSecretRef that) {
-        this.driverKey = that.driverKey;
-        this.hostnameKey = that.hostnameKey;
-        this.passwordKey = that.passwordKey;
-        this.schemaKey = that.schemaKey;
-        this.secretName = that.secretName;
-        this.urlKey = that.urlKey;
-        this.usernameKey = that.usernameKey;
-    }
-
+    /**
+     * Creates a ClientSecretRef with the keys all filled with their default values.
+     *
+     * @param secretName name of the referenced Secret
+     * @return reference
+     */
     public static ClientSecretRef defaultClientSecretRef(String secretName) {
-        return new ClientSecretRef(DEFAULT_DRIVER_KEY, DEFAULT_HOSTNAME_KEY, DEFAULT_PASSWORD_KEY, DEFAULT_SCHEMA_KEY, secretName, DEFAULT_URL_KEY, DEFAULT_USERNAME_KEY);
+        ClientSecretRef csr = new ClientSecretRef();
+        csr.secretName = secretName;
+        csr.driverKey = DEFAULT_DRIVER_KEY;
+        csr.hostnameKey = DEFAULT_HOSTNAME_KEY;
+        csr.passwordKey = DEFAULT_PASSWORD_KEY;
+        csr.schemaKey = DEFAULT_SCHEMA_KEY;
+        csr.urlKey = DEFAULT_URL_KEY;
+        csr.usernameKey = DEFAULT_USERNAME_KEY;
+        return csr;
     }
 
     /**
@@ -79,16 +83,5 @@ public class ClientSecretRef {
      */
     public EnvVar toEnvVar(String prefix, String name, String key) {
         return EnvVarSecret(concatOptionalWithJoiner("_", prefix, name), getSecretName(), key);
-    }
-
-    @Builder
-    private ClientSecretRef(String driverKey, String hostnameKey, String passwordKey, String schemaKey, String secretName, String urlKey, String usernameKey) {
-        this.driverKey = driverKey;
-        this.hostnameKey = hostnameKey;
-        this.passwordKey = passwordKey;
-        this.schemaKey = schemaKey;
-        this.secretName = secretName;
-        this.urlKey = urlKey;
-        this.usernameKey = usernameKey;
     }
 }

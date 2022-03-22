@@ -21,6 +21,7 @@ public enum Milestone {
     ContentServerReady,
     ManagementReady,
     Ready,
+    RunJob,
     Never;
 
     @JsonIgnore
@@ -28,12 +29,14 @@ public enum Milestone {
 
     static {
         Milestone[] values = Milestone.values();
-        // the next value; when we reach the second to last value, we stay there.
-        for (int i = 0; i < values.length - 2; i++) {
-            values[i].next = values[i + 1];
+        /*
+         * Every milestone advances to the following until we reach Ready. Ready advances to itself;
+         * Never to itself, and everything between Ready and Never advances to Ready.
+         */
+        for (int i = 0; i < values.length - 1; i++) {
+            values[i].next = values[i].compareTo(Ready) >= 0 ? Ready : values[i + 1];
         }
-        values[values.length - 2].next = values[values.length - 2];
-        values[values.length - 1].next = values[values.length - 1];
+        Never.next = Never;
     }
 
     public Milestone getNext() {

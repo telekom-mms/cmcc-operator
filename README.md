@@ -15,11 +15,13 @@ The operator:
 * deploys the CoreMedia Content Cloud components step by step. This ensures that components that require other components are only started when the dependencies have been initialized successfully.
 * imports test users and contents initially.
 * creates random passwords for all components and configures them to use them (MariaDB, MongoDB, and UAPI/Corba).
+* run additional jobs, for example to re-import content into a running installation.
 
 Planned features include:
-* Running additional jobs, for example to re-import content into a running installation.
 * Creating a scalable delivery stage automatically by simply providing the number of Replication Live Servers and minimum and maximum number of Content Application Engines.
 * Configure Solr clustering by specifying the number of replicas to create.
+* Use a ConfigMap instead of the Custom Resource, so the operator can be used in clusters where installation of cluster-wide resources (like the CRD) is not possible.
+* Support for Traefik ingress resource (in addition to the NGINX ingress).
 
 ## Quick Links
 

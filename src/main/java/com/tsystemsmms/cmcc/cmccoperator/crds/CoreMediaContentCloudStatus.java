@@ -30,7 +30,11 @@ public class CoreMediaContentCloudStatus extends ObservedGenerationAwareStatus {
     @JsonPropertyDescription("Error message if state is error")
     String errorMessage = "";
 
+    @JsonPropertyDescription("Additional state flags")
     HashMap<String, String> flags = new HashMap<>();
+
+    @JsonPropertyDescription("Currently executing job")
+    String job = "";
 
     @PrinterColumn
     @JsonPropertyDescription("Which milestone has been reached in configuring all components")
