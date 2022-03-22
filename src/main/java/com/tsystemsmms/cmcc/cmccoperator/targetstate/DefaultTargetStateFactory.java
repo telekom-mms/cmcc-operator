@@ -10,29 +10,32 @@
 
 package com.tsystemsmms.cmcc.cmccoperator.targetstate;
 
-import com.tsystemsmms.cmcc.cmccoperator.crds.CoreMediaContentCloud;
+import com.tsystemsmms.cmcc.cmccoperator.customresource.CustomResource;
 import com.tsystemsmms.cmcc.cmccoperator.ingress.CmccIngressGeneratorFactory;
+import com.tsystemsmms.cmcc.cmccoperator.resource.ResourceReconcilerManager;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import org.springframework.beans.factory.BeanFactory;
 
 /**
- * Create a DefaultTargetState based on a CoreMediaContentCloud custom resource.
+ * Create a DefaultTargetState based on a CustomResource custom resource.
  */
 public class DefaultTargetStateFactory implements TargetStateFactory {
     private final BeanFactory beanFactory;
     private final KubernetesClient kubernetesClient;
     private final CmccIngressGeneratorFactory cmccIngressGeneratorFactory;
     private final ResourceNamingProviderFactory resourceNamingProviderFactory;
+    private final ResourceReconcilerManager resourceReconcilerManager;
 
-    public DefaultTargetStateFactory(BeanFactory beanFactory, KubernetesClient kubernetesClient, CmccIngressGeneratorFactory cmccIngressGeneratorFactory, ResourceNamingProviderFactory resourceNamingProviderFactory) {
+    public DefaultTargetStateFactory(BeanFactory beanFactory, KubernetesClient kubernetesClient, CmccIngressGeneratorFactory cmccIngressGeneratorFactory, ResourceNamingProviderFactory resourceNamingProviderFactory, ResourceReconcilerManager resourceReconcilerManager) {
         this.beanFactory = beanFactory;
         this.kubernetesClient = kubernetesClient;
         this.cmccIngressGeneratorFactory = cmccIngressGeneratorFactory;
         this.resourceNamingProviderFactory = resourceNamingProviderFactory;
+        this.resourceReconcilerManager = resourceReconcilerManager;
     }
 
     @Override
-    public TargetState buildTargetState(CoreMediaContentCloud cmcc) {
-        return new DefaultTargetState(beanFactory, kubernetesClient, cmccIngressGeneratorFactory, resourceNamingProviderFactory, cmcc);
+    public TargetState buildTargetState(CustomResource cmcc) {
+        return new DefaultTargetState(beanFactory, kubernetesClient, cmccIngressGeneratorFactory, resourceNamingProviderFactory, resourceReconcilerManager, cmcc);
     }
 }

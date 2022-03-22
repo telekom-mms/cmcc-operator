@@ -10,14 +10,16 @@
 
 package com.tsystemsmms.cmcc.cmccoperator.targetstate;
 
+import com.tsystemsmms.cmcc.cmccoperator.customresource.CustomResource;
 import com.tsystemsmms.cmcc.cmccoperator.CoreMediaContentCloudReconciler;
 import com.tsystemsmms.cmcc.cmccoperator.components.Component;
 import com.tsystemsmms.cmcc.cmccoperator.components.ComponentCollection;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ClientSecretRef;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentDefaults;
-import com.tsystemsmms.cmcc.cmccoperator.crds.CoreMediaContentCloud;
 import com.tsystemsmms.cmcc.cmccoperator.ingress.CmccIngressGeneratorFactory;
+import com.tsystemsmms.cmcc.cmccoperator.resource.ResourceReconcilerManager;
 import io.fabric8.kubernetes.api.model.*;
+import io.fabric8.kubernetes.client.KubernetesClient;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -114,11 +116,11 @@ public interface TargetState {
     Map<String, ClientSecret> getClientSecrets(String kind);
 
     /**
-     * Return the CoreMediaContentCloud custom resource this target state is working on.
+     * Return the CustomResource custom resource this target state is working on.
      *
      * @return cmcc
      */
-    CoreMediaContentCloud getCmcc();
+    CustomResource getCmcc();
 
     /**
      * Return the factory used for ingress generation.
@@ -150,6 +152,13 @@ public interface TargetState {
     }
 
     /**
+     * Returns the kubernetes client.
+     *
+     * @return client
+     */
+    KubernetesClient getKubernetesClient();
+
+    /**
      * Owner references to be added to created resources.
      *
      * @return the owner reference
@@ -164,6 +173,13 @@ public interface TargetState {
     default String getPreviewHostname() {
         return getHostname(getCmcc().getSpec().getDefaults().getPreviewHostname());
     }
+
+    /**
+     * Returns the manager.
+     *
+     * @return the manager
+     */
+    ResourceReconcilerManager getResourceReconcilerManager();
 
     /**
      * Construct the Kubernetes metadata for the given name.
@@ -319,4 +335,9 @@ public interface TargetState {
      * @return true if we own this
      */
     boolean isWeOwnThis(HasMetadata resource);
+
+    /**
+     * Reconcile the current cluster state with the target state.
+     */
+    void reconcile();
 }

@@ -10,13 +10,14 @@
 
 package com.tsystemsmms.cmcc.cmccoperator.targetstate;
 
+import com.tsystemsmms.cmcc.cmccoperator.customresource.CustomResource;
 import com.tsystemsmms.cmcc.cmccoperator.components.ComponentSpecBuilder;
 import com.tsystemsmms.cmcc.cmccoperator.components.generic.MongoDBComponent;
 import com.tsystemsmms.cmcc.cmccoperator.components.generic.MySQLComponent;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
-import com.tsystemsmms.cmcc.cmccoperator.crds.CoreMediaContentCloud;
 import com.tsystemsmms.cmcc.cmccoperator.crds.Milestone;
 import com.tsystemsmms.cmcc.cmccoperator.ingress.CmccIngressGeneratorFactory;
+import com.tsystemsmms.cmcc.cmccoperator.resource.ResourceReconcilerManager;
 import com.tsystemsmms.cmcc.cmccoperator.utils.Utils;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import lombok.extern.slf4j.Slf4j;
@@ -30,8 +31,13 @@ import java.util.Optional;
  */
 @Slf4j
 public class DefaultTargetState extends AbstractTargetState {
-    public DefaultTargetState(BeanFactory beanFactory, KubernetesClient kubernetesClient, CmccIngressGeneratorFactory cmccIngressGeneratorFactory, ResourceNamingProviderFactory resourceNamingProviderFactory, CoreMediaContentCloud cmcc) {
-        super(beanFactory, kubernetesClient, cmccIngressGeneratorFactory, resourceNamingProviderFactory, cmcc);
+    public DefaultTargetState(BeanFactory beanFactory,
+                              KubernetesClient kubernetesClient,
+                              CmccIngressGeneratorFactory cmccIngressGeneratorFactory,
+                              ResourceNamingProviderFactory resourceNamingProviderFactory,
+                              ResourceReconcilerManager resourceReconcilerManager,
+                              CustomResource cmcc) {
+        super(beanFactory, kubernetesClient, cmccIngressGeneratorFactory, resourceNamingProviderFactory, resourceReconcilerManager, cmcc);
     }
 
     @Override

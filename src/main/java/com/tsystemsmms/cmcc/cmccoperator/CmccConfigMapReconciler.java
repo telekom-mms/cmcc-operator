@@ -14,11 +14,9 @@ import com.tsystemsmms.cmcc.cmccoperator.components.job.MgmtToolsJobComponent;
 import com.tsystemsmms.cmcc.cmccoperator.crds.CoreMediaContentCloud;
 import com.tsystemsmms.cmcc.cmccoperator.crds.CoreMediaContentCloudStatus;
 import com.tsystemsmms.cmcc.cmccoperator.customresource.ConfigMapCustomResource;
-import com.tsystemsmms.cmcc.cmccoperator.customresource.CrdCustomResource;
-import com.tsystemsmms.cmcc.cmccoperator.customresource.CustomResource;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetStateFactory;
-import com.tsystemsmms.cmcc.cmccoperator.utils.Utils;
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
@@ -27,60 +25,58 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
-@ControllerConfiguration
-@Slf4j
-public class CoreMediaContentCloudReconciler implements Reconciler<CoreMediaContentCloud>, ErrorStatusHandler<CoreMediaContentCloud>, EventSourceInitializer<CoreMediaContentCloud> {
+import static com.tsystemsmms.cmcc.cmccoperator.CoreMediaContentCloudReconciler.OPERATOR_SELECTOR_LABELS;
 
-    public static final Map<String, String> OPERATOR_SELECTOR_LABELS = Map.of("cmcc.tsystemsmms.com/operator", "cmcc");
+@ControllerConfiguration(labelSelector = CmccConfigMapReconciler.SELECTOR_LABEL)
+@Slf4j
+public class CmccConfigMapReconciler implements Reconciler<ConfigMap>, ErrorStatusHandler<ConfigMap>, EventSourceInitializer<ConfigMap> {
+    public static final String SELECTOR_LABEL = "cmcc.tsystemsmms.com.customresource=cmcc";
 
     private final KubernetesClient kubernetesClient;
     private final TargetStateFactory targetStateFactory;
 
-    public CoreMediaContentCloudReconciler(KubernetesClient kubernetesClient, TargetStateFactory targetStateFactory) {
+    public CmccConfigMapReconciler(KubernetesClient kubernetesClient, TargetStateFactory targetStateFactory) {
         this.kubernetesClient = kubernetesClient;
         this.targetStateFactory = targetStateFactory;
-        log.info("Using custom resource {} for configuration", CoreMediaContentCloud.class.getSimpleName());
+        log.info("Using ConfigMap with label {} for configuration", SELECTOR_LABEL);
     }
 
     @Override
-    public UpdateControl<CoreMediaContentCloud> reconcile(CoreMediaContentCloud cmcc, Context context) {
-        CustomResource deepCopy = new CrdCustomResource(Utils.deepClone(cmcc, CoreMediaContentCloud.class));
-        CoreMediaContentCloudStatus status = deepCopy.getStatus();
+    public UpdateControl<ConfigMap> reconcile(ConfigMap cm, Context context) {
+        ConfigMapCustomResource cmcc = new ConfigMapCustomResource(cm);
+        CoreMediaContentCloudStatus status = cmcc.getStatus();
 
-        TargetState targetState = targetStateFactory.buildTargetState(deepCopy);
+        TargetState targetState = targetStateFactory.buildTargetState(cmcc);
         targetState.reconcile();
 
         status.setError("");
         status.setErrorMessage("");
-        if (!deepCopy.getStatus().getJob().isBlank()) {
+        if (!cmcc.getStatus().getJob().isBlank()) {
             cmcc.getSpec().setJob("");
-            cmcc.setStatus(status);
-            return UpdateControl.updateResourceAndStatus(cmcc);
-        } else {
-            cmcc.setStatus(status);
-            return UpdateControl.updateStatus(cmcc);
         }
+        cmcc.setStatus(status);
+        cmcc.updateResource();
+        return UpdateControl.updateResource(cm);
     }
 
     @Override
-    public DeleteControl cleanup(CoreMediaContentCloud cmcc, Context context) {
+    public DeleteControl cleanup(ConfigMap cm, Context context) {
         return DeleteControl.defaultDelete();
     }
 
     @Override
-    public Optional<CoreMediaContentCloud> updateErrorStatus(CoreMediaContentCloud resource, RetryInfo retryInfo,
+    public Optional<ConfigMap> updateErrorStatus(ConfigMap cm, RetryInfo retryInfo,
                                                              RuntimeException e) {
-        CoreMediaContentCloudStatus status = resource.getStatus();
+        CoreMediaContentCloudStatus status = new ConfigMapCustomResource(cm).getStatus();
         status.setErrorMessage(e.getMessage());
         status.setError("error");
-        return Optional.of(resource);
+        return Optional.of(cm);
     }
 
     @Override
-    public List<EventSource> prepareEventSources(EventSourceContext<CoreMediaContentCloud> context) {
+    public List<EventSource> prepareEventSources(EventSourceContext<ConfigMap> context) {
         return List.of(new InformerEventSource<>(kubernetesClient.batch().v1().jobs().inAnyNamespace().withLabels(MgmtToolsJobComponent.getJobLabels()).runnableInformer(1200), Mappers.fromOwnerReference()),
                 new InformerEventSource<>(kubernetesClient.apps().statefulSets().inAnyNamespace().withLabels(OPERATOR_SELECTOR_LABELS).runnableInformer(1200), Mappers.fromOwnerReference()));
     }

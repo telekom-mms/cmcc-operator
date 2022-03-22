@@ -10,7 +10,9 @@
 
 package com.tsystemsmms.cmcc.cmccoperator.components;
 
+import com.tsystemsmms.cmcc.cmccoperator.customresource.ConfigMapCustomResource;
 import com.tsystemsmms.cmcc.cmccoperator.crds.*;
+import com.tsystemsmms.cmcc.cmccoperator.customresource.CustomResource;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 import com.tsystemsmms.cmcc.cmccoperator.utils.EnvVarSet;
 import io.fabric8.kubernetes.api.model.*;
@@ -47,7 +49,7 @@ public abstract class AbstractComponent implements Component {
         this.kubernetesClient = kubernetesClient;
         this.targetState = targetState;
         this.namespace = getCmcc().getMetadata().getNamespace();
-        this.componentSpec = componentSpec;
+        this.componentSpec = new ComponentSpec(componentSpec);
         this.specName = componentSpec.getName() != null && !componentSpec.getName().isEmpty() ? componentSpec.getName() : componentSpec.getType();
         this.imageRepository = imageRepository;
     }
@@ -62,12 +64,8 @@ public abstract class AbstractComponent implements Component {
         if (!ComponentCollection.equalsSpec(getComponentSpec(), newCs)) {
             throw new IllegalArgumentException("Internal error: cannot update existing component because type/kind/name do not match");
         }
-        ComponentSpec cs = getComponentSpec();
-        cs.setArgs(newCs.getArgs());
-        cs.getEnv().addAll(newCs.getEnv());
-        cs.getExtra().putAll(newCs.getExtra());
-        cs.getImage().update(newCs.getImage());
-        cs.setMilestone(newCs.getMilestone());
+        componentSpec.update(newCs);
+
         return this;
     }
 
@@ -76,7 +74,7 @@ public abstract class AbstractComponent implements Component {
      *
      * @return the custom resource
      */
-    public CoreMediaContentCloud getCmcc() {
+    public CustomResource getCmcc() {
         return targetState.getCmcc();
     }
 

@@ -6,6 +6,17 @@
     <option name="VM_PARAMETERS" value="-Dkubernetes.trust.certificates=true" />
     <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
     <option name="ALTERNATIVE_JRE_PATH" value="11" />
+    <additionalParameters>
+      <param>
+        <option name="enabled" value="true" />
+        <option name="name" value="cmcc.useConfigMap" />
+        <option name="value" value="true" />
+      </param>
+      <param>
+        <option name="name" value="cmcc.useCrd" />
+        <option name="value" value="false" />
+      </param>
+    </additionalParameters>
     <method v="2">
       <option name="Make" enabled="true" />
     </method>

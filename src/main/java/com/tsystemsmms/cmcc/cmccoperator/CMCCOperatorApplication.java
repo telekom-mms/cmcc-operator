@@ -20,19 +20,29 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 
 @SpringBootApplication
 public class CMCCOperatorApplication {
 
     @Bean
+    @ConditionalOnProperty(value="cmcc.useCrd", havingValue = "true", matchIfMissing = true)
     public CoreMediaContentCloudReconciler coreMediaContentCloudReconciler(
             KubernetesClient kubernetesClient,
-            ResourceReconcilerManager resourceReconcilerManager,
             TargetStateFactory targetStateFactory) {
         return new CoreMediaContentCloudReconciler(
                 kubernetesClient,
-                resourceReconcilerManager,
+                targetStateFactory);
+    }
+
+    @Bean
+    @ConditionalOnProperty(value="cmcc.useConfigMap", havingValue = "true", matchIfMissing = false)
+    public CmccConfigMapReconciler cmccConfigMapReconciler(
+            KubernetesClient kubernetesClient,
+            TargetStateFactory targetStateFactory) {
+        return new CmccConfigMapReconciler(
+                kubernetesClient,
                 targetStateFactory);
     }
 
@@ -60,11 +70,13 @@ public class CMCCOperatorApplication {
     public TargetStateFactory targetStateFactory(BeanFactory beanFactory,
                                                  KubernetesClient kubernetesClient,
                                                  CmccIngressGeneratorFactory cmccIngressGeneratorFactory,
-                                                 ResourceNamingProviderFactory resourceNamingProviderFactory) {
+                                                 ResourceNamingProviderFactory resourceNamingProviderFactory,
+                                                 ResourceReconcilerManager resourceReconcilerManager) {
         return new DefaultTargetStateFactory(beanFactory,
                 kubernetesClient,
                 cmccIngressGeneratorFactory,
-                resourceNamingProviderFactory);
+                resourceNamingProviderFactory,
+                resourceReconcilerManager);
     }
 
     public static void main(String[] args) {

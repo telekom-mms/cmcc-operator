@@ -10,7 +10,7 @@
 
 package com.tsystemsmms.cmcc.cmccoperator.targetstate;
 
-import com.tsystemsmms.cmcc.cmccoperator.crds.CoreMediaContentCloud;
+import com.tsystemsmms.cmcc.cmccoperator.customresource.CustomResource;
 
 /**
  * Spring Bean that generates a target state object suitable for use in a reconciler.
@@ -22,5 +22,5 @@ public interface TargetStateFactory {
      * @param cmcc custom resource
      * @return target state
      */
-    TargetState buildTargetState(CoreMediaContentCloud cmcc);
+    TargetState buildTargetState(CustomResource cmcc);
 }

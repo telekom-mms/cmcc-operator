@@ -21,6 +21,16 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @ShortNames({"cmcc", "coremedia"})
 public class CoreMediaContentCloud extends CustomResource<CoreMediaContentCloudSpec, CoreMediaContentCloudStatus> implements Namespaced {
 
+    public CoreMediaContentCloud() {
+        super();
+    }
+
+    public CoreMediaContentCloud(CoreMediaContentCloudSpec spec, CoreMediaContentCloudStatus status) {
+        super();
+        this.spec = spec;
+        this.status = status;
+    }
+
     @Override
     protected CoreMediaContentCloudStatus initStatus() {
         return new CoreMediaContentCloudStatus();

@@ -228,8 +228,7 @@ public class EnvVarSet implements Set<EnvVar> {
      * @param key variable name
      * @return variable
      */
-    public Optional<EnvVar> get(String key) {
-        return Optional.ofNullable(envVars.get(key));
+    public Optional<EnvVar> get(String key) {return Optional.ofNullable(envVars.get(key));
     }
 
     public static EnvVarSet of() {

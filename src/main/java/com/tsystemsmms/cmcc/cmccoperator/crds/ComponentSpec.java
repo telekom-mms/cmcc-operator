@@ -45,6 +45,17 @@ public class ComponentSpec {
     @JsonPropertyDescription("Make available with this milestone")
     private Milestone milestone = Milestone.ManagementReady;
 
+    public ComponentSpec() {
+
+    }
+
+    public ComponentSpec(ComponentSpec that) {
+        this.type = that.type;
+        this.kind = that.kind;
+        this.name = that.name;
+        this.update(that);
+    }
+
     public void update(ComponentSpec that) {
         this.setArgs(that.getArgs());
         this.getEnv().addAll(that.getEnv());

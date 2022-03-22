@@ -12,6 +12,7 @@ The operator:
 * manages the creation and updating of all the Kubernetes resources required to run CoreMedia Content Cloud. Care has been taken to have sensible defaults for all parameters wherever possible.
 * can create a fresh installation from scratch, creating MariaDB and MongoDB database servers, and initialize the necessary database schemas and secrets.
 * can deploy against existing databases, using pre-existing secrets provided.
+* can use a custom resource definition or a config map to supply the values.
 * deploys the CoreMedia Content Cloud components step by step. This ensures that components that require other components are only started when the dependencies have been initialized successfully.
 * imports test users and contents initially.
 * creates random passwords for all components and configures them to use them (MariaDB, MongoDB, and UAPI/Corba).
@@ -20,7 +21,6 @@ The operator:
 Planned features include:
 * Creating a scalable delivery stage automatically by simply providing the number of Replication Live Servers and minimum and maximum number of Content Application Engines.
 * Configure Solr clustering by specifying the number of replicas to create.
-* Use a ConfigMap instead of the Custom Resource, so the operator can be used in clusters where installation of cluster-wide resources (like the CRD) is not possible.
 * Support for Traefik ingress resource (in addition to the NGINX ingress).
 * Admission webhook that verifies consistency of the custom resource, and can migrate between CRD versions.
 
@@ -75,7 +75,7 @@ If you're using Docker Desktop on macOS or Windows, you can have **exactly one s
 
 If you're using [k3d](https://k3d.io/) as a cluster, your Docker install will need to [expose the ingress controller](https://k3d.io/v5.0.0/usage/exposing_services/).
 
-### Installing the Operator
+### Installing the Operator With a Custom Resource Definition
 
 You need to add the [Custom Resource Definition](k8s/cmcc-crd.yaml) `CoreMediaContentClouds` (or `cmcc` for short) to the cluster, and create a number of object for the operator: a ClusterRole, a ClusterRoleMapping, a ServiceAccount, and a Deployment for the operator. An example can be found in [`k8s/cmcc-operator.yaml`](k8s/cmcc-operator.yaml).
 
@@ -91,6 +91,11 @@ or for the impatient:
 kubectl apply -f https://raw.githubusercontent.com/T-Systems-MMS/cmcc-operator/main/k8s/cmcc-crd.yaml -f https://raw.githubusercontent.com/T-Systems-MMS/cmcc-operator/main/k8s/cmcc-operator.yaml
 ```
 
+### Installing the Operator Using a Config Map
+
+If installing the custom resource definition is not an option for you, you can install the operator and have it act on ConfigMaps. The operator can work on ConfigMaps in any namespace (if the role allows it), or can be limited to a single namespace.
+
+When installing the Operator, you need to set the Spring Boot property `cmcc.useConfigMap` to `true`, and `cmcc.useCrd` to `false`. You can accomplish this by setting the environment variables `CMCC_USECONFIGMAP` and `CMCC_USECRD` on the deployment for the operator.
 
 ## Using the Operator
 
@@ -108,7 +113,7 @@ kubectl create secret generic license-cms --from-file=license.zip=license/cms-li
 
 The license secrets need to be created in the same namespace you plan to install CoreMedia in. See `licenseSecrets`, below.
 
-### Creating a CoreMedia Installation
+### Creating a CoreMedia Installation – Custom Resource
 
 You can create a complete CoreMedia installation by creating the custom resource `CoreMediaContentClouds` with the desired properties. An example can be found in [`k8s/example.yaml`](k8s/example.yaml), and can be created in the cluster like this:
 
@@ -125,6 +130,13 @@ NAME     MILESTONE
 obiwan   Created
 ```
 See below for the different milestones and their meaning.
+
+### Creating a CoreMedia Installation – ConfigMap
+
+If you have enabled using a ConfigMap instead (or in addition to) the custom resource, you need to create a ConfigMap that maps the custom resource properties `spec` and `status` to `data` entries, and has a label `"cmcc.tsystemsmms.com.customresource": "cmcc"`. See the [`example-config.yaml`](k8s/example-configmap.yaml).
+
+The status display is slightly more complicated, you will need a custom client or script to extract the milestone from the ConfigMap `status` entry, and patching the `job` entry likewise requires editing the entire `spec` entry of the ConfigMap. However, the operation is otherwise the same as with the custom resource.
+
 
 ### Deleting the CoreMedia Installation
 

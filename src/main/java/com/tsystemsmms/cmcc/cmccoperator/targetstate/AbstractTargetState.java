@@ -10,12 +10,13 @@
 
 package com.tsystemsmms.cmcc.cmccoperator.targetstate;
 
+import com.tsystemsmms.cmcc.cmccoperator.customresource.CustomResource;
 import com.tsystemsmms.cmcc.cmccoperator.components.Component;
 import com.tsystemsmms.cmcc.cmccoperator.components.ComponentCollection;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ClientSecretRef;
-import com.tsystemsmms.cmcc.cmccoperator.crds.CoreMediaContentCloud;
 import com.tsystemsmms.cmcc.cmccoperator.crds.Milestone;
 import com.tsystemsmms.cmcc.cmccoperator.ingress.CmccIngressGeneratorFactory;
+import com.tsystemsmms.cmcc.cmccoperator.resource.ResourceReconcilerManager;
 import com.tsystemsmms.cmcc.cmccoperator.utils.RandomString;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
@@ -33,6 +34,8 @@ import java.util.stream.Collectors;
 
 import static com.tsystemsmms.cmcc.cmccoperator.components.HasUapiClient.UAPI_ADMIN_USERNAME;
 import static com.tsystemsmms.cmcc.cmccoperator.components.HasUapiClient.UAPI_CLIENT_SECRET_REF_KIND;
+import static com.tsystemsmms.cmcc.cmccoperator.utils.KubernetesUtils.getAllResourcesMatchingLabels;
+import static com.tsystemsmms.cmcc.cmccoperator.utils.KubernetesUtils.isMetadataContains;
 import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.concatOptional;
 
 @Slf4j
@@ -46,20 +49,28 @@ public abstract class AbstractTargetState implements TargetState {
     @Getter
     final CmccIngressGeneratorFactory cmccIngressGeneratorFactory;
     @Getter
-    final CoreMediaContentCloud cmcc;
+    final CustomResource cmcc;
     @Getter
     final ComponentCollection componentCollection;
     @Getter
     final ResourceNamingProvider resourceNamingProvider;
+    @Getter
+    final ResourceReconcilerManager resourceReconcilerManager;
 
     final Map<String, Map<String, ClientSecret>> clientSecrets = new HashMap<>();
 
-    public AbstractTargetState(BeanFactory beanFactory, KubernetesClient kubernetesClient, CmccIngressGeneratorFactory cmccIngressGeneratorFactory, ResourceNamingProviderFactory resourceNamingProviderFactory, CoreMediaContentCloud cmcc) {
+    public AbstractTargetState(BeanFactory beanFactory,
+                               KubernetesClient kubernetesClient,
+                               CmccIngressGeneratorFactory cmccIngressGeneratorFactory,
+                               ResourceNamingProviderFactory resourceNamingProviderFactory,
+                               ResourceReconcilerManager resourceReconcilerManager,
+                               CustomResource cmcc) {
         this.kubernetesClient = kubernetesClient;
         this.cmccIngressGeneratorFactory = cmccIngressGeneratorFactory;
         this.cmcc = cmcc;
         componentCollection = new ComponentCollection(beanFactory, kubernetesClient, this);
         this.resourceNamingProvider = resourceNamingProviderFactory.instance(this);
+        this.resourceReconcilerManager = resourceReconcilerManager;
     }
 
     /**
@@ -89,6 +100,26 @@ public abstract class AbstractTargetState implements TargetState {
                     active,
                     String.join(", ", stillWaiting));
         }
+    }
+
+    @Override
+    public void reconcile() {
+        List<HasMetadata> builtResources = buildResources();
+
+        Set<HasMetadata> existingResources = getAllResourcesMatchingLabels(getKubernetesClient(), getCmcc().getMetadata().getNamespace(), getSelectorLabels())
+                .stream().filter(this::isWeOwnThis).collect(Collectors.toSet());
+        Set<HasMetadata> newResources = builtResources.stream().filter(r -> !isMetadataContains(existingResources, r)).collect(Collectors.toSet());
+        Set<HasMetadata> changedResources = builtResources.stream().filter(r -> isMetadataContains(existingResources, r)).collect(Collectors.toSet());
+        Set<HasMetadata> abandonedResources = existingResources.stream().filter(r -> !isMetadataContains(builtResources, r)).collect(Collectors.toSet());
+
+        log.debug("[{}] Updating dependent resources: {} new, {} updated, {} abandoned resources",
+                getContextForLogging(),
+                newResources.size(), changedResources.size(), abandonedResources.size());
+
+        abandonedResources.forEach(r -> getKubernetesClient().resource(r).withPropagationPolicy(DeletionPropagation.BACKGROUND).delete());
+
+        KubernetesList list = new KubernetesListBuilder().withItems(builtResources).build();
+        getResourceReconcilerManager().createPatchUpdate(getCmcc().getMetadata().getNamespace(), list);
     }
 
     @Override
