@@ -113,7 +113,7 @@ public class ContentServerComponent extends CorbaComponent implements HasJdbcCli
             case KIND_MLS:
                 break;
             case KIND_RLS:
-                env.addAll(getUapiClientEnvVars("REPLICATOR"));
+                env.addAll(getUapiClientEnvVars("REPLICATOR_PUBLICATION"));
                 break;
         }
 
@@ -141,11 +141,15 @@ public class ContentServerComponent extends CorbaComponent implements HasJdbcCli
                 "cap.server.cache.resource-cache-size", "5000"
                 ));
         if (getComponentSpec().getKind().equals(KIND_CMS)) {
-            properties.put("publisher.target[0].iorUrl", getTargetState().getServiceUrlFor("content-server", "mls"));
+            properties.put("publisher.target[0].iorUrl", "x" + getTargetState().getServiceUrlFor("content-server", "mls"));
+            properties.put("publisher.target[0].name", "mls");
+            properties.put("publisher.target[0].ior-url", "y" + getTargetState().getServiceUrlFor("content-server", "mls"));
         }
         if (getComponentSpec().getKind().equals(KIND_RLS)) {
             properties.put("replicator.publication-ior-url", getTargetState().getServiceUrlFor("content-server", "mls"));
         }
+
+        properties.put("debug", "true");
 
         return properties;
     }

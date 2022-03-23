@@ -70,7 +70,7 @@ public abstract class AbstractCmccIngressGenerator implements CmccIngressGenerat
         ingresses.addAll(ingressBuilderFactory.builder(targetState, previewName("blueprint"), fqdn)
                 .pathPrefix("/blueprint", serviceName).build());
         ingresses.addAll(ingressBuilderFactory.builder(targetState, previewName("all"), fqdn)
-                .pathPattern("/(.*)$", serviceName).rewrite("/blueprint/servlet/$1").build());
+                .pathPattern("/(.*)", serviceName).rewrite("/blueprint/servlet/$1").build());
         return ingresses;
     }
 

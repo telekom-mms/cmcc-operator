@@ -32,6 +32,8 @@ spec:
           image: ghcr.io/t-systems-mms/cmcc-operator/cmcc-operator:latest
           imagePullPolicy: Always
           env:
+            - name: CMCC_INGRESSBUILDER
+              value: "blueprint"
             - name: CMCC_USECONFIGMAP
               value: "false"
             - name: CMCC_USECRD

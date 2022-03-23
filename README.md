@@ -97,6 +97,15 @@ If installing the custom resource definition is not an option for you, you can i
 
 When installing the Operator, you need to set the Spring Boot property `cmcc.useConfigMap` to `true`, and `cmcc.useCrd` to `false`. You can accomplish this by setting the environment variables `CMCC_USECONFIGMAP` and `CMCC_USECRD` on the deployment for the operator.
 
+## Configuring the Operator
+
+The operator has a number of configuration parameters that can be set using the [usual Spring Boot ways](https://docs.spring.io/spring-boot/docs/1.5.22.RELEASE/reference/html/boot-features-external-config.html): as an application.properties or application.yaml file, or using environment variables. The following properties can be configured:
+
+| Property              | Environment           | Default     | Description                                                                                                                           |
+|-----------------------|-----------------------|-------------|---------------------------------------------------------------------------------------------------------------------------------------|
+| `cmcc.ingressbuilder` | `CMCC_INGRESSBUILDER` | `blueprint` | The ingress builder to use. See [site mappings](docs/custom-resource#automatic-eneration-of-ingresses-and-site-mappings-sitemappings) | 
+| `cmcc.useConfigMap`   | `CMCC_USECONFIGMAP`   | `false`     | Use the ConfigMap reconciler (see [Installing the Operator Using a Config Map](#installing-the-operator-using-a-config-map))          | 
+| `cmcc.useCrd`         | `CMCC_USECRD`         | `true`      | Use the Custom Resource reconciler                                                                                                    | 
 ## Using the Operator
 
 ### Pull Secret

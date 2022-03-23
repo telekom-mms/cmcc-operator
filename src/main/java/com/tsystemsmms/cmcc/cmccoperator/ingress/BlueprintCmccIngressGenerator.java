@@ -20,6 +20,19 @@ import java.util.LinkedList;
 
 import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.concatOptional;
 
+/**
+ * Implements the URL rewriting for the standard Blueprint link scheme, where the site segment is always the first part
+ * of the URL. For example, consider this site mapping:
+ *
+ *     - hostname: corporate
+ *       primarySegment: corporate
+ *       additionalSegments:
+ *         - corporate-de-de
+ *         - corporate-en-ca
+ *         - corporate-en-gb
+ *
+ * The resulting rewrite rules for the Ingress serving the host corporate simply prepend /blueprint/servlet to the URL.
+ */
 @Slf4j
 public class BlueprintCmccIngressGenerator extends AbstractCmccIngressGenerator {
 
@@ -43,7 +56,7 @@ public class BlueprintCmccIngressGenerator extends AbstractCmccIngressGenerator 
             ingresses.addAll(ingressBuilderFactory.builder(targetState, liveName(site, "blueprint"), fqdn)
                     .pathPrefix("/blueprint", serviceName).build());
             ingresses.addAll(ingressBuilderFactory.builder(targetState, liveName(site, "all"), fqdn)
-                    .pathPattern("/(.*)$", serviceName).rewrite("/blueprint/servlet/$1").build());
+                    .pathPattern("/(.*)", serviceName).rewrite("/blueprint/servlet/$1").build());
         }
 
         return ingresses;

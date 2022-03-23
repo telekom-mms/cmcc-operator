@@ -300,6 +300,32 @@ This makes the Chef Corp. example site available under these URLs:
 * `https://corporate.example.com/corporate-en-ca`
 * `https://corporate.example.com/corporate-en-gb`
 
+
+### Configuring the Ingress Builder
+
+The operator supports two different schemes for mapping live URLs to CAE URIs: the default `blueprint` scheme (the default Link Building Scheme in the CAE, see above), and `onlylang`. You configure the ingress builder by setting the application property `cmcc.ingressbuilder`, for example by adding the `CMCC_INGRESSBUILDER` environment variable to the deployment resource of the operator.
+
+The `onlylang` ingress builder maps hostnames of the form *countrysite*/*lang* to URIs of the form *sitesegment*-*lang*-*locale*. Consider these `siteMappings`:
+
+```yaml
+siteMappings:
+     - hostname: corporate.example.de
+       primarySegment: corporate-de-de
+     - hostname: corporate.example.ca
+       primarySegment: corporate-en-ca
+       additionalSegments:
+         - corporate-fr-ca
+```
+
+This will create ingresses for:
+* `https://corporate.example.de/` redirects to `/de/`
+* `https://corporate.example.de/de` maps to `corporate-de-de`
+* `https://corporate.example.ca/` redirects to `/en`
+* `https://corporate.example.ca/en` maps to `corporate-en-ca`
+* `https://corporate.example.ca/fr` maps to `corporate-en-fr`
+
+**Note** You will need to your own code to the CAE to have it generate links in this form.
+
 ## Components
 
 `components` specifies a list of CoreMedia components and their parameters. The only required parameter is `type`, which specifies the type of component, and for some component types, `kind` as a sub-type.

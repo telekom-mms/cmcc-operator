@@ -10,10 +10,7 @@
 
 package com.tsystemsmms.cmcc.cmccoperator;
 
-import com.tsystemsmms.cmcc.cmccoperator.ingress.BlueprintCmccIngressGeneratorFactory;
-import com.tsystemsmms.cmcc.cmccoperator.ingress.CmccIngressGeneratorFactory;
-import com.tsystemsmms.cmcc.cmccoperator.ingress.IngressBuilderFactory;
-import com.tsystemsmms.cmcc.cmccoperator.ingress.NginxIngressBuilderFactory;
+import com.tsystemsmms.cmcc.cmccoperator.ingress.*;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.*;
 import com.tsystemsmms.cmcc.cmccoperator.resource.ResourceReconcilerManager;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -57,8 +54,15 @@ public class CMCCOperatorApplication {
     }
 
     @Bean
-    public CmccIngressGeneratorFactory caeIngressGeneratorFactory(IngressBuilderFactory ingressBuilderFactory) {
+    @ConditionalOnProperty(value = "cmcc.ingressbuilder", havingValue = "blueprint")
+    public CmccIngressGeneratorFactory blueprintIngressGeneratorFactory(IngressBuilderFactory ingressBuilderFactory) {
         return new BlueprintCmccIngressGeneratorFactory(ingressBuilderFactory);
+    }
+
+    @Bean
+    @ConditionalOnProperty(value = "cmcc.ingressbuilder", havingValue = "onlylang")
+    public CmccIngressGeneratorFactory onlylangIngressGeneratorFactory(IngressBuilderFactory ingressBuilderFactory) {
+        return new OnlyLangCmccIngressGeneratorFactory(ingressBuilderFactory);
     }
 
     @Bean
