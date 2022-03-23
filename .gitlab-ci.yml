@@ -5,7 +5,7 @@ before_script:
 
 build:
   script:
-    - "tag=$(echo -n ${CI_COMMIT_BRANCH} | tr -c '[:alnum:]' '-' | tr '[:upper:]' '[:lower:]')"
+    - "tag=$(echo -n ${CI_COMMIT_BRANCH:-${CI_COMMIT_REF_NAME}} | tr -c '[:alnum:]' '-' | tr '[:upper:]' '[:lower:]')"
     - >
       gradle --build-cache clean test jib
       -Djib.to.image=${CI_REGISTRY_IMAGE}/${CI_PROJECT_NAME}
