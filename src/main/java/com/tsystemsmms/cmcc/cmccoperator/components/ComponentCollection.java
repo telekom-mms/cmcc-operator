@@ -63,6 +63,9 @@ public class ComponentCollection {
         specs.forEach(this::add);
     }
 
+    public Optional<Component> getOfTypeAndKind(String type, String kind) {
+        return components.values().stream().filter(c -> c.getComponentSpec().getType().equals(type) && c.getComponentSpec().getKind().equals(kind)).findAny();
+    }
     /**
      * Returns all added components.
      *

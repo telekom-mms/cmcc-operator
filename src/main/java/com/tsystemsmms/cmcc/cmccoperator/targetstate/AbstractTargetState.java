@@ -241,11 +241,14 @@ public abstract class AbstractTargetState implements TargetState {
     public LinkedList<HasMetadata> buildIngressResources() {
         final LinkedList<HasMetadata> resources = new LinkedList<>();
 
-        // generate ingresses for CAEs
-        resources.addAll(cmccIngressGeneratorFactory.instance(this, getServiceNameFor("cae", "preview")).buildPreviewResources());
-        if (getCmcc().getSpec().getWith().getDelivery().getMinCae() > 0) {
+        Optional<Component> previewCae = componentCollection.getOfTypeAndKind("cae", "preview");
+        if (previewCae.isPresent() && previewCae.get().getComponentSpec().getMilestone().compareTo(getCmcc().getStatus().getMilestone()) <= 0)
+            resources.addAll(cmccIngressGeneratorFactory.instance(this, getServiceNameFor("cae", "preview")).buildPreviewResources());
+
+        Optional<Component> liveCae = componentCollection.getOfTypeAndKind("cae", "live");
+        if (liveCae.isPresent() && liveCae.get().getComponentSpec().getMilestone().compareTo(getCmcc().getStatus().getMilestone()) <= 0)
             resources.addAll(cmccIngressGeneratorFactory.instance(this, getServiceNameFor("cae", "live")).buildLiveResources());
-        }
+
         return resources;
     }
 
