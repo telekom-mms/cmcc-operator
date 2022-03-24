@@ -322,7 +322,7 @@ the CAE in the right way. The array of objects `siteMappings` defines the mappin
 ingress objects and the mapping properties for the live CAE from them.
 
 The operator can only generate Ingress resources compatible with
-the [ingress-nginx controller](https://kubernetes.github.io/ingress-nginx/).
+the [kubernetes/ingress-nginx](https://github.com/kubernetes/ingress-nginx).
 
 ### Site Mappings
 

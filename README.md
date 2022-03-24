@@ -22,7 +22,7 @@ The operator:
 Planned features include:
 * Creating a scalable delivery stage automatically by simply providing the number of Replication Live Servers and minimum and maximum number of Content Application Engines.
 * Configure Solr clustering by specifying the number of replicas to create.
-* Support for Traefik ingress resource (in addition to the NGINX ingress).
+* Support for Traefik ingress controller and its resource types (in addition to the [kubernetes/ingress-nginx](https://github.com/kubernetes/ingress-nginx)).
 * Admission webhook that verifies consistency of the custom resource, and can migrate between CRD versions.
 
 ## Quick Links
