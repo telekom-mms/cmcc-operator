@@ -10,6 +10,7 @@
 
 package com.tsystemsmms.cmcc.cmccoperator.ingress;
 
+import com.tsystemsmms.cmcc.cmccoperator.crds.IngressTls;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 
 import java.util.Collection;
@@ -39,5 +40,12 @@ public interface CmccIngressGenerator {
      */
     Collection<? extends HasMetadata> buildStudioResources();
 
+    /**
+     * Generate a generic ingress for additional components like overview.
+     *
+     * @param name name for the resource
+     * @param hostname hostname for the ingress
+     * @return an ingress builder
+     */
     IngressBuilder builder(String name, String hostname);
 }

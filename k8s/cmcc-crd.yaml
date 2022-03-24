@@ -169,6 +169,16 @@ spec:
                 description: References to existing secrets for components connecting
                   as clients to services
                 type: object
+              defaultIngressTls:
+                description: Ingress TLS defaults
+                properties:
+                  enabled:
+                    description: Enable TLS for this ingress
+                    type: boolean
+                  secretName:
+                    description: Name of secret with the TLS certificate
+                    type: string
+                type: object
               defaults:
                 description: Default values for components
                 properties:
@@ -257,22 +267,33 @@ spec:
                 description: Site mappings
                 items:
                   properties:
-                    hostname:
-                      description: Simple hostname of the site
-                      type: string
-                    fqdn:
-                      description: Fully-qualified hostname of the site; defaults
-                        to the simple hostname
-                      type: string
-                    primarySegment:
-                      description: The site segment the root maps to
-                      type: string
                     additionalSegments:
                       description: Additional segments that are available through
                         this hostname
                       items:
                         type: string
                       type: array
+                    fqdn:
+                      description: Fully-qualified hostname of the site; defaults
+                        to the simple hostname
+                      type: string
+                    hostname:
+                      description: Simple hostname of the site; used as the key for
+                        site mappings
+                      type: string
+                    primarySegment:
+                      description: The site segment the root maps to
+                      type: string
+                    tls:
+                      description: TLS settings for this mapping
+                      properties:
+                        enabled:
+                          description: Enable TLS for this ingress
+                          type: boolean
+                        secretName:
+                          description: Name of secret with the TLS certificate
+                          type: string
+                      type: object
                   type: object
                 type: array
               with:

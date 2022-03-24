@@ -13,23 +13,11 @@ package com.tsystemsmms.cmcc.cmccoperator.crds;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import lombok.Data;
 
-import java.util.Collections;
-import java.util.Set;
-
 @Data
-public class SiteMapping {
-    @JsonPropertyDescription("Additional segments that are available through this hostname")
-    private Set<String> additionalSegments = Collections.emptySet();
+public class IngressTls {
+    @JsonPropertyDescription("Enable TLS for this ingress")
+    private boolean enabled = true;
 
-    @JsonPropertyDescription("Fully-qualified hostname of the site; defaults to the simple hostname")
-    private String fqdn = "";
-
-    @JsonPropertyDescription("Simple hostname of the site; used as the key for site mappings")
-    private String hostname;
-
-    @JsonPropertyDescription("The site segment the root maps to")
-    private String primarySegment;
-
-    @JsonPropertyDescription("TLS settings for this mapping")
-    private IngressTls tls;
+    @JsonPropertyDescription("Name of secret with the TLS certificate")
+    private String secretName = "";
 }

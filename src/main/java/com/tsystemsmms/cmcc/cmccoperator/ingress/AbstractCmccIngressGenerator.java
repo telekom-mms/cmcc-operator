@@ -12,6 +12,7 @@ package com.tsystemsmms.cmcc.cmccoperator.ingress;
 
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentDefaults;
 import com.tsystemsmms.cmcc.cmccoperator.crds.CoreMediaContentCloudSpec;
+import com.tsystemsmms.cmcc.cmccoperator.crds.IngressTls;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import lombok.Getter;
@@ -37,7 +38,9 @@ public abstract class AbstractCmccIngressGenerator implements CmccIngressGenerat
 
     @Override
     public IngressBuilder builder(String name, String hostname) {
-        return ingressBuilderFactory.builder(targetState, name, targetState.getHostname(hostname));
+        IngressTls tls = targetState.getCmcc().getSpec().getDefaultIngressTls();
+
+        return ingressBuilderFactory.builder(targetState, name, targetState.getHostname(hostname), tls);
     }
 
     public ComponentDefaults getDefaults() {
@@ -60,16 +63,15 @@ public abstract class AbstractCmccIngressGenerator implements CmccIngressGenerat
     @Override
     public Collection<? extends HasMetadata> buildPreviewResources() {
         LinkedList<HasMetadata> ingresses = new LinkedList<>();
-
         String fqdn = getTargetState().getPreviewHostname();
-
         String segment = getSpec().getSiteMappings().stream().findAny().orElseThrow().getPrimarySegment();
+        IngressTls tls = targetState.getCmcc().getSpec().getDefaultIngressTls();
 
-        ingresses.addAll(ingressBuilderFactory.builder(targetState, previewName("home"), fqdn)
+        ingresses.addAll(ingressBuilderFactory.builder(targetState, previewName("home"), fqdn, tls)
                 .pathExact("/", serviceName).redirect("/" + segment).build());
-        ingresses.addAll(ingressBuilderFactory.builder(targetState, previewName("blueprint"), fqdn)
+        ingresses.addAll(ingressBuilderFactory.builder(targetState, previewName("blueprint"), fqdn, tls)
                 .pathPrefix("/blueprint", serviceName).build());
-        ingresses.addAll(ingressBuilderFactory.builder(targetState, previewName("all"), fqdn)
+        ingresses.addAll(ingressBuilderFactory.builder(targetState, previewName("all"), fqdn, tls)
                 .pathPattern("/(.*)", serviceName).rewrite("/blueprint/servlet/$1").build());
         return ingresses;
     }
@@ -77,7 +79,8 @@ public abstract class AbstractCmccIngressGenerator implements CmccIngressGenerat
 
     @Override
     public Collection<? extends HasMetadata> buildStudioResources() {
-        return ingressBuilderFactory.builder(targetState, concatOptional(getDefaults().getNamePrefix(), "studio"), getTargetState().getStudioHostname())
+        IngressTls tls = targetState.getCmcc().getSpec().getDefaultIngressTls();
+        return ingressBuilderFactory.builder(targetState, concatOptional(getDefaults().getNamePrefix(), "studio"), getTargetState().getStudioHostname(), tls)
                 .pathPrefix("/", getTargetState().getServiceNameFor("studio-client"))
                 .pathPrefix("/api", serviceName)
                 .pathPrefix("/login", serviceName)

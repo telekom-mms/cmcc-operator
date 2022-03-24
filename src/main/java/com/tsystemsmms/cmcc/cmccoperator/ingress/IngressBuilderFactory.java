@@ -10,6 +10,7 @@
 
 package com.tsystemsmms.cmcc.cmccoperator.ingress;
 
+import com.tsystemsmms.cmcc.cmccoperator.crds.IngressTls;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 
 /**
@@ -22,7 +23,8 @@ public interface IngressBuilderFactory {
      * @param metadata The metadata for the generated resources
      * @param name     The base name for the generated resource
      * @param hostname The hostname the ingresses should be generated for
+     * @param tls      The TLS settings for this host
      * @return the builder
      */
-    IngressBuilder builder(TargetState metadata, String name, String hostname);
+    IngressBuilder builder(TargetState metadata, String name, String hostname, IngressTls tls);
 }

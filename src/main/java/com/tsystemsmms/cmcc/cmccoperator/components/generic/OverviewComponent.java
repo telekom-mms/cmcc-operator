@@ -65,7 +65,7 @@ public class OverviewComponent extends AbstractComponent implements HasService {
 
 
     ConfigMap buildConfigMap() {
-        HashMap<String,String> contents = new HashMap<>();
+        HashMap<String, String> contents = new HashMap<>();
 
         contents.put("index.html", getResource("/overview/index.html"));
         contents.put("handlebars.js", getResource("/overview/handlebars.min-v4.7.7.js"));
@@ -102,11 +102,13 @@ public class OverviewComponent extends AbstractComponent implements HasService {
                 .build();
     }
 
-    
+
     Collection<? extends HasMetadata> buildIngress() {
         String service = getTargetState().getServiceNameFor(this);
         return getTargetState().getCmccIngressGeneratorFactory().instance(getTargetState(), service)
-                .builder(getTargetState().getResourceNameFor(this), getSpecName()).pathPrefix("/", service).build();
+                .builder(getTargetState().getResourceNameFor(this), getSpecName())
+                .pathPrefix("/", service)
+                .build();
     }
 
 
@@ -226,7 +228,7 @@ public class OverviewComponent extends AbstractComponent implements HasService {
         try {
             InputStream is = OverviewComponent.class.getResourceAsStream(file);
             return new String(Objects.requireNonNull(is).readAllBytes(), StandardCharsets.UTF_8);
-        } catch (NullPointerException|IOException e) {
+        } catch (NullPointerException | IOException e) {
             log.warn("Unable to load {} from the classpath", file, e);
             return "";
         }

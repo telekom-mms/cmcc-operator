@@ -26,6 +26,9 @@ public class CoreMediaContentCloudSpec {
     @JsonPropertyDescription("References to existing secrets for components connecting as clients to services")
     Map<String, Map<String, ClientSecretRef>> clientSecretRefs = new HashMap<>();
 
+    @JsonPropertyDescription("Ingress TLS defaults")
+    IngressTls defaultIngressTls = new IngressTls();
+
     @JsonPropertyDescription("Default values for components")
     ComponentDefaults defaults;
 

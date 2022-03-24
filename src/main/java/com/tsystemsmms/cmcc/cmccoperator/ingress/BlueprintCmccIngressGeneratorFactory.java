@@ -10,6 +10,7 @@
 
 package com.tsystemsmms.cmcc.cmccoperator.ingress;
 
+import com.tsystemsmms.cmcc.cmccoperator.crds.IngressTls;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 
 public class BlueprintCmccIngressGeneratorFactory implements CmccIngressGeneratorFactory {

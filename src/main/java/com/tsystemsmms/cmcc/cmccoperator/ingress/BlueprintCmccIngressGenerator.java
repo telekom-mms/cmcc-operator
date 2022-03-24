@@ -10,6 +10,7 @@
 
 package com.tsystemsmms.cmcc.cmccoperator.ingress;
 
+import com.tsystemsmms.cmcc.cmccoperator.crds.IngressTls;
 import com.tsystemsmms.cmcc.cmccoperator.crds.SiteMapping;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -47,15 +48,16 @@ public class BlueprintCmccIngressGenerator extends AbstractCmccIngressGenerator 
         for (SiteMapping siteMapping : targetState.getCmcc().getSpec().getSiteMappings()) {
             String site = siteMapping.getHostname();
             String fqdn = concatOptional(getDefaults().getNamePrefix(), site) + "." + getDefaults().getIngressDomain();
+            IngressTls tls = targetState.getCmcc().getSpec().getDefaultIngressTls();
 
             if (!siteMapping.getFqdn().isBlank())
                 fqdn = siteMapping.getFqdn();
 
-            ingresses.addAll(ingressBuilderFactory.builder(targetState, liveName(site, "home"), fqdn)
+            ingresses.addAll(ingressBuilderFactory.builder(targetState, liveName(site, "home"), fqdn, tls)
                     .pathExact("/", serviceName).redirect("/" + siteMapping.getPrimarySegment()).build());
-            ingresses.addAll(ingressBuilderFactory.builder(targetState, liveName(site, "blueprint"), fqdn)
+            ingresses.addAll(ingressBuilderFactory.builder(targetState, liveName(site, "blueprint"), fqdn, tls)
                     .pathPrefix("/blueprint", serviceName).build());
-            ingresses.addAll(ingressBuilderFactory.builder(targetState, liveName(site, "all"), fqdn)
+            ingresses.addAll(ingressBuilderFactory.builder(targetState, liveName(site, "all"), fqdn, tls)
                     .pathPattern("/(.*)", serviceName).rewrite("/blueprint/servlet/$1").build());
         }
 

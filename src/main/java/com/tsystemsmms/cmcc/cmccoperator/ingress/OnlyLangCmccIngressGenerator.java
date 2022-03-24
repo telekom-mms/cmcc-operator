@@ -10,6 +10,7 @@
 
 package com.tsystemsmms.cmcc.cmccoperator.ingress;
 
+import com.tsystemsmms.cmcc.cmccoperator.crds.IngressTls;
 import com.tsystemsmms.cmcc.cmccoperator.crds.SiteMapping;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.CustomResourceConfigError;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
@@ -65,6 +66,7 @@ public class OnlyLangCmccIngressGenerator extends AbstractCmccIngressGenerator {
         for (SiteMapping siteMapping : targetState.getCmcc().getSpec().getSiteMappings()) {
             String site = siteMapping.getHostname();
             String fqdn = concatOptional(getDefaults().getNamePrefix(), site) + "." + getDefaults().getIngressDomain();
+            IngressTls tls = targetState.getCmcc().getSpec().getDefaultIngressTls();
             Set<String> segments = new TreeSet<>(siteMapping.getAdditionalSegments());
             segments.add(siteMapping.getPrimarySegment());
             String languagePattern = segments.stream().map(this::getLanguage).collect(Collectors.joining("|"));
@@ -72,14 +74,13 @@ public class OnlyLangCmccIngressGenerator extends AbstractCmccIngressGenerator {
             if (!siteMapping.getFqdn().isBlank())
                 fqdn = siteMapping.getFqdn();
 
-
-            ingresses.addAll(ingressBuilderFactory.builder(targetState, liveName(site, "home"), fqdn)
+            ingresses.addAll(ingressBuilderFactory.builder(targetState, liveName(site, "home"), fqdn, tls)
                     .pathExact("/", serviceName).redirect("/" + getLanguage(siteMapping.getPrimarySegment())).build());
-            ingresses.addAll(ingressBuilderFactory.builder(targetState, liveName(site, "blueprint"), fqdn)
+            ingresses.addAll(ingressBuilderFactory.builder(targetState, liveName(site, "blueprint"), fqdn, tls)
                     .pathPrefix("/blueprint", serviceName).build());
-            ingresses.addAll(ingressBuilderFactory.builder(targetState, liveName(site, "all"), fqdn)
+            ingresses.addAll(ingressBuilderFactory.builder(targetState, liveName(site, "all"), fqdn, tls)
                     .pathPattern("/(.*)", serviceName).rewrite("/blueprint/servlet/$1").build());
-            ingresses.addAll(ingressBuilderFactory.builder(targetState, liveName(site, "language"), fqdn)
+            ingresses.addAll(ingressBuilderFactory.builder(targetState, liveName(site, "language"), fqdn, tls)
                     .pathPattern("/(" + languagePattern + ")(.*)", serviceName).rewrite("/blueprint/servlet/" + getReplacement(siteMapping.getPrimarySegment()) + "$2").build());
         }
 

@@ -10,6 +10,7 @@
 
 package com.tsystemsmms.cmcc.cmccoperator.ingress;
 
+import com.tsystemsmms.cmcc.cmccoperator.crds.IngressTls;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
@@ -22,17 +23,20 @@ public class NginxIngressBuilder extends AbstractIngressBuilder {
     private final String hostname;
     private final String name;
     private final TargetState targetState;
-    private final HashMap<String,String> annotations = new HashMap<>();
+    private final HashMap<String, String> annotations = new HashMap<>();
     private final HashSet<Path> paths = new HashSet<>();
+    private final IngressTls tls;
 
-    public NginxIngressBuilder(TargetState targetState, String name, String hostname) {
+    public NginxIngressBuilder(TargetState targetState, String name, String hostname, IngressTls tls) {
         this.hostname = hostname;
         this.name = name;
         this.targetState = targetState;
+        this.tls = tls;
     }
 
     @Override
     public Collection<? extends HasMetadata> build() {
+        IngressTLS ingressTls;
         ObjectMeta metadata = targetState.getResourceMetadataFor(name);
         metadata.getAnnotations().putAll(annotations);
 
@@ -45,13 +49,20 @@ public class NginxIngressBuilder extends AbstractIngressBuilder {
                         .build())
                 .build()).collect(Collectors.toList());
 
-        return  Collections.singletonList(new io.fabric8.kubernetes.api.model.networking.v1.IngressBuilder()
+        if (tls.isEnabled()) {
+            ingressTls = new IngressTLSBuilder()
+                    .withHosts(hostname)
+                    .withSecretName(tls.getSecretName())
+                    .build();
+        } else {
+            ingressTls = new IngressTLS();
+        }
+
+        return Collections.singletonList(new io.fabric8.kubernetes.api.model.networking.v1.IngressBuilder()
                 .withMetadata(metadata)
                 .withSpec(new IngressSpecBuilder()
                         .withIngressClassName("nginx")
-                        .withTls(new IngressTLSBuilder()
-                                .withHosts(hostname)
-                                .build())
+                        .withTls(ingressTls)
                         .withRules(new IngressRuleBuilder()
                                 .withHost(hostname)
                                 .withHttp(new HTTPIngressRuleValueBuilder()

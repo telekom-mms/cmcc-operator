@@ -10,12 +10,13 @@
 
 package com.tsystemsmms.cmcc.cmccoperator.ingress;
 
+import com.tsystemsmms.cmcc.cmccoperator.crds.IngressTls;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 
-public class NginxIngressBuilderFactory implements IngressBuilderFactory{
+public class NginxIngressBuilderFactory implements IngressBuilderFactory {
     @Override
-    public IngressBuilder builder(TargetState targetState, String name, String hostname) {
-        return new NginxIngressBuilder(targetState, name, hostname);
+    public IngressBuilder builder(TargetState targetState, String name, String hostname, IngressTls tls) {
+        return new NginxIngressBuilder(targetState, name, hostname, tls);
     }
 
 
