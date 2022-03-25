@@ -524,6 +524,10 @@ access it.
 If `with.databases` is enabled, the operator creates a MySQL instance and the necessary secrets for the components to
 access it.
 
+### Component `nginx`
+
+Runs an NGINX web server image, for example, to make static files available within the cluster. The server is expected to run on port 80; the environment variable NGINX_PORT is set to enable that.
+
 ### Component `solr`
 
 The Solr type has two kinds: `leader` and `follower`. The name defaults to `solr-leader` and `solr-follower`,

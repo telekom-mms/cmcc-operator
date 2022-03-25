@@ -79,6 +79,12 @@ public class ComponentBeanFactories {
         return new MySQLComponent(kubernetesClient, targetState, cs);
     }
 
+    @Bean("component:nginx")
+    @Scope(SCOPE_PROTOTYPE)
+    public NginxComponent nginxComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec cs) {
+        return new NginxComponent(kubernetesClient, targetState, cs);
+    }
+
     @Bean("component:overview")
     @Scope(SCOPE_PROTOTYPE)
     public OverviewComponent overviewComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec cs) {
