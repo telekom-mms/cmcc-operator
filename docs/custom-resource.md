@@ -453,7 +453,7 @@ The Solr collection is `preview` and `live`, respectively.
 The CAE Feeder type has two kinds: `preview` and `live`. The default image as well as the name are `cae-feeder-preview`
 and `cae-feeder-live`, respectively.
 
-The database schema and username is `caefeeder` and `mcaefeeder`, respectively.
+The database schema and username defaults to `caefeeder` and `mcaefeeder`, respectively. You can override it by setting `extra.databaseSchema`.
 
 The Solr collection is `preview` and `live`, respectively.
 

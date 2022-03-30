@@ -29,9 +29,10 @@ public class CAEFeederComponent extends CorbaComponent implements HasMongoDBClie
 
     public static final String KIND_LIVE = "live";
     public static final String KIND_PREVIEW = "preview";
+    public static final String EXTRA_DATABASE_SCHEMA = "databaseSchema";
 
     @Getter
-    final String databaseSchema;
+    String databaseSchema;
     String solrCollection;
 
     public CAEFeederComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec componentSpec) {
@@ -50,6 +51,8 @@ public class CAEFeederComponent extends CorbaComponent implements HasMongoDBClie
             default:
                 throw new CustomResourceConfigError("kind \"" + getComponentSpec().getKind() + "\" is illegal, must be either " + KIND_LIVE + " or " + KIND_PREVIEW);
         }
+        if (getComponentSpec().getExtra().containsKey(EXTRA_DATABASE_SCHEMA))
+            databaseSchema = getComponentSpec().getExtra().get(EXTRA_DATABASE_SCHEMA);
     }
 
     @Override
