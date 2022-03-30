@@ -108,6 +108,7 @@ public class ContentServerComponent extends CorbaComponent implements HasJdbcCli
         env.addAll(getJdbcClientEnvVars("SQL_STORE"));
         switch (getComponentSpec().getKind()) {
             case KIND_CMS:
+                env.addAll(getUapiClientEnvVars("PUBLISHER_LOCAL"));
                 env.addAll(getUapiClientEnvVars("PUBLISHER_TARGET_0"));
                 break;
             case KIND_MLS:
