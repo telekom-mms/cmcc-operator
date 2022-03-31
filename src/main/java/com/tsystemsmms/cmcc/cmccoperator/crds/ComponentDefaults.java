@@ -22,7 +22,7 @@ import java.util.Map;
 @Data
 public class ComponentDefaults {
     @JsonPropertyDescription("Docker image with curl available")
-    private String curlImage = "docker.io/alpine/k8s:1.19.15";
+    private String curlImage = "docker.io/alpine/curl:latest";
 
     @JsonPropertyDescription("Defaults for the image specification")
     private ImageSpec image;

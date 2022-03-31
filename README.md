@@ -27,7 +27,8 @@ Planned features include:
 
 ## Quick Links
 
-* [Helm chart cmcc-operator](charts/cmcc-operator)
+* [Helm chart cmcc-operator](charts/cmcc-operator) to install the operator
+* [Helm chart cmcc](charts/cmcc) to create a CoreMedia Content Cloud deployment with the operator
 * [CoreMediaContentClouds custom resource documentation](docs/custom-resource.md)
 * [Installing the Operator](#preparing-your-cluster-and-installing-the-operator)
 * [Using the Operator to create a CoreMedia installation](#using-the-operator)
@@ -120,7 +121,7 @@ The operator has a number of configuration parameters that can be set using the 
 | Property              | Environment           | Default     | Description                                                                                                                               |
 |-----------------------|-----------------------|-------------|-------------------------------------------------------------------------------------------------------------------------------------------|
 | `cmcc.ingressbuilder` | `CMCC_INGRESSBUILDER` | `blueprint` | The ingress builder to use. See [site mappings](docs/custom-resource.md#automatic-generation-of-ingresses-and-site-mappings-sitemappings) | 
-| `cmcc.useConfigMap`   | `CMCC_USECONFIGMAP`   | `false`     | Use the ConfigMap reconciler (see [Installing the Operator Using a Config Map](#installing-the-operator-using-a-config-map))              | 
+| `cmcc.useConfigMap`   | `CMCC_USECONFIGMAP`   | `false`     | Use the ConfigMap reconciler (see [Using a Config Map](#using-a-config-map))              | 
 | `cmcc.useCrd`         | `CMCC_USECRD`         | `true`      | Use the Custom Resource reconciler                                                                                                        | 
 ## Using the Operator
 
@@ -137,6 +138,15 @@ kubectl create secret generic license-cms --from-file=license.zip=license/cms-li
 ```
 
 The license secrets need to be created in the same namespace you plan to install CoreMedia in. See `licenseSecrets`, below.
+
+### Creating a CoreMedia Installation – Helm Chart
+
+The [Helm chart cmcc](charts/cmcc) can be used to create a deployment for CoreMedia Content Cloud. See the documentation there for information on how to supply the necessary values to Helm.
+
+````shell
+$ helm repo add cmcc-operator https://t-systems-mms.github.io/cmcc-operator/
+$ helm upgrade --install my-release cmcc-operator/cmcc --values my-values.yaml
+````
 
 ### Creating a CoreMedia Installation – Custom Resource
 
