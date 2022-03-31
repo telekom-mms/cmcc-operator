@@ -7,7 +7,7 @@ operator; an accompanying chart helps managing the custom resource or config map
 ## TL;DR
 
 ```console
-$ helm repo add cmcc-operator https://foo.github.io/charts
+$ helm repo add cmcc-operator https://t-systems-mms.github.io/cmcc-operator/
 $ helm upgrade --install --create-namespace --namespace cmcc-operator cmcc-operator charts/cmcc-operator
 ```
 
@@ -78,7 +78,7 @@ The command removes all the Kubernetes components associated with the chart and 
 
 The operator gets the desired configuration from a custom resource of type `CoreMediaContentClouds`. If `cmcc.useCrd` is enabled (default), the chart will install the appropriate `CustomResourceDefinition`.
 
-If you cannot install a CRD, you can disable `cmcc.useCrd` and enable `cmcc.useConfigMap`, to supply the configuration for a deployment using a config map instead of the custom resource. See [Installing the Operator Using a Config Map](https://github.com/T-Systems-MMS/cmcc-operator#installing-the-operator-using-a-config-map) for further details.
+If you cannot install a CRD, you can disable `cmcc.useCrd` and enable `cmcc.useConfigMap`, to supply the configuration for a deployment using a config map instead of the custom resource. See [Using a Config Map](https://github.com/T-Systems-MMS/cmcc-operator#using-a-config-map) for further details.
 
 ### Role-based Access Control
 

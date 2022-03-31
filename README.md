@@ -27,6 +27,7 @@ Planned features include:
 
 ## Quick Links
 
+* [Helm chart cmcc-operator](charts/cmcc-operator)
 * [CoreMediaContentClouds custom resource documentation](docs/custom-resource.md)
 * [Installing the Operator](#preparing-your-cluster-and-installing-the-operator)
 * [Using the Operator to create a CoreMedia installation](#using-the-operator)
@@ -76,27 +77,41 @@ If you're using Docker Desktop on macOS or Windows, you can have **exactly one s
 
 If you're using [k3d](https://k3d.io/) as a cluster, your Docker install will need to [expose the ingress controller](https://k3d.io/v5.0.0/usage/exposing_services/).
 
-### Installing the Operator With a Custom Resource Definition
+## Installing the Operator
 
-You need to add the [Custom Resource Definition](k8s/cmcc-crd.yaml) `CoreMediaContentClouds` (or `cmcc` for short) to the cluster, and create a number of object for the operator: a ClusterRole, a ClusterRoleMapping, a ServiceAccount, and a Deployment for the operator. An example can be found in [`k8s/cmcc-operator.yaml`](k8s/cmcc-operator.yaml).
+### Installing the Operator Using the Helm Chart
 
-The CRD and the operator can be added to the cluster like this:
+The [Helm chart cmcc-operator](charts/cmcc-operator) can be used to install and configure the operator.
+
+```console
+$ helm repo add cmcc-operator https://t-systems-mms.github.io/cmcc-operator/
+$ helm upgrade --install --create-namespace --namespace cmcc-operator cmcc-operator charts/cmcc-operator
+```
+
+### Installing the Operator Manually
+Alternatively, you can use the example Kubernetes resource definitions in [k8s/](k8s):
 
 ```shell
 kubectl apply -f k8s/cmcc-crd.yaml
 kubectl apply -f k8s/cmcc-operator.yaml
 ```
-
 or for the impatient:
 ```shell
 kubectl apply -f https://raw.githubusercontent.com/T-Systems-MMS/cmcc-operator/main/k8s/cmcc-crd.yaml -f https://raw.githubusercontent.com/T-Systems-MMS/cmcc-operator/main/k8s/cmcc-operator.yaml
 ```
 
-### Installing the Operator Using a Config Map
+### Using the Custom Resource Definition
+
+You need to add the [Custom Resource Definition](k8s/cmcc-crd.yaml) `CoreMediaContentClouds` (or `cmcc` for short) to the cluster, and create a number of object for the operator: a ClusterRole, a ClusterRoleMapping, a ServiceAccount, and a Deployment for the operator. An example can be found in [`k8s/cmcc-operator.yaml`](k8s/cmcc-operator.yaml).
+
+
+### Using a Config Map
 
 If installing the custom resource definition is not an option for you, you can install the operator and have it act on ConfigMaps. The operator can work on ConfigMaps in any namespace (if the role allows it), or can be limited to a single namespace.
 
-When installing the Operator, you need to set the Spring Boot property `cmcc.useConfigMap` to `true`, and `cmcc.useCrd` to `false`. You can accomplish this by setting the environment variables `CMCC_USECONFIGMAP` and `CMCC_USECRD` on the deployment for the operator.
+When installing the Operator, you need to set the Spring Boot property `cmcc.useConfigMap` to `true`, and `cmcc.useCrd` to `false`. You can set these in the Helm chart, for example with `--set cmcc.useConfigMap=true`.
+
+If you're installing the operator manually, you will need to set the environment variables `CMCC_USECONFIGMAP` and `CMCC_USECRD` on the deployment for the operator.
 
 ## Configuring the Operator
 
