@@ -1,0 +1,14 @@
+apiVersion: v1
+entries:
+  cmcc-operator:
+  - apiVersion: v2
+    appVersion: 0.9.8-beta6
+    created: "2022-03-31T09:49:23.73139054Z"
+    description: Kubernetes Operator to bring up a CoreMedia Content Cloud installation
+    digest: 3e0ebb60e1e825e8340fbf5cd93ae8e555f05be0997decb2554aefcee7003fda
+    name: cmcc-operator
+    type: application
+    urls:
+    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-0.9.8-beta6/cmcc-operator-0.9.8-beta6.tgz
+    version: 0.9.8-beta6
+generated: "2022-03-31T09:49:23.731397143Z"
