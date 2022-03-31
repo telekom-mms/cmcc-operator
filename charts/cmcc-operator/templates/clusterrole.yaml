@@ -1,0 +1,61 @@
+{{- if or .Values.serviceAccount.create .Values.clusterRole.create -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "cmcc-operator.fullname" . }}
+  labels:
+    {{- include "cmcc-operator.labels" . | nindent 4 }}
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - configmaps
+      - persistentvolumeclaims
+      - pods
+{{- if .Values.cmcc.manageSecrets }}
+      - secrets
+{{- end }}
+      - services
+    verbs:
+      - '*'
+  - apiGroups:
+      - "apps"
+    resources:
+      - deployments
+      - statefulsets
+    verbs:
+      - '*'
+  - apiGroups:
+      - "batch"
+    resources:
+      - deployments
+      - jobs
+      - statefulsets
+    verbs:
+      - '*'
+  - apiGroups:
+      - networking.k8s.io
+    resources:
+      - ingresses
+    verbs:
+      - '*'
+{{- if .Values.cmcc.useCrd }}
+  - apiGroups:
+      - "apiextensions.k8s.io"
+    resources:
+      - customresourcedefinitions
+    verbs:
+      - get
+      - list
+  - apiGroups:
+      - "cmcc.tsystemsmms.com"
+    resources:
+      - coremediacontentclouds
+      - coremediacontentclouds/status
+    verbs:
+      - get
+      - list
+      - update
+      - watch
+{{- end }}
+{{- end }}

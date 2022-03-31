@@ -1,0 +1,68 @@
+# Default values for cmcc-operator.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+cmcc:
+  # Which URL mapping scheme to use
+  ingressBuilder: blueprint
+  # Should the operator be able to create secrets automatically, for example for database schemas or UAPI accounts.
+  manageSecrets: true
+  # Watch for ConfigMaps to control deployment of CoreMedia instances
+  useConfigMap: false
+  # Watch for CoreMediaContentClouds custom resources to control deployment of CoreMedia instances. Also controls if
+  # the CRD is installed.
+  useCrd: true
+
+image:
+  repository: ghcr.io/t-systems-mms/cmcc-operator/cmcc-operator
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+clusterRole:
+  # Whether to create a ClusterRole with the approriate rights for the operator. See also cmcc.manageSecrets.
+  create: true
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

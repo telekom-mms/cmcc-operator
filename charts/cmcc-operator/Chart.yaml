@@ -1,0 +1,7 @@
+apiVersion: v2
+name: cmcc-operator
+description: Kubernetes Operator to bring up a CoreMedia Content Cloud installation
+type: application
+# this will be set during the release process
+version: 0.1.0-alpha1
+appVersion: 0.1.0-alpha1
