@@ -1,3 +1,5 @@
+import java.nio.charset.StandardCharsets
+
 plugins {
     id 'org.springframework.boot' version '2.6.4'
     id 'io.spring.dependency-management' version '1.0.11.RELEASE'
@@ -24,6 +26,7 @@ compileJava {
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'io.javaoperatorsdk:operator-framework-spring-boot-starter:2.0.1'
     implementation 'org.bouncycastle:bcpkix-jdk15on:1.70'
     // required for the fabric8 k8s client to grok k3d certificates
@@ -49,7 +52,20 @@ task copyCrd(type: Copy) {
     into 'k8s'
 }
 
+def updateHelmCharCrd = tasks.register('updateHelmCharCrd') {
+    inputs.files('build/classes/java/main/META-INF/fabric8/coremediacontentclouds.cmcc.tsystemsmms.com-v1.yml')
+    outputs.files('charts/cmcc-operator/templates/crd.yaml')
+    doLast {
+        outputs.files.singleFile.withOutputStream { out ->
+            out.write('{{- if .Values.cmcc.useCrd }}\n'.getBytes(StandardCharsets.UTF_8))
+            for ( file in inputs.files ) file.withInputStream { out << it << '\n' }
+            out.write('{{- end }}\n'.getBytes(StandardCharsets.UTF_8))
+        }
+    }
+}
+
 build.finalizedBy(copyCrd)
+build.finalizedBy(updateHelmCharCrd)
 
 if (hasProperty('buildScan')) {
     buildScan {

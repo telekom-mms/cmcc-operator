@@ -15,9 +15,19 @@ logging:
   level:
     com:
       tsystemsmms: debug
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  health:
+    probes:
+      enabled: true
 spring:
   config:
     activate:
       on-profile: dev
   devtools:
     add-properties: true
+  main:
+    banner-mode: console
