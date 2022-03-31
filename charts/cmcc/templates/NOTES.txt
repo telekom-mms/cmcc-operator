@@ -1,0 +1,5 @@
+CoreMedia Content Cloud deployment resource has been updated.
+
+You can watch the progress of the deployment using:
+  kubectl --namespace {{ .Release.Namespace }} get cmcc {{ include "cmcc.fullname" . }}
+

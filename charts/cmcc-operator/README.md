@@ -8,7 +8,7 @@ operator; an accompanying chart helps managing the custom resource or config map
 
 ```console
 $ helm repo add cmcc-operator https://t-systems-mms.github.io/cmcc-operator/
-$ helm upgrade --install --create-namespace --namespace cmcc-operator cmcc-operator charts/cmcc-operator
+$ helm upgrade --install --create-namespace --namespace cmcc-operator cmcc-operator cmcc-operator/cmcc-operator
 ```
 
 ## Introduction
@@ -24,23 +24,23 @@ operator; an accompanying chart helps managing the custom resource or config map
 
 ## Installing the Chart
 
-To install the chart with the release name `my-release`:
+To install the chart with the release name `cmcc-operator`:
 
 ```console
-$ helm upgrade --install --create-namespace --namespace cmcc-operator cmcc-operator charts/cmcc-operator
+$ helm upgrade --install --create-namespace --namespace cmcc-operator cmcc-operator cmcc-operator/cmcc-operator
 ```
 
-The command deploys Joomla! on the Kubernetes cluster in the default configuration. The [Parameters](#parameters)
+The command deploys the operator on the Kubernetes cluster in the default configuration. The [Parameters](#parameters)
 section lists the parameters that can be configured during installation.
 
 > **Tip**: List all releases using `helm list`
 
 ## Uninstalling the Chart
 
-To uninstall/delete the `my-release` deployment:
+To uninstall/delete the `cmcc-operator` deployment:
 
 ```console
-$ helm delete my-release
+$ helm delete cmcc-operator
 ```
 
 The command removes all the Kubernetes components associated with the chart and deletes the release.

@@ -1,0 +1,20 @@
+{{- if .Values.useConfigMap }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    {{- include "cmcc.labels" . | nindent 4 }}
+data:
+  spec: |
+    {{- include "cmcc.cmcc" .  | nindent 4 }}
+{{- else }}
+apiVersion: cmcc.tsystemsmms.com/v1
+kind: CoreMediaContentCloud
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    {{- include "cmcc.labels" . | nindent 4 }}
+spec:
+  {{- include "cmcc.cmcc" .  | nindent 2 }}
+{{- end }}

@@ -1,0 +1,43 @@
+# Default values for cmcc.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+cmcc:
+  clientSecretRefs: {}
+  comment: ""
+  components: []
+  defaultIngressTls:
+    enabled: true
+    secretName: ""
+  defaults:
+    curlImage: docker.io/alpine/curl:latest
+    image:
+      pullPolicy: IfNotPresent
+      registry: gitlab.exmaple.com/my-cmcc-project
+      tag: latest
+    insecureDatabasePassword: ""
+    ingressDomain: 127.0.0.1.nip.io
+    namePrefix: ""
+    previewHostname: preview
+    resources: {}
+    studioHostname: studio
+  job: ""
+#  licenseSecrets:
+#    cmsLicense: license-cms
+#    mlsLicense: license-mls
+#    rlsLicense: license-rls
+  siteMappings: []
+  with:
+    contentImport: true
+    databases: true
+    delivery:
+      maxCae: 1
+      minCae: 1
+      rls: 0
+    management: true
+
+nameOverride: ""
+fullnameOverride: ""
+
+# should the deployment description be created as a config map instead of a custom resource?
+useConfigMap: false

@@ -3,10 +3,13 @@ kind: CoreMediaContentCloud
 metadata:
   name: example
 spec:
-  comment: a comment.
   with:
+    contentImport: true
     databases: true
-    live: true
+    delivery:
+      maxCae: 1
+      minCae: 1
+      rls: 0
     management: true
     prefix: example
   defaults:
@@ -22,4 +25,3 @@ spec:
         - corporate-de-de
         - corporate-en-ca
         - corporate-en-gb
-
