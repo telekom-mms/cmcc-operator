@@ -130,7 +130,7 @@ public abstract class CorbaComponent extends SpringBootComponent implements HasS
 
     EnvVarSet getSolrEnvVars(String component, String solrCollection) {
         EnvVarSet env = new EnvVarSet();
-        env.add(EnvVarSimple("SOLR_URL", "http://" + getTargetState().getServiceNameFor("solr", "leader") + ":8983/solr"));
+        env.add(EnvVarSimple("SOLR_URL", "http://" + getTargetState().getServiceNameFor("solr") + ":8983/solr"));
         env.add(EnvVarSimple("SOLR_" + component.toUpperCase() + "_COLLECTION", solrCollection));
         return env;
     }

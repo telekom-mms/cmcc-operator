@@ -12,6 +12,7 @@ package com.tsystemsmms.cmcc.cmccoperator.components.job;
 
 import com.tsystemsmms.cmcc.cmccoperator.components.SpringBootComponent;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
+import com.tsystemsmms.cmcc.cmccoperator.crds.Milestone;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.batch.v1.Job;
@@ -33,7 +34,7 @@ public abstract class JobComponent extends SpringBootComponent {
 
     @Override
     public boolean isBuildResources() {
-        return getCmcc().getStatus().getMilestone().compareTo(getComponentSpec().getMilestone()) == 0;
+        return Milestone.compareTo(getCmcc().getStatus().getMilestone(), getComponentSpec().getMilestone()) == 0;
     }
 
     @Override
@@ -93,7 +94,7 @@ public abstract class JobComponent extends SpringBootComponent {
     @Override
     public Optional<Boolean> isReady() {
         // job is only active during one milestone
-        if (getCmcc().getStatus().getMilestone().compareTo(getComponentSpec().getMilestone()) != 0)
+        if (Milestone.compareTo(getCmcc().getStatus().getMilestone(), getComponentSpec().getMilestone()) != 0)
             return Optional.empty();
         return Optional.of(getTargetState().isJobReady(getTargetState().getResourceNameFor(this)));
     }

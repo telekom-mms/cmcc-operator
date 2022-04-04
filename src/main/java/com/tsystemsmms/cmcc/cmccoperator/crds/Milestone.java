@@ -42,4 +42,17 @@ public enum Milestone {
     public Milestone getNext() {
         return this.next;
     }
+
+    /**
+     * Compare two milestones. Null is allowed; null is considered to be smaller than any other value.
+     *
+     * @param a to compare
+     * @param b to compare
+     * @return -1 if a is smaller than b; 0 if they are equal, and 1 if a is larger than b
+     */
+    public static int compareTo(Milestone a, Milestone b) {
+        if (a == null)
+            return b == null ? 0 : -1;
+        return b == null ? -1 : a.compareTo(b);
+    }
 }

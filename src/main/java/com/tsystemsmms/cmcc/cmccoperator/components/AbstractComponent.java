@@ -60,7 +60,7 @@ public abstract class AbstractComponent implements Component {
 
     @Override
     public boolean isBuildResources() {
-        return getCmcc().getStatus().getMilestone().compareTo(getComponentSpec().getMilestone()) >= 0;
+        return Milestone.compareTo(getCmcc().getStatus().getMilestone(), getComponentSpec().getMilestone()) >= 0;
     }
 
     @Override
@@ -178,6 +178,18 @@ public abstract class AbstractComponent implements Component {
     }
 
     /**
+     * Get a set of labels suitable to distinguish pods, services, etc. of this component from others.
+     *
+     * @return list of labels
+     */
+    public HashMap<String, String> getSelectorLabels(String... extra) {
+        HashMap<String, String> labels = getTargetState().getSelectorLabels();
+        labels.put("cmcc.tsystemsmms.com/type", componentSpec.getType());
+        labels.put("cmcc.tsystemsmms.com/name", getTargetState().getResourceNameFor(this, extra));
+        return labels;
+    }
+
+    /**
      * List of ports that the main container of the main pod provides.
      *
      * @return list of ports
@@ -232,6 +244,27 @@ public abstract class AbstractComponent implements Component {
         LinkedList<Container> containers = new LinkedList<>();
         EnvVarSet env = getEnvVars();
         env.addAll(getComponentSpec().getEnv());
+
+        containers.add(new ContainerBuilder()
+                .withName(specName)
+                .withImage(getImage())
+                .withImagePullPolicy(getImagePullPolicy())
+                .withResources(getDefaults().getResources())
+                .withSecurityContext(getSecurityContext())
+                .withPorts(getContainerPorts())
+                .withArgs(getComponentSpec().getArgs())
+                .withEnv(env.toList())
+                .withVolumeMounts(getVolumeMounts())
+                .withStartupProbe(getStartupProbe())
+                .withLivenessProbe(getLivenessProbe())
+                .withReadinessProbe(getReadinessProbe())
+                .build());
+
+        return containers;
+    }
+
+    public List<Container> buildContainersWithEnv(EnvVarSet env) {
+        LinkedList<Container> containers = new LinkedList<>();
 
         containers.add(new ContainerBuilder()
                 .withName(specName)
@@ -374,7 +407,7 @@ public abstract class AbstractComponent implements Component {
 
     @Override
     public Optional<Boolean> isReady() {
-        if (getCmcc().getStatus().getMilestone().compareTo(getComponentSpec().getMilestone()) < 0)
+        if (Milestone.compareTo(getCmcc().getStatus().getMilestone(), getComponentSpec().getMilestone()) < 0)
             return Optional.empty();
         return Optional.of(getTargetState().isStatefulSetReady(getTargetState().getResourceNameFor(this)));
     }

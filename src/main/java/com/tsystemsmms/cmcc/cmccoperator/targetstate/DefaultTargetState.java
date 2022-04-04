@@ -62,7 +62,7 @@ public class DefaultTargetState extends AbstractTargetState {
                     ComponentSpecBuilder.ofType("content-server").withKind("cms").withMilestone(Milestone.DatabasesReady).build(),
                     ComponentSpecBuilder.ofType("content-server").withKind("mls").withMilestone(Milestone.DatabasesReady).build(),
                     ComponentSpecBuilder.ofType("elastic-worker").build(),
-                    ComponentSpecBuilder.ofType("solr").withKind("leader").withMilestone(Milestone.Created).build(),
+                    ComponentSpecBuilder.ofType("solr").withMilestone(Milestone.Created).build(),
                     ComponentSpecBuilder.ofType("studio-client").build(),
                     ComponentSpecBuilder.ofType("studio-server").build(),
                     ComponentSpecBuilder.ofType("user-changes").build(),

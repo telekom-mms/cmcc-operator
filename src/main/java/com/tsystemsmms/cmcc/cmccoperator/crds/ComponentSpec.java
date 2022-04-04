@@ -43,7 +43,7 @@ public class ComponentSpec {
     private ImageSpec image = new ImageSpec();
 
     @JsonPropertyDescription("Make available with this milestone")
-    private Milestone milestone = Milestone.ManagementReady;
+    private Milestone milestone = null;
 
     @JsonPropertyDescription("Schema names for JDBC, MongoDB, and/or UAPI")
     private Map<String, String> schemas = new HashMap<>();
@@ -64,7 +64,8 @@ public class ComponentSpec {
         this.getEnv().addAll(that.getEnv());
         this.getExtra().putAll(that.getExtra());
         this.getImage().update(that.getImage());
-        this.setMilestone(that.getMilestone());
+        if (that.getMilestone() != null)
+            this.setMilestone(that.getMilestone());
 
     }
 }

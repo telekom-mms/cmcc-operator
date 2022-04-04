@@ -11,12 +11,16 @@
 package com.tsystemsmms.cmcc.cmccoperator.components.generic;
 
 import com.tsystemsmms.cmcc.cmccoperator.components.AbstractComponent;
+import com.tsystemsmms.cmcc.cmccoperator.components.Component;
 import com.tsystemsmms.cmcc.cmccoperator.components.HasService;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.CustomResourceConfigError;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 import com.tsystemsmms.cmcc.cmccoperator.utils.EnvVarSet;
 import io.fabric8.kubernetes.api.model.*;
+import io.fabric8.kubernetes.api.model.apps.StatefulSet;
+import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
+import io.fabric8.kubernetes.api.model.apps.StatefulSetSpecBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 
 import java.util.LinkedList;
@@ -26,18 +30,98 @@ import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.EnvVarSimple;
 
 public class SolrComponent extends AbstractComponent implements HasService {
     public static final String SOLR_PERSISTENT_STORAGE = "solr-persistent-storage";
+    public static final String SOLR_REPLICAS = "replicas";
+
+    private int replicas = 1;
 
     public SolrComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec componentSpec) {
         super(kubernetesClient, targetState, componentSpec, "solr");
+        if (!componentSpec.getKind().isBlank())
+            throw new CustomResourceConfigError("Invalid specification \"kind\" for \"solr\": there are no different kinds.");
+        if (componentSpec.getExtra().containsKey(SOLR_REPLICAS))
+            replicas = Integer.parseInt(componentSpec.getExtra().get(SOLR_REPLICAS).toString());
+    }
+
+    @Override
+    public Component updateComponentSpec(ComponentSpec newCs) {
+        super.updateComponentSpec(newCs);
+        if (newCs.getExtra().containsKey(SOLR_REPLICAS))
+            replicas = Integer.parseInt(newCs.getExtra().get(SOLR_REPLICAS).toString());
+        return this;
     }
 
     @Override
     public List<HasMetadata> buildResources() {
         List<HasMetadata> resources = new LinkedList<>();
-        resources.add(buildStatefulSet());
         resources.add(buildService());
-        resources.add(buildPvc());
+        resources.add(buildStatefulSetLeader());
+        resources.add(buildPvc(getTargetState().getResourceNameFor(this, "leader")));
+        for (int i = 1; i < replicas; i++) {
+            resources.add(buildStatefulSetFollower(i));
+            resources.add(buildPvc(getTargetState().getResourceNameFor(this, getFollowerName(i))));
+        }
         return resources;
+    }
+
+    public StatefulSet buildStatefulSetLeader() {
+        EnvVarSet env = getEnvVars();
+        env.add(EnvVarSimple("SOLR_LEADER", "true"));
+        env.addAll(getComponentSpec().getEnv());
+
+        return new StatefulSetBuilder()
+                .withMetadata(getResourceMetadataForName(getTargetState().getResourceNameFor(this, "leader")))
+                .withSpec(new StatefulSetSpecBuilder()
+                        .withServiceName(getTargetState().getServiceNameFor(this))
+                        .withSelector(new LabelSelectorBuilder()
+                                .withMatchLabels(getSelectorLabels("leader"))
+                                .build())
+                        .withTemplate(new PodTemplateSpecBuilder()
+                                .withMetadata(new ObjectMetaBuilder()
+                                        .withLabels(getSelectorLabels("leader"))
+                                        .build())
+                                .withSpec(new PodSpecBuilder()
+                                        .withContainers(buildContainersWithEnv(env))
+                                        .withInitContainers(getInitContainers())
+                                        .withSecurityContext(getPodSecurityContext())
+                                        .withTerminationGracePeriodSeconds(getTerminationGracePeriodSeconds())
+                                        .withVolumes(getVolumes("leader"))
+                                        .build())
+                                .build())
+                        .build())
+                .build();
+    }
+
+    public StatefulSet buildStatefulSetFollower(int i) {
+        EnvVarSet env = getEnvVars();
+        env.add(EnvVarSimple("SOLR_FOLLOWER", "true"));
+        env.add(EnvVarSimple("SOLR_LEADER_URL", getServiceUrl()));
+        env.addAll(getComponentSpec().getEnv());
+
+        return new StatefulSetBuilder()
+                .withMetadata(getResourceMetadataForName(getTargetState().getResourceNameFor(this, getFollowerName(i))))
+                .withSpec(new StatefulSetSpecBuilder()
+                        .withServiceName(getTargetState().getServiceNameFor(this))
+                        .withSelector(new LabelSelectorBuilder()
+                                .withMatchLabels(getSelectorLabels(getFollowerName(i)))
+                                .build())
+                        .withTemplate(new PodTemplateSpecBuilder()
+                                .withMetadata(new ObjectMetaBuilder()
+                                        .withLabels(getSelectorLabels(getFollowerName(i)))
+                                        .build())
+                                .withSpec(new PodSpecBuilder()
+                                        .withContainers(buildContainersWithEnv(env))
+                                        .withInitContainers(getInitContainers())
+                                        .withSecurityContext(getPodSecurityContext())
+                                        .withTerminationGracePeriodSeconds(getTerminationGracePeriodSeconds())
+                                        .withVolumes(getVolumes(getFollowerName(i)))
+                                        .build())
+                                .build())
+                        .build())
+                .build();
+    }
+
+    private String getFollowerName(int i) {
+        return "follower-" + i;
     }
 
     @Override
@@ -54,29 +138,16 @@ public class SolrComponent extends AbstractComponent implements HasService {
         env.add(EnvVarSimple("JAVA_HEAP", ""));
         env.add(EnvVarSimple("GC_TUNE", "-XX:+UseG1GC -XX:+PerfDisableSharedMem -XX:+ParallelRefProcEnabled -XX:MaxGCPauseMillis=250 -XX:+AlwaysPreTouch"));
         env.add(EnvVarSimple("SOLR_JAVA_MEM", "-XX:MinRAMPercentage=80 -XX:MaxRAMPercentage=95"));
-        if (getComponentSpec().getKind() == null)
-            throw new CustomResourceConfigError("kind must be set to either master or replica");
-        switch (getComponentSpec().getKind()) {
-            case "leader":
-                env.add(EnvVarSimple("SOLR_LEADER", "true"));
-                break;
-            case "follower":
-                throw new CustomResourceConfigError("not yet implemented");
-            default:
-                throw new CustomResourceConfigError("kind must be set to either leader or follower, not " + getComponentSpec().getKind());
-        }
-
         return env;
     }
 
-    @Override
-    public List<Volume> getVolumes() {
+    public List<Volume> getVolumes(String name) {
         LinkedList<Volume> volumes = new LinkedList<>(super.getVolumes());
 
         volumes.add(new VolumeBuilder()
                 .withName(SOLR_PERSISTENT_STORAGE)
                 .withPersistentVolumeClaim(new PersistentVolumeClaimVolumeSourceBuilder()
-                        .withClaimName(getTargetState().getResourceNameFor(this))
+                        .withClaimName(getTargetState().getResourceNameFor(this, name))
                         .build())
                 .build());
         volumes.add(new VolumeBuilder()
