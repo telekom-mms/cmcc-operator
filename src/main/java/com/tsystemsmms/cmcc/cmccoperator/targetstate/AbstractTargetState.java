@@ -177,8 +177,8 @@ public abstract class AbstractTargetState implements TargetState {
         Milestone previousMilestone = getCmcc().getStatus().getMilestone();
 
         convergeDefaultComponents();
-        requestRequiredResources();
         componentCollection.addAll(cmcc.getSpec().getComponents());
+        requestRequiredResources();
         convergeOverrideResources();
         advanceToNextMilestoneOnComponentsReady();
 
