@@ -39,7 +39,9 @@ public abstract class SpringBootComponent extends AbstractComponent {
      * @return properties
      */
     public Map<String, String> getSpringBootProperties() {
-        return new HashMap<>();
+        return new HashMap<>(Map.of(
+                "management.health.probes.enabled", "true" // enable support for k8s compatible probe endpoints
+        ));
     }
 
     /**
@@ -52,7 +54,7 @@ public abstract class SpringBootComponent extends AbstractComponent {
                 .withPeriodSeconds(10)
                 .withFailureThreshold(60)
                 .withHttpGet(new HTTPGetActionBuilder()
-                        .withPath("/actuator/health")
+                        .withPath("/actuator/health/readiness")
                         .withPort(new IntOrString("management"))
                         .build())
                 .build();
@@ -68,7 +70,7 @@ public abstract class SpringBootComponent extends AbstractComponent {
                 .withPeriodSeconds(10)
                 .withFailureThreshold(20)
                 .withHttpGet(new HTTPGetActionBuilder()
-                        .withPath("/actuator")
+                        .withPath("/actuator/health/liveness")
                         .withPort(new IntOrString("management"))
                         .build())
                 .build();
@@ -84,7 +86,7 @@ public abstract class SpringBootComponent extends AbstractComponent {
                 .withPeriodSeconds(10)
                 .withFailureThreshold(10)
                 .withHttpGet(new HTTPGetActionBuilder()
-                        .withPath("/actuator/health")
+                        .withPath("/actuator/health/readiness")
                         .withPort(new IntOrString("management"))
                         .build())
                 .build();
