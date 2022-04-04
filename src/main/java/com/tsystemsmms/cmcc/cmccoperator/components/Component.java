@@ -31,8 +31,8 @@ public interface Component {
      * The base name to be used when building a resource for this component. The target state will use this name
      * combined with additional information to compute the complete resource name.
      *
-     * @see TargetState#getResourceNameFor(Component, String...) 
      * @return the name
+     * @see TargetState#getResourceNameFor(Component, String...)
      */
     String getBaseResourceName();
 
@@ -72,6 +72,13 @@ public interface Component {
     }
 
     /**
+     * Returns the map of schema names (JDBC, MongoDB, UAPI) defined for this component.
+     *
+     * @return map of schema names
+     */
+    Map<String, String> getSchemas();
+
+    /**
      * The specification this component was built from.
      *
      * @return the specification
@@ -95,7 +102,7 @@ public interface Component {
     /**
      * Has this component started successfully? The target state might use this to decided when to move on to the next
      * milestone.
-     *
+     * <p>
      * If the component is not active at the current milestone, return Optional.empty();
      *
      * @return true if component has started successfully

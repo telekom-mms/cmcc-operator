@@ -52,6 +52,10 @@ public class CAEComponent extends CorbaComponent implements HasMongoDBClient, Ha
             default:
                 throw new CustomResourceConfigError("kind \"" + getComponentSpec().getKind() + "\" is illegal, must be either " + KIND_LIVE + " or " + KIND_PREVIEW);
         }
+        setDefaultSchemas(Map.of(
+                MONGODB_CLIENT_SECRET_REF_KIND, "blueprint",
+                UAPI_CLIENT_SECRET_REF_KIND, "webserver"
+        ));
         servletPathPattern = String.join("|", getDefaults().getServletNames());
     }
 
@@ -167,15 +171,5 @@ public class CAEComponent extends CorbaComponent implements HasMongoDBClient, Ha
                 .build());
 
         return volumeMounts;
-    }
-
-    @Override
-    public String getUapiClientDefaultUsername() {
-        return "webserver";
-    }
-
-    @Override
-    public String getMongoDBClientDefaultCollectionPrefix() {
-        return "blueprint";
     }
 }

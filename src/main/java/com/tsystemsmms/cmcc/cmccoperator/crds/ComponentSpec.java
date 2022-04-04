@@ -45,6 +45,9 @@ public class ComponentSpec {
     @JsonPropertyDescription("Make available with this milestone")
     private Milestone milestone = Milestone.ManagementReady;
 
+    @JsonPropertyDescription("Schema names for JDBC, MongoDB, and/or UAPI")
+    private Map<String, String> schemas = new HashMap<>();
+
     public ComponentSpec() {
 
     }

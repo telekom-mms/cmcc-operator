@@ -16,6 +16,7 @@ import com.tsystemsmms.cmcc.cmccoperator.utils.EnvVarSet;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public interface HasMongoDBClient extends Component {
     String MONGODB_CLIENT_SECRET_REF_KIND = "mongodb";
@@ -23,7 +24,9 @@ public interface HasMongoDBClient extends Component {
     /**
      * Returns the default MongoDB collection prefix for this component.
      */
-    String getMongoDBClientDefaultCollectionPrefix();
+    default String getMongoDBClientDefaultCollectionPrefix() {
+        return Objects.requireNonNull(getSchemas().get(MONGODB_CLIENT_SECRET_REF_KIND), () -> "A schema name was requested for " + MONGODB_CLIENT_SECRET_REF_KIND + ", but the component " + this.getSpecName() + " does not define one.");
+    }
 
     /**
      * Returns the secret reference for the default collection prefix.

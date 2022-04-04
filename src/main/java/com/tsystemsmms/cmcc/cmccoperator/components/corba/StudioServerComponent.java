@@ -35,6 +35,11 @@ public class StudioServerComponent extends CorbaComponent implements HasMongoDBC
 
     public StudioServerComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec componentSpec) {
         super(kubernetesClient, targetState, componentSpec, "studio-server");
+        setDefaultSchemas(Map.of(
+                JDBC_CLIENT_SECRET_REF_KIND, "studio",
+                MONGODB_CLIENT_SECRET_REF_KIND, "blueprint",
+                UAPI_CLIENT_SECRET_REF_KIND, "studio"
+        ));
         solrCollection = "studio";
     }
 
@@ -120,20 +125,5 @@ public class StudioServerComponent extends CorbaComponent implements HasMongoDBC
     public Collection<? extends HasMetadata> buildIngress() {
         CmccIngressGenerator generator = getTargetState().getCmccIngressGeneratorFactory().instance(getTargetState(), getTargetState().getServiceNameFor(this));
         return generator.buildStudioResources();
-    }
-
-    @Override
-    public String getJdbcClientDefaultSchema() {
-        return "studio";
-    }
-
-    @Override
-    public String getMongoDBClientDefaultCollectionPrefix() {
-        return "blueprint";
-    }
-
-    @Override
-    public String getUapiClientDefaultUsername() {
-        return "studio";
     }
 }

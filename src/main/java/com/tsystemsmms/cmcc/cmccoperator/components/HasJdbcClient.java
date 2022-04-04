@@ -16,6 +16,7 @@ import com.tsystemsmms.cmcc.cmccoperator.utils.EnvVarSet;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * A Component that requires a JDBC client connection.
@@ -24,9 +25,11 @@ public interface HasJdbcClient extends Component {
     String JDBC_CLIENT_SECRET_REF_KIND = "jdbc";
 
     /**
-     * Returns the default MongoDB collection prefix for this component.
+     * Returns the default JDBC collection prefix for this component.
      */
-    String getJdbcClientDefaultSchema();
+    default String getJdbcClientDefaultSchema() {
+        return Objects.requireNonNull(getSchemas().get(JDBC_CLIENT_SECRET_REF_KIND), () -> "A schema name was requested for " + JDBC_CLIENT_SECRET_REF_KIND + ", but the component " + this.getSpecName() + " does not define one.");
+    };
 
     /**
      * Returns the secret reference for the default collection prefix.

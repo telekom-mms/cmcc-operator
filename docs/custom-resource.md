@@ -173,13 +173,24 @@ This tables shows the component types and the client secrets they use.
 | `content-server`/`rls` | `replication` |             | `publisher` | To the MLS  |
 | `cae`/`live`           |               | `blueprint` | `webserver` |             |
 | `cae`/`preview`        |               | `blueprint` | `webserver` |             |
-| `cae-feeder`/`live`    |               | `blueprint` | `webserver` |             |
-| `cae-feeder`/`preview` |               | `blueprint` | `webserver` |             |
+| `cae-feeder`/`live`    | `caefeeder`   | `blueprint` | `webserver` |             |
+| `cae-feeder`/`preview` | `mcaefeeder`  | `blueprint` | `webserver` |             |
 | `content-feeder`       |               | `blueprint` | `feeder`    |             |
 | `elastic-worker`       |               | `blueprint` | `webserver` |             |
 | `studio-server`        | `studio`      | `blueprint` | `studio`    |             |
 | `user-changes`         |               | `blueprint` | `studio`    |             |
 | `workflow-server`      | `management`  | `blueprint` | `workflow`  |             |
+
+You can override the schema/user names for each component by adding an entry to the components `schemas` map, for example:
+
+```yaml
+components:
+   - type: cae-feeder
+     kind: live
+     schemas:
+       jdbc: live-cae-feeder
+```
+
 
 ### `clientSecretRef.jdbc`
 
@@ -396,19 +407,20 @@ This will create ingresses for:
 `components` specifies a list of CoreMedia components and their parameters. The only required parameter is `type`, which
 specifies the type of component, and for some component types, `kind` as a sub-type.
 
-| Property           | Type           | Default         | Description                                                                                                             |
-|--------------------|----------------|-----------------|-------------------------------------------------------------------------------------------------------------------------|
-| `type`             | String         | –               | Required type of the component                                                                                          |
-| `kind`             | String         | –               | Sub-type, required for some component types                                                                             |
-| `name`             | String         | type            | The name of the component and the resources created for it. Defaults to a type-specific name, typically the type itself |
-| `image`            | object         | –               | Specification of the Docker Image to use for the main container of the main pod of the component                        |
-| `image.registry`   | String         | `coremedia`     | Docker Image Registry to pull images from                                                                               |
-| `image.repository` | String         | see description | Docker Image Repository to pull images from. Default is type-specific based on the standard blueprint image names.      |
-| `image.tag`        | String         | latest          | Docker Image Tag to pull images from                                                                                    |
-| `image.pullPolicy` | String         | `IfNotPresent`  | default imagePullPolicy                                                                                                 |
-| `milestone`        | enum           | `DatabaseReady` | Milestone that has to be reached before this component gets created.                                                    |
-| `env`              | list of EnvVar | –               | Additional environment variables to be made available to the containers                                                 |
-| `args`             | list of String | –               | Args for the main container of the main pod. Defaults to unset, using the default from the image.                       |
+| Property           | Type           | Default         | Description                                                                                                                                  |
+|--------------------|----------------|-----------------|----------------------------------------------------------------------------------------------------------------------------------------------|
+| `type`             | String         | –               | Required type of the component                                                                                                               |
+| `kind`             | String         | –               | Sub-type, required for some component types                                                                                                  |
+| `name`             | String         | type            | The name of the component and the resources created for it. Defaults to a type-specific name, typically the type itself                      |
+| `image`            | object         | –               | Specification of the Docker Image to use for the main container of the main pod of the component                                             |
+| `image.registry`   | String         | `coremedia`     | Docker Image Registry to pull images from                                                                                                    |
+| `image.repository` | String         | see description | Docker Image Repository to pull images from. Default is type-specific based on the standard blueprint image names.                           |
+| `image.tag`        | String         | latest          | Docker Image Tag to pull images from                                                                                                         |
+| `image.pullPolicy` | String         | `IfNotPresent`  | default imagePullPolicy                                                                                                                      |
+| `milestone`        | enum           | `DatabaseReady` | Milestone that has to be reached before this component gets created.                                                                         |
+| `env`              | list of EnvVar | –               | Additional environment variables to be made available to the containers                                                                      |
+| `args`             | list of String | –               | Args for the main container of the main pod. Defaults to unset, using the default from the image.                                            |
+| `schemas`          | map            | –               | The name of the JDBC, MongoDB, and/or UAPI schemas that should be used for this component. Overrides the built-in default for the component. |
 
 You can set the milestone `Never` to define but disable a component.
 
@@ -452,7 +464,7 @@ The Solr collection is `preview` and `live`, respectively.
 The CAE Feeder type has two kinds: `preview` and `live`. The default image as well as the name are `cae-feeder-preview`
 and `cae-feeder-live`, respectively.
 
-The database schema and username defaults to `caefeeder` and `mcaefeeder`, respectively. You can override it by setting `extra.databaseSchema`.
+The database schema and username defaults to `caefeeder` and `mcaefeeder`, respectively.
 
 The Solr collection is `preview` and `live`, respectively.
 

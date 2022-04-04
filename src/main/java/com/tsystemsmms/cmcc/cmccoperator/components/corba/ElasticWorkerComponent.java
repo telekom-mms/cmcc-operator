@@ -21,12 +21,17 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 public class ElasticWorkerComponent extends CorbaComponent implements HasMongoDBClient, HasService {
 
     public ElasticWorkerComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec componentSpec) {
         super(kubernetesClient, targetState, componentSpec, "elastic-worker");
+        setDefaultSchemas(Map.of(
+                MONGODB_CLIENT_SECRET_REF_KIND, "blueprint",
+                UAPI_CLIENT_SECRET_REF_KIND, "webserver"
+        ));
     }
 
     @Override
@@ -50,15 +55,5 @@ public class ElasticWorkerComponent extends CorbaComponent implements HasMongoDB
         env.addAll(getSolrEnvVars("content", "studio"));
 
         return env;
-    }
-
-    @Override
-    public String getMongoDBClientDefaultCollectionPrefix() {
-        return "blueprint";
-    }
-
-    @Override
-    public String getUapiClientDefaultUsername() {
-        return "webserver";
     }
 }

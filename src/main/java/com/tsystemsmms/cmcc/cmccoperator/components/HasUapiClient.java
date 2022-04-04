@@ -16,6 +16,7 @@ import com.tsystemsmms.cmcc.cmccoperator.utils.EnvVarSet;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.concatOptional;
 
@@ -42,7 +43,9 @@ public interface HasUapiClient extends Component {
     /**
      * Returns the default UAPI username for this component.
      */
-    String getUapiClientDefaultUsername();
+    default String getUapiClientDefaultUsername() {
+        return Objects.requireNonNull(getSchemas().get(UAPI_CLIENT_SECRET_REF_KIND), () -> "A schema name was requested for " + UAPI_CLIENT_SECRET_REF_KIND + ", but the component " + this.getSpecName() + " does not define one.");
+    }
 
     /**
      * Returns the secret reference for the default collection prefix.

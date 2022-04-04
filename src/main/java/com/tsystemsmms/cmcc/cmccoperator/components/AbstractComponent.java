@@ -45,6 +45,9 @@ public abstract class AbstractComponent implements Component {
     @Setter
     String imageRepository;
 
+    @Getter
+    final Map<String, String> schemas = new HashMap<>();
+
     public AbstractComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec componentSpec, String imageRepository) {
         this.kubernetesClient = kubernetesClient;
         this.targetState = targetState;
@@ -52,6 +55,7 @@ public abstract class AbstractComponent implements Component {
         this.componentSpec = new ComponentSpec(componentSpec);
         this.specName = componentSpec.getName() != null && !componentSpec.getName().isEmpty() ? componentSpec.getName() : componentSpec.getType();
         this.imageRepository = imageRepository;
+        schemas.putAll(componentSpec.getSchemas());
     }
 
     @Override
@@ -65,6 +69,7 @@ public abstract class AbstractComponent implements Component {
             throw new IllegalArgumentException("Internal error: cannot update existing component because type/kind/name do not match");
         }
         componentSpec.update(newCs);
+        schemas.putAll(componentSpec.getSchemas());
 
         return this;
     }
@@ -377,5 +382,18 @@ public abstract class AbstractComponent implements Component {
     @Override
     public void requestRequiredResources() {
         // default component does not reference any resources.
+    }
+
+    /**
+     * Set default values for schemas. The defaults are set if schemas does not contain an entry for the respective key.
+     *
+     * @param defaults teh default entries
+     */
+    public void setDefaultSchemas(Map<String, String> defaults) {
+        for (Map.Entry<String, String> e : defaults.entrySet()) {
+            if (!schemas.containsKey(e.getKey())) {
+                schemas.put(e.getKey(), e.getValue());
+            }
+        }
     }
 }

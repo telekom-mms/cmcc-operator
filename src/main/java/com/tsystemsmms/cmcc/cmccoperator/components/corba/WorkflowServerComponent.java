@@ -20,17 +20,24 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.Map;
+
 import static com.tsystemsmms.cmcc.cmccoperator.components.corba.ContentServerComponent.MANAGEMENT_SCHEMA;
 import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.EnvVarSimple;
 
 @Slf4j
-public class WorkflowServerComponent extends CorbaComponent implements HasMongoDBClient, HasJdbcClient, HasService {
+public class WorkflowServerComponent extends CorbaComponent implements HasJdbcClient, HasMongoDBClient, HasService {
 
     @Getter
     final String databaseSchema;
 
     public WorkflowServerComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec componentSpec) {
         super(kubernetesClient, targetState, componentSpec, "workflow-server");
+        setDefaultSchemas(Map.of(
+                JDBC_CLIENT_SECRET_REF_KIND, MANAGEMENT_SCHEMA,
+                MONGODB_CLIENT_SECRET_REF_KIND, "blueprint",
+                UAPI_CLIENT_SECRET_REF_KIND, "workflow"
+        ));
         databaseSchema = "management";
     }
 
@@ -52,20 +59,4 @@ public class WorkflowServerComponent extends CorbaComponent implements HasMongoD
 
         return env;
     }
-
-    @Override
-    public String getJdbcClientDefaultSchema() {
-        return MANAGEMENT_SCHEMA;
-    }
-
-    @Override
-    public String getMongoDBClientDefaultCollectionPrefix() {
-        return "blueprint";
-    }
-
-    @Override
-    public String getUapiClientDefaultUsername() {
-        return "workflow";
-    }
-
 }

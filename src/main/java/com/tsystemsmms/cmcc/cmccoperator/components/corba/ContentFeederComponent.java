@@ -20,12 +20,17 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 public class ContentFeederComponent extends CorbaComponent implements HasMongoDBClient {
 
     public ContentFeederComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec componentSpec) {
         super(kubernetesClient, targetState, componentSpec, "content-feeder");
+        setDefaultSchemas(Map.of(
+                MONGODB_CLIENT_SECRET_REF_KIND, "blueprint",
+                UAPI_CLIENT_SECRET_REF_KIND, "feeder"
+        ));
     }
 
     @Override
@@ -49,15 +54,5 @@ public class ContentFeederComponent extends CorbaComponent implements HasMongoDB
         env.addAll(getSolrEnvVars("content", "studio"));
 
         return env;
-    }
-
-    @Override
-    public String getMongoDBClientDefaultCollectionPrefix() {
-        return "blueprint";
-    }
-
-    @Override
-    public String getUapiClientDefaultUsername() {
-        return "feeder";
     }
 }

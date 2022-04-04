@@ -12,6 +12,7 @@ package com.tsystemsmms.cmcc.cmccoperator.components.corba;
 
 import com.tsystemsmms.cmcc.cmccoperator.components.HasJdbcClient;
 import com.tsystemsmms.cmcc.cmccoperator.components.HasMongoDBClient;
+import com.tsystemsmms.cmcc.cmccoperator.components.HasUapiClient;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.CustomResourceConfigError;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
@@ -21,18 +22,18 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.HashMap;
+import java.util.Map;
 
 import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.EnvVarSimple;
 
 @Slf4j
-public class CAEFeederComponent extends CorbaComponent implements HasMongoDBClient, HasJdbcClient {
+public class CAEFeederComponent extends CorbaComponent implements HasJdbcClient, HasMongoDBClient {
 
     public static final String KIND_LIVE = "live";
     public static final String KIND_PREVIEW = "preview";
     public static final String EXTRA_DATABASE_SCHEMA = "databaseSchema";
 
     @Getter
-    String databaseSchema;
     String solrCollection;
 
     public CAEFeederComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec componentSpec) {
@@ -41,18 +42,26 @@ public class CAEFeederComponent extends CorbaComponent implements HasMongoDBClie
             throw new CustomResourceConfigError("kind must be set to either " + KIND_LIVE + " or " + KIND_PREVIEW);
         switch (componentSpec.getKind()) {
             case KIND_LIVE:
-                databaseSchema = "mcaefeeder";
+                setDefaultSchemas(Map.of(
+                        JDBC_CLIENT_SECRET_REF_KIND, "mcaefeeder",
+                        MONGODB_CLIENT_SECRET_REF_KIND, "blueprint",
+                        UAPI_CLIENT_SECRET_REF_KIND, "feeder"
+                ));
                 solrCollection = "live";
                 break;
             case KIND_PREVIEW:
-                databaseSchema = "caefeeder";
+                setDefaultSchemas(Map.of(
+                        JDBC_CLIENT_SECRET_REF_KIND, "caefeeder",
+                        MONGODB_CLIENT_SECRET_REF_KIND, "blueprint",
+                        UAPI_CLIENT_SECRET_REF_KIND, "feeder"
+                ));
                 solrCollection = "preview";
                 break;
             default:
                 throw new CustomResourceConfigError("kind \"" + getComponentSpec().getKind() + "\" is illegal, must be either " + KIND_LIVE + " or " + KIND_PREVIEW);
         }
         if (getComponentSpec().getExtra().containsKey(EXTRA_DATABASE_SCHEMA))
-            databaseSchema = getComponentSpec().getExtra().get(EXTRA_DATABASE_SCHEMA);
+            getSchemas().put(JDBC_CLIENT_SECRET_REF_KIND, getComponentSpec().getExtra().get(EXTRA_DATABASE_SCHEMA));
     }
 
     @Override
@@ -81,20 +90,5 @@ public class CAEFeederComponent extends CorbaComponent implements HasMongoDBClie
             env.add(EnvVarSimple("REPOSITORY_URL", getTargetState().getServiceUrlFor("content-server", "mls")));
 
         return env;
-    }
-
-    @Override
-    public String getJdbcClientDefaultSchema() {
-        return databaseSchema;
-    }
-
-    @Override
-    public String getMongoDBClientDefaultCollectionPrefix() {
-        return "blueprint";
-    }
-
-    @Override
-    public String getUapiClientDefaultUsername() {
-        return "feeder";
     }
 }

@@ -37,8 +37,6 @@ public class ContentServerComponent extends CorbaComponent implements HasJdbcCli
 
     public static final String LICENSE_VOLUME_NAME = "license";
 
-    @Getter
-    final String databaseSchema;
     String licenseSecretName;
 
     public ContentServerComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec componentSpec) {
@@ -48,15 +46,24 @@ public class ContentServerComponent extends CorbaComponent implements HasJdbcCli
         switch (componentSpec.getKind()) {
             case KIND_CMS:
                 licenseSecretName = getSpec().getLicenseSecrets().getCMSLicense();
-                databaseSchema = MANAGEMENT_SCHEMA;
+                setDefaultSchemas(Map.of(
+                        JDBC_CLIENT_SECRET_REF_KIND, MANAGEMENT_SCHEMA,
+                        UAPI_CLIENT_SECRET_REF_KIND, "publisher"
+                ));
                 break;
             case KIND_MLS:
                 licenseSecretName = getSpec().getLicenseSecrets().getMLSLicense();
-                databaseSchema = MASTER_SCHEMA;
+                setDefaultSchemas(Map.of(
+                        JDBC_CLIENT_SECRET_REF_KIND, MASTER_SCHEMA,
+                        UAPI_CLIENT_SECRET_REF_KIND, "publisher"
+                ));
                 break;
             case KIND_RLS:
 //                licenseSecretName = getSpec().getLicenseSecrets().getRLSLicense();
-//                databaseSchema = "replication";
+//                setDefaultSchemas(Map.of(
+//                        JDBC_CLIENT_SECRET_REF_KIND, MASTER_SCHEMA,
+//                UAPI_CLIENT_SECRET_REF_KIND, "publisher"
+//                ));
 //                break;
                 throw new CustomResourceConfigError("not implemented yet");
             default:
@@ -140,7 +147,7 @@ public class ContentServerComponent extends CorbaComponent implements HasJdbcCli
                 "cap.server.license", "/coremedia/licenses/license.zip",
                 "com.coremedia.corba.server.host", getTargetState().getResourceNameFor(this),
                 "cap.server.cache.resource-cache-size", "5000"
-                ));
+        ));
         if (getComponentSpec().getKind().equals(KIND_CMS)) {
             properties.put("publisher.target[0].iorUrl", getTargetState().getServiceUrlFor("content-server", "mls"));
             properties.put("publisher.target[0].ior-url", getTargetState().getServiceUrlFor("content-server", "mls"));
@@ -180,15 +187,5 @@ public class ContentServerComponent extends CorbaComponent implements HasJdbcCli
         volumes.add(licenseVolumeMount);
 
         return volumes;
-    }
-
-    @Override
-    public String getJdbcClientDefaultSchema() {
-        return databaseSchema;
-    }
-
-    @Override
-    public String getUapiClientDefaultUsername() {
-        return "publisher";
     }
 }

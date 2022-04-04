@@ -21,12 +21,17 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 public class UserChangesComponent extends CorbaComponent implements HasMongoDBClient {
 
     public UserChangesComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec componentSpec) {
         super(kubernetesClient, targetState, componentSpec, "user-changes");
+        setDefaultSchemas(Map.of(
+                MONGODB_CLIENT_SECRET_REF_KIND, "blueprint",
+                UAPI_CLIENT_SECRET_REF_KIND, "studio"
+        ));
     }
 
     @Override
@@ -57,15 +62,5 @@ public class UserChangesComponent extends CorbaComponent implements HasMongoDBCl
 
         containers.add(getContainerWaitForIor(getTargetState().getServiceNameFor("workflow-server"), getTargetState().getServiceUrlFor("workflow-server")));
         return containers;
-    }
-
-    @Override
-    public String getMongoDBClientDefaultCollectionPrefix() {
-        return "blueprint";
-    }
-
-    @Override
-    public String getUapiClientDefaultUsername() {
-        return "studio";
     }
 }
