@@ -10,53 +10,42 @@
 
 package com.tsystemsmms.cmcc.cmccoperator.customresource;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tsystemsmms.cmcc.cmccoperator.crds.CoreMediaContentCloud;
 import com.tsystemsmms.cmcc.cmccoperator.crds.CoreMediaContentCloudSpec;
 import com.tsystemsmms.cmcc.cmccoperator.crds.CoreMediaContentCloudStatus;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.CustomResourceConfigError;
+import com.tsystemsmms.cmcc.cmccoperator.utils.YamlMapper;
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.ObjectMeta;
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.yaml.snakeyaml.DumperOptions;
-import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.constructor.Constructor;
-import org.yaml.snakeyaml.nodes.Tag;
-import org.yaml.snakeyaml.representer.Representer;
-
-import java.util.Map;
-import java.util.Set;
 
 import static org.springframework.beans.BeanUtils.copyProperties;
 
 @Slf4j
 public class ConfigMapCustomResource extends AbstractCustomResource {
     final ConfigMap cm;
+    final YamlMapper yamlMapper;
 
-    public ConfigMapCustomResource(ConfigMap cm) {
-        super(cm);
+    public ConfigMapCustomResource(ConfigMap cm, YamlMapper yamlMapper) {
+        super(cm, getSpecFromConfigMap(cm, yamlMapper), getStatusFromConfigMap(cm, yamlMapper));
         this.cm = cm;
+        this.yamlMapper = yamlMapper;
+    }
+
+    private static CoreMediaContentCloudSpec getSpecFromConfigMap(ConfigMap cm, YamlMapper yamlMapper) {
+        String specString = cm.getData().get("spec");
+        if (specString == null)
+            throw new CustomResourceConfigError("ConfigMap \"" + cm.getMetadata().getName() + "\": property \"spec\" is missing.");
+        return yamlMapper.load(specString, CoreMediaContentCloudSpec.class);
+    }
+
+    private static CoreMediaContentCloudStatus getStatusFromConfigMap(ConfigMap cm, YamlMapper yamlMapper) {
+        return cm.getData().containsKey("status")
+                ? yamlMapper.load(cm.getData().get("status"), CoreMediaContentCloudStatus.class)
+                : new CoreMediaContentCloudStatus();
     }
 
     @Override
     public void updateResource() {
-        ObjectMapper mapper = new ObjectMapper();
-        DumperOptions options = new DumperOptions();
-        options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
-        options.setPrettyFlow(true);
-        options.setDefaultScalarStyle(DumperOptions.ScalarStyle.DOUBLE_QUOTED);
-        options.setCanonical(false);
-        options.setExplicitStart(false);
-        Representer representer = new Representer(options);
-        representer.addClassTag(CoreMediaContentCloudSpec.class, Tag.MAP);
-        representer.addClassTag(CoreMediaContentCloudStatus.class, Tag.MAP);
-        representer.addClassTag(Set.class, Tag.SEQ);
-        Yaml yaml = new Yaml(representer);
-
-//        log.debug("spec:\n{}", yaml.dump(mapper.convertValue(spec, Map.class)));
-        cm.getData().put("spec", yaml.dump(mapper.convertValue(spec, Map.class)));
-        cm.getData().put("status", yaml.dump(mapper.convertValue(status, Map.class)));
+        cm.getData().put("spec", yamlMapper.dump(spec));
+        cm.getData().put("status", yamlMapper.dump(status));
     }
 }

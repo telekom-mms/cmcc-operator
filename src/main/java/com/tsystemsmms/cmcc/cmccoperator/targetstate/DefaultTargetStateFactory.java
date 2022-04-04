@@ -13,6 +13,7 @@ package com.tsystemsmms.cmcc.cmccoperator.targetstate;
 import com.tsystemsmms.cmcc.cmccoperator.customresource.CustomResource;
 import com.tsystemsmms.cmcc.cmccoperator.ingress.CmccIngressGeneratorFactory;
 import com.tsystemsmms.cmcc.cmccoperator.resource.ResourceReconcilerManager;
+import com.tsystemsmms.cmcc.cmccoperator.utils.YamlMapper;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import org.springframework.beans.factory.BeanFactory;
 
@@ -25,17 +26,30 @@ public class DefaultTargetStateFactory implements TargetStateFactory {
     private final CmccIngressGeneratorFactory cmccIngressGeneratorFactory;
     private final ResourceNamingProviderFactory resourceNamingProviderFactory;
     private final ResourceReconcilerManager resourceReconcilerManager;
+    private final YamlMapper yamlMapper;
 
-    public DefaultTargetStateFactory(BeanFactory beanFactory, KubernetesClient kubernetesClient, CmccIngressGeneratorFactory cmccIngressGeneratorFactory, ResourceNamingProviderFactory resourceNamingProviderFactory, ResourceReconcilerManager resourceReconcilerManager) {
+    public DefaultTargetStateFactory(BeanFactory beanFactory,
+                                     KubernetesClient kubernetesClient,
+                                     CmccIngressGeneratorFactory cmccIngressGeneratorFactory,
+                                     ResourceNamingProviderFactory resourceNamingProviderFactory,
+                                     ResourceReconcilerManager resourceReconcilerManager,
+                                     YamlMapper yamlMapper) {
         this.beanFactory = beanFactory;
         this.kubernetesClient = kubernetesClient;
         this.cmccIngressGeneratorFactory = cmccIngressGeneratorFactory;
         this.resourceNamingProviderFactory = resourceNamingProviderFactory;
         this.resourceReconcilerManager = resourceReconcilerManager;
+        this.yamlMapper = yamlMapper;
     }
 
     @Override
     public TargetState buildTargetState(CustomResource cmcc) {
-        return new DefaultTargetState(beanFactory, kubernetesClient, cmccIngressGeneratorFactory, resourceNamingProviderFactory, resourceReconcilerManager, cmcc);
+        return new DefaultTargetState(beanFactory,
+                kubernetesClient,
+                cmccIngressGeneratorFactory,
+                resourceNamingProviderFactory,
+                resourceReconcilerManager,
+                yamlMapper,
+                cmcc);
     }
 }

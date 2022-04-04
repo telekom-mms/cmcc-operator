@@ -19,6 +19,7 @@ import com.tsystemsmms.cmcc.cmccoperator.crds.Milestone;
 import com.tsystemsmms.cmcc.cmccoperator.ingress.CmccIngressGeneratorFactory;
 import com.tsystemsmms.cmcc.cmccoperator.resource.ResourceReconcilerManager;
 import com.tsystemsmms.cmcc.cmccoperator.utils.Utils;
+import com.tsystemsmms.cmcc.cmccoperator.utils.YamlMapper;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.BeanFactory;
@@ -36,8 +37,15 @@ public class DefaultTargetState extends AbstractTargetState {
                               CmccIngressGeneratorFactory cmccIngressGeneratorFactory,
                               ResourceNamingProviderFactory resourceNamingProviderFactory,
                               ResourceReconcilerManager resourceReconcilerManager,
+                              YamlMapper yamlMapper,
                               CustomResource cmcc) {
-        super(beanFactory, kubernetesClient, cmccIngressGeneratorFactory, resourceNamingProviderFactory, resourceReconcilerManager, cmcc);
+        super(beanFactory,
+                kubernetesClient,
+                cmccIngressGeneratorFactory,
+                resourceNamingProviderFactory,
+                resourceReconcilerManager,
+                yamlMapper,
+                cmcc);
     }
 
     @Override

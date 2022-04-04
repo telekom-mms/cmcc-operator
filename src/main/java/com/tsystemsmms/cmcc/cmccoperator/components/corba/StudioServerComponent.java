@@ -13,6 +13,7 @@ package com.tsystemsmms.cmcc.cmccoperator.components.corba;
 import com.tsystemsmms.cmcc.cmccoperator.components.HasJdbcClient;
 import com.tsystemsmms.cmcc.cmccoperator.components.HasMongoDBClient;
 import com.tsystemsmms.cmcc.cmccoperator.components.HasService;
+import com.tsystemsmms.cmcc.cmccoperator.components.HasSolrClient;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
 import com.tsystemsmms.cmcc.cmccoperator.ingress.CmccIngressGenerator;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
@@ -29,7 +30,7 @@ import java.util.Map;
 import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.concatOptional;
 
 @Slf4j
-public class StudioServerComponent extends CorbaComponent implements HasMongoDBClient, HasJdbcClient, HasService {
+public class StudioServerComponent extends CorbaComponent implements HasMongoDBClient, HasJdbcClient, HasService, HasSolrClient {
 
     final String solrCollection;
 
@@ -38,6 +39,7 @@ public class StudioServerComponent extends CorbaComponent implements HasMongoDBC
         setDefaultSchemas(Map.of(
                 JDBC_CLIENT_SECRET_REF_KIND, "studio",
                 MONGODB_CLIENT_SECRET_REF_KIND, "blueprint",
+                SOLR_CLIENT_SECRET_REF_KIND, "studio",
                 UAPI_CLIENT_SECRET_REF_KIND, "studio"
         ));
         solrCollection = "studio";
@@ -48,6 +50,7 @@ public class StudioServerComponent extends CorbaComponent implements HasMongoDBC
         super.requestRequiredResources();
         getMongoDBClientSecretRef();
         getJdbcClientSecretRef();
+        getSolrClientSecretRef();
     }
 
     @Override
@@ -79,7 +82,7 @@ public class StudioServerComponent extends CorbaComponent implements HasMongoDBC
                 .withName("EDITORIAL_COMMENTS_JPA_PROPERTIES_HIBERNATE_DEFAULT_SCHEMA").build());
         env.add(new EnvVarBuilder(env.get("EDITORIAL_COMMENTS_DATASOURCE_USER").orElseThrow())
                 .withName("EDITORIAL_COMMENTS_DATASOURCE_USERNAME").build());
-        env.addAll(getSolrEnvVars("studio", solrCollection));
+        env.addAll(getSolrEnvVars("studio"));
 
         return env;
     }

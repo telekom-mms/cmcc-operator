@@ -18,6 +18,7 @@ import com.tsystemsmms.cmcc.cmccoperator.crds.ClientSecretRef;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentDefaults;
 import com.tsystemsmms.cmcc.cmccoperator.ingress.CmccIngressGeneratorFactory;
 import com.tsystemsmms.cmcc.cmccoperator.resource.ResourceReconcilerManager;
+import com.tsystemsmms.cmcc.cmccoperator.utils.YamlMapper;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.client.KubernetesClient;
 
@@ -310,6 +311,8 @@ public interface TargetState {
     default String getStudioHostname() {
         return getHostname(getCmcc().getSpec().getDefaults().getStudioHostname());
     }
+
+    YamlMapper getYamlMapper();
 
     /**
      * Checks if the given Job is ready. The Job has to exist, and it has to have at least one successful execution.

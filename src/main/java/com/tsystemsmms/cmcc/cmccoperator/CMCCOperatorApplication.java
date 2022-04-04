@@ -13,6 +13,7 @@ package com.tsystemsmms.cmcc.cmccoperator;
 import com.tsystemsmms.cmcc.cmccoperator.ingress.*;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.*;
 import com.tsystemsmms.cmcc.cmccoperator.resource.ResourceReconcilerManager;
+import com.tsystemsmms.cmcc.cmccoperator.utils.YamlMapper;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.boot.SpringApplication;
@@ -37,10 +38,12 @@ public class CMCCOperatorApplication {
     @ConditionalOnProperty(value="cmcc.useConfigMap", havingValue = "true", matchIfMissing = false)
     public CmccConfigMapReconciler cmccConfigMapReconciler(
             KubernetesClient kubernetesClient,
-            TargetStateFactory targetStateFactory) {
+            TargetStateFactory targetStateFactory,
+            YamlMapper yamlMapper) {
         return new CmccConfigMapReconciler(
                 kubernetesClient,
-                targetStateFactory);
+                targetStateFactory,
+                yamlMapper);
     }
 
     @Bean
@@ -75,12 +78,19 @@ public class CMCCOperatorApplication {
                                                  KubernetesClient kubernetesClient,
                                                  CmccIngressGeneratorFactory cmccIngressGeneratorFactory,
                                                  ResourceNamingProviderFactory resourceNamingProviderFactory,
-                                                 ResourceReconcilerManager resourceReconcilerManager) {
+                                                 ResourceReconcilerManager resourceReconcilerManager,
+                                                 YamlMapper yamlMapper) {
         return new DefaultTargetStateFactory(beanFactory,
                 kubernetesClient,
                 cmccIngressGeneratorFactory,
                 resourceNamingProviderFactory,
-                resourceReconcilerManager);
+                resourceReconcilerManager,
+                yamlMapper);
+    }
+
+    @Bean
+    public YamlMapper yamlMapper() {
+        return new YamlMapper();
     }
 
     public static void main(String[] args) {

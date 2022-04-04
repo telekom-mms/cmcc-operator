@@ -10,10 +10,13 @@
 
 package com.tsystemsmms.cmcc.cmccoperator.components.generic;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.tsystemsmms.cmcc.cmccoperator.components.AbstractComponent;
 import com.tsystemsmms.cmcc.cmccoperator.components.Component;
 import com.tsystemsmms.cmcc.cmccoperator.components.HasService;
+import com.tsystemsmms.cmcc.cmccoperator.crds.ClientSecretRef;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
+import com.tsystemsmms.cmcc.cmccoperator.targetstate.ClientSecret;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.CustomResourceConfigError;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 import com.tsystemsmms.cmcc.cmccoperator.utils.EnvVarSet;
@@ -23,14 +26,30 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetSpecBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
+import static com.tsystemsmms.cmcc.cmccoperator.components.HasSolrClient.SOLR_CLIENT_SECRET_REF_KIND;
 import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.EnvVarSimple;
 
 public class SolrComponent extends AbstractComponent implements HasService {
     public static final String SOLR_PERSISTENT_STORAGE = "solr-persistent-storage";
     public static final String SOLR_REPLICAS = "replicas";
+    public static final String SOLR_CONFIG_SETS = "configSets";
+    public static final String SOLR_LEADER_COMPONENT = "leader";
+
+    private HashMap<String, String> configSets = new HashMap<>(Map.of(
+            "live", "cae",
+            "preview", "cae",
+            "studio", "studio"
+    ));
 
     private int replicas = 1;
 
@@ -47,6 +66,10 @@ public class SolrComponent extends AbstractComponent implements HasService {
         super.updateComponentSpec(newCs);
         if (newCs.getExtra().containsKey(SOLR_REPLICAS))
             replicas = Integer.parseInt(newCs.getExtra().get(SOLR_REPLICAS).toString());
+        if (newCs.getExtra().containsKey(SOLR_CONFIG_SETS))
+            configSets.putAll(getTargetState().getYamlMapper().load(newCs.getExtra().get(SOLR_CONFIG_SETS), new TypeReference<HashMap<String, String>>() {
+                    },
+                    () -> "Unable to read \"" + SOLR_CONFIG_SETS + "\" as a map in component \"" + newCs.getName() + "\""));
         return this;
     }
 
@@ -54,12 +77,18 @@ public class SolrComponent extends AbstractComponent implements HasService {
     public List<HasMetadata> buildResources() {
         List<HasMetadata> resources = new LinkedList<>();
         resources.add(buildService());
+        resources.add(buildServiceLeader());
         resources.add(buildStatefulSetLeader());
-        resources.add(buildPvc(getTargetState().getResourceNameFor(this, "leader")));
+        resources.add(buildPvc(getTargetState().getResourceNameFor(this, SOLR_LEADER_COMPONENT)));
         for (int i = 1; i < replicas; i++) {
             resources.add(buildStatefulSetFollower(i));
             resources.add(buildPvc(getTargetState().getResourceNameFor(this, getFollowerName(i))));
         }
+
+        for (ClientSecret secret : getTargetState().getClientSecrets(SOLR_CLIENT_SECRET_REF_KIND).values()) {
+
+        }
+
         return resources;
     }
 
@@ -69,22 +98,22 @@ public class SolrComponent extends AbstractComponent implements HasService {
         env.addAll(getComponentSpec().getEnv());
 
         return new StatefulSetBuilder()
-                .withMetadata(getResourceMetadataForName(getTargetState().getResourceNameFor(this, "leader")))
+                .withMetadata(getResourceMetadataForName(getTargetState().getResourceNameFor(this, SOLR_LEADER_COMPONENT)))
                 .withSpec(new StatefulSetSpecBuilder()
                         .withServiceName(getTargetState().getServiceNameFor(this))
                         .withSelector(new LabelSelectorBuilder()
-                                .withMatchLabels(getSelectorLabels("leader"))
+                                .withMatchLabels(getSelectorLabels(SOLR_LEADER_COMPONENT))
                                 .build())
                         .withTemplate(new PodTemplateSpecBuilder()
                                 .withMetadata(new ObjectMetaBuilder()
-                                        .withLabels(getSelectorLabels("leader"))
+                                        .withLabels(getSelectorLabels(SOLR_LEADER_COMPONENT))
                                         .build())
                                 .withSpec(new PodSpecBuilder()
                                         .withContainers(buildContainersWithEnv(env))
                                         .withInitContainers(getInitContainers())
                                         .withSecurityContext(getPodSecurityContext())
                                         .withTerminationGracePeriodSeconds(getTerminationGracePeriodSeconds())
-                                        .withVolumes(getVolumes("leader"))
+                                        .withVolumes(getVolumes(SOLR_LEADER_COMPONENT))
                                         .build())
                                 .build())
                         .build())
@@ -124,6 +153,21 @@ public class SolrComponent extends AbstractComponent implements HasService {
         return "follower-" + i;
     }
 
+    /**
+     * Build a service for just the leader.
+     *
+     * @return
+     */
+    private Service buildServiceLeader() {
+        return new ServiceBuilder()
+                .withMetadata(getTargetState().getResourceMetadataFor(this, SOLR_LEADER_COMPONENT))
+                .withSpec(new ServiceSpecBuilder()
+                        .withSelector(getSelectorLabels())
+                        .withPorts(getServicePorts())
+                        .build())
+                .build();
+    }
+
     @Override
     public long getTerminationGracePeriodSeconds() {
         return 30L;
@@ -156,6 +200,30 @@ public class SolrComponent extends AbstractComponent implements HasService {
                 .build());
 
         return volumes;
+    }
+
+    /**
+     * Create a Solr index in a follower.
+     *
+     * @param name name of the index to create
+     */
+    public void createIndex(String name) {
+        URI uri = URI.create("http://solr/foo");
+        try {
+            HttpClient client = HttpClient.newHttpClient();
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(uri)
+                    .build();
+            HttpResponse<String> response =
+                    client.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() != 200) {
+                throw new CustomResourceConfigError("Unable to create Solr index for \"" + name + "\" on Solr \"" + uri.toString() + "\": code " + response.statusCode() + ", " + response.body());
+            }
+        } catch (IOException e) {
+            throw new CustomResourceConfigError("Unable to create Solr index for \"" + name + "\" on Solr \"" + uri.toString() + "\": " + e.getMessage(), e);
+        } catch (InterruptedException e) {
+            // ignore?
+        }
     }
 
     @Override
@@ -242,4 +310,9 @@ public class SolrComponent extends AbstractComponent implements HasService {
     public String getServiceUrl() {
         return "http://" + getTargetState().getResourceNameFor(this) + ":8983/solr";
     }
+
+    public String getServiceUrlLeader() {
+        return "http://" + getTargetState().getResourceNameFor(this, SOLR_LEADER_COMPONENT) + ":8983/solr";
+    }
+
 }

@@ -12,6 +12,7 @@ package com.tsystemsmms.cmcc.cmccoperator.components.corba;
 
 import com.tsystemsmms.cmcc.cmccoperator.components.HasMongoDBClient;
 import com.tsystemsmms.cmcc.cmccoperator.components.HasService;
+import com.tsystemsmms.cmcc.cmccoperator.components.HasSolrClient;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
 import com.tsystemsmms.cmcc.cmccoperator.crds.SiteMapping;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.CustomResourceConfigError;
@@ -29,16 +30,18 @@ import java.util.Map;
 import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.concatOptional;
 
 @Slf4j
-public class CAEComponent extends CorbaComponent implements HasMongoDBClient, HasService {
+public class CAEComponent extends CorbaComponent implements HasMongoDBClient, HasSolrClient, HasService {
 
     public static final String KIND_LIVE = "live";
     public static final String KIND_PREVIEW = "preview";
 
-    String solrCollection;
     String servletPathPattern;
 
     public CAEComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec componentSpec) {
         super(kubernetesClient, targetState, componentSpec, "cae-preview");
+
+        String solrCollection;
+
         if (getComponentSpec().getKind() == null)
             throw new CustomResourceConfigError("kind must be set to either " + KIND_LIVE + " or " + KIND_PREVIEW);
         switch (componentSpec.getKind()) {
@@ -54,6 +57,7 @@ public class CAEComponent extends CorbaComponent implements HasMongoDBClient, Ha
         }
         setDefaultSchemas(Map.of(
                 MONGODB_CLIENT_SECRET_REF_KIND, "blueprint",
+                SOLR_CLIENT_SECRET_REF_KIND, solrCollection,
                 UAPI_CLIENT_SECRET_REF_KIND, "webserver"
         ));
         servletPathPattern = String.join("|", getDefaults().getServletNames());
@@ -63,6 +67,7 @@ public class CAEComponent extends CorbaComponent implements HasMongoDBClient, Ha
     public void requestRequiredResources() {
         super.requestRequiredResources();
         getMongoDBClientSecretRef();
+        getSolrClientSecretRef();
     }
 
     @Override
@@ -86,7 +91,7 @@ public class CAEComponent extends CorbaComponent implements HasMongoDBClient, Ha
         EnvVarSet env = super.getEnvVars();
 
         env.addAll(getMongoDBEnvVars());
-        env.addAll(getSolrEnvVars("cae", solrCollection));
+        env.addAll(getSolrEnvVars("cae"));
 
         return env;
     }
