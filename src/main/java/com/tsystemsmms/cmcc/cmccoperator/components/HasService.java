@@ -10,6 +10,7 @@
 
 package com.tsystemsmms.cmcc.cmccoperator.components;
 
+import com.tsystemsmms.cmcc.cmccoperator.targetstate.CustomResourceConfigError;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceBuilder;
 import io.fabric8.kubernetes.api.model.ServicePort;
@@ -52,5 +53,12 @@ public interface HasService extends Component {
         return "http://" + getTargetState().getResourceNameFor(this) + ":8080";
     }
 
-
+    /**
+     * Returns the URL for a specific service, if the components creates more than one.
+     * @param variant
+     * @return
+     */
+    default String getServiceUrl(String variant) {
+        throw new CustomResourceConfigError("Component \"" + getSpecName() + "\" does not implement multiple services");
+    }
 }

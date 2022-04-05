@@ -15,6 +15,7 @@ import com.tsystemsmms.cmcc.cmccoperator.crds.CoreMediaContentCloud;
 import com.tsystemsmms.cmcc.cmccoperator.crds.CoreMediaContentCloudSpec;
 import com.tsystemsmms.cmcc.cmccoperator.crds.CoreMediaContentCloudStatus;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.CustomResourceConfigError;
+import com.tsystemsmms.cmcc.cmccoperator.utils.YamlMapper;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
@@ -37,22 +38,12 @@ public abstract class AbstractCustomResource implements CustomResource {
         status = cmcc.getStatus();
     }
 
-    public AbstractCustomResource(ConfigMap cm) {
-        Yaml yaml = new Yaml();
-        ObjectMapper mapper = new ObjectMapper();
-        resource = cm;
-//        Yaml specYaml = new Yaml(new Constructor(CoreMediaContentCloudSpec.class));
-//        Yaml statusYaml = new Yaml(new Constructor(CoreMediaContentCloudStatus.class));
-        String specString = cm.getData().get("spec");
-        if (specString == null)
-            throw new CustomResourceConfigError("ConfigMap \"" + cm.getMetadata().getName() + "\": property \"spec\" is missing.");
-//        spec = specYaml.load(specString);
-//        status = cm.getData().containsKey("status") ? statusYaml.load(cm.getData().get("status")) : new CoreMediaContentCloudStatus();
-        spec = mapper.convertValue(yaml.load(specString), CoreMediaContentCloudSpec.class);
-        status = cm.getData().containsKey("status")
-                ? mapper.convertValue(yaml.load(cm.getData().get("status")), CoreMediaContentCloudStatus.class)
-                : new CoreMediaContentCloudStatus();
+    public AbstractCustomResource(HasMetadata resource, CoreMediaContentCloudSpec spec, CoreMediaContentCloudStatus status) {
+        this.resource = resource;
+        this.spec = spec;
+        this.status = status;
     }
+
 
     @Override
     public String getApiVersion() {

@@ -16,6 +16,7 @@ import com.tsystemsmms.cmcc.cmccoperator.crds.CoreMediaContentCloudStatus;
 import com.tsystemsmms.cmcc.cmccoperator.customresource.ConfigMapCustomResource;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetStateFactory;
+import com.tsystemsmms.cmcc.cmccoperator.utils.YamlMapper;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.reconciler.*;
@@ -36,16 +37,18 @@ public class CmccConfigMapReconciler implements Reconciler<ConfigMap>, ErrorStat
 
     private final KubernetesClient kubernetesClient;
     private final TargetStateFactory targetStateFactory;
+    private final YamlMapper yamlMapper;
 
-    public CmccConfigMapReconciler(KubernetesClient kubernetesClient, TargetStateFactory targetStateFactory) {
+    public CmccConfigMapReconciler(KubernetesClient kubernetesClient, TargetStateFactory targetStateFactory, YamlMapper yamlMapper) {
         this.kubernetesClient = kubernetesClient;
         this.targetStateFactory = targetStateFactory;
+        this.yamlMapper = yamlMapper;
         log.info("Using ConfigMap with label {} for configuration", SELECTOR_LABEL);
     }
 
     @Override
     public UpdateControl<ConfigMap> reconcile(ConfigMap cm, Context context) {
-        ConfigMapCustomResource cmcc = new ConfigMapCustomResource(cm);
+        ConfigMapCustomResource cmcc = new ConfigMapCustomResource(cm, yamlMapper);
         CoreMediaContentCloudStatus status = cmcc.getStatus();
 
         TargetState targetState = targetStateFactory.buildTargetState(cmcc);
@@ -69,7 +72,7 @@ public class CmccConfigMapReconciler implements Reconciler<ConfigMap>, ErrorStat
     @Override
     public Optional<ConfigMap> updateErrorStatus(ConfigMap cm, RetryInfo retryInfo,
                                                              RuntimeException e) {
-        CoreMediaContentCloudStatus status = new ConfigMapCustomResource(cm).getStatus();
+        CoreMediaContentCloudStatus status = new ConfigMapCustomResource(cm, yamlMapper).getStatus();
         status.setErrorMessage(e.getMessage());
         status.setError("error");
         return Optional.of(cm);

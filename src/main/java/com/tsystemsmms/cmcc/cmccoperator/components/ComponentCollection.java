@@ -11,6 +11,7 @@
 package com.tsystemsmms.cmcc.cmccoperator.components;
 
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
+import com.tsystemsmms.cmcc.cmccoperator.crds.Milestone;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.CustomResourceConfigError;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -47,6 +48,8 @@ public class ComponentCollection {
         Component c = components.get(cr);
         if (c == null) {
             c = createComponentByComponentSpec(componentSpec);
+            if (componentSpec.getMilestone() == null)
+                componentSpec.setMilestone(Milestone.ManagementReady);
             components.put(cr, c);
         } else {
             c.updateComponentSpec(componentSpec);

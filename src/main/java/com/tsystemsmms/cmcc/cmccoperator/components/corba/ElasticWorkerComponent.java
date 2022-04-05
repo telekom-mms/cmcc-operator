@@ -12,6 +12,7 @@ package com.tsystemsmms.cmcc.cmccoperator.components.corba;
 
 import com.tsystemsmms.cmcc.cmccoperator.components.HasMongoDBClient;
 import com.tsystemsmms.cmcc.cmccoperator.components.HasService;
+import com.tsystemsmms.cmcc.cmccoperator.components.HasSolrClient;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 import com.tsystemsmms.cmcc.cmccoperator.utils.EnvVarSet;
@@ -23,13 +24,16 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import static com.tsystemsmms.cmcc.cmccoperator.components.HasSolrClient.SOLR_CLIENT_SECRET_REF_KIND;
+
 @Slf4j
-public class ElasticWorkerComponent extends CorbaComponent implements HasMongoDBClient, HasService {
+public class ElasticWorkerComponent extends CorbaComponent implements HasMongoDBClient, HasSolrClient, HasService {
 
     public ElasticWorkerComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec componentSpec) {
         super(kubernetesClient, targetState, componentSpec, "elastic-worker");
         setDefaultSchemas(Map.of(
                 MONGODB_CLIENT_SECRET_REF_KIND, "blueprint",
+                SOLR_CLIENT_SECRET_REF_KIND, HasSolrClient.getSolrClientSecretRefName("studio", SOLR_CLIENT_SERVER_LEADER),
                 UAPI_CLIENT_SECRET_REF_KIND, "webserver"
         ));
     }
@@ -38,6 +42,7 @@ public class ElasticWorkerComponent extends CorbaComponent implements HasMongoDB
     public void requestRequiredResources() {
         super.requestRequiredResources();
         getMongoDBClientSecretRef();
+        getSolrClientSecretRef();
     }
 
     @Override
@@ -52,7 +57,7 @@ public class ElasticWorkerComponent extends CorbaComponent implements HasMongoDB
         EnvVarSet env = super.getEnvVars();
 
         env.addAll(getMongoDBEnvVars());
-        env.addAll(getSolrEnvVars("content", "studio"));
+        env.addAll(getSolrEnvVars("content"));
 
         return env;
     }

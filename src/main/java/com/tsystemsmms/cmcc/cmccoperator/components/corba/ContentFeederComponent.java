@@ -11,6 +11,7 @@
 package com.tsystemsmms.cmcc.cmccoperator.components.corba;
 
 import com.tsystemsmms.cmcc.cmccoperator.components.HasMongoDBClient;
+import com.tsystemsmms.cmcc.cmccoperator.components.HasSolrClient;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 import com.tsystemsmms.cmcc.cmccoperator.utils.EnvVarSet;
@@ -22,13 +23,17 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import static com.tsystemsmms.cmcc.cmccoperator.components.HasSolrClient.SOLR_CLIENT_SECRET_REF_KIND;
+import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.concatOptional;
+
 @Slf4j
-public class ContentFeederComponent extends CorbaComponent implements HasMongoDBClient {
+public class ContentFeederComponent extends CorbaComponent implements HasMongoDBClient, HasSolrClient {
 
     public ContentFeederComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec componentSpec) {
         super(kubernetesClient, targetState, componentSpec, "content-feeder");
         setDefaultSchemas(Map.of(
                 MONGODB_CLIENT_SECRET_REF_KIND, "blueprint",
+                SOLR_CLIENT_SECRET_REF_KIND, HasSolrClient.getSolrClientSecretRefName("studio", SOLR_CLIENT_SERVER_LEADER),
                 UAPI_CLIENT_SECRET_REF_KIND, "feeder"
         ));
     }
@@ -37,6 +42,7 @@ public class ContentFeederComponent extends CorbaComponent implements HasMongoDB
     public void requestRequiredResources() {
         super.requestRequiredResources();
         getMongoDBClientSecretRef();
+        getSolrClientSecretRef();
     }
 
     @Override
@@ -51,7 +57,7 @@ public class ContentFeederComponent extends CorbaComponent implements HasMongoDB
         EnvVarSet env = super.getEnvVars();
 
         env.addAll(getMongoDBEnvVars());
-        env.addAll(getSolrEnvVars("content", "studio"));
+        env.addAll(getSolrEnvVars("content"));
 
         return env;
     }

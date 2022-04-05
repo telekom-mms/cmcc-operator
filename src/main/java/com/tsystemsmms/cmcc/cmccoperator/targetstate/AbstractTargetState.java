@@ -18,6 +18,7 @@ import com.tsystemsmms.cmcc.cmccoperator.crds.Milestone;
 import com.tsystemsmms.cmcc.cmccoperator.ingress.CmccIngressGeneratorFactory;
 import com.tsystemsmms.cmcc.cmccoperator.resource.ResourceReconcilerManager;
 import com.tsystemsmms.cmcc.cmccoperator.utils.RandomString;
+import com.tsystemsmms.cmcc.cmccoperator.utils.YamlMapper;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetStatus;
@@ -56,6 +57,8 @@ public abstract class AbstractTargetState implements TargetState {
     final ResourceNamingProvider resourceNamingProvider;
     @Getter
     final ResourceReconcilerManager resourceReconcilerManager;
+    @Getter
+    final YamlMapper yamlMapper;
 
     final Map<String, Map<String, ClientSecret>> clientSecrets = new HashMap<>();
 
@@ -64,6 +67,7 @@ public abstract class AbstractTargetState implements TargetState {
                                CmccIngressGeneratorFactory cmccIngressGeneratorFactory,
                                ResourceNamingProviderFactory resourceNamingProviderFactory,
                                ResourceReconcilerManager resourceReconcilerManager,
+                               YamlMapper yamlMapper,
                                CustomResource cmcc) {
         this.kubernetesClient = kubernetesClient;
         this.cmccIngressGeneratorFactory = cmccIngressGeneratorFactory;
@@ -71,6 +75,7 @@ public abstract class AbstractTargetState implements TargetState {
         componentCollection = new ComponentCollection(beanFactory, kubernetesClient, this);
         this.resourceNamingProvider = resourceNamingProviderFactory.instance(this);
         this.resourceReconcilerManager = resourceReconcilerManager;
+        this.yamlMapper = yamlMapper;
     }
 
     /**
@@ -242,11 +247,11 @@ public abstract class AbstractTargetState implements TargetState {
         final LinkedList<HasMetadata> resources = new LinkedList<>();
 
         Optional<Component> previewCae = componentCollection.getOfTypeAndKind("cae", "preview");
-        if (previewCae.isPresent() && previewCae.get().getComponentSpec().getMilestone().compareTo(getCmcc().getStatus().getMilestone()) <= 0)
+        if (previewCae.isPresent() && Milestone.compareTo(previewCae.get().getComponentSpec().getMilestone(), getCmcc().getStatus().getMilestone()) <= 0)
             resources.addAll(cmccIngressGeneratorFactory.instance(this, getServiceNameFor("cae", "preview")).buildPreviewResources());
 
         Optional<Component> liveCae = componentCollection.getOfTypeAndKind("cae", "live");
-        if (liveCae.isPresent() && liveCae.get().getComponentSpec().getMilestone().compareTo(getCmcc().getStatus().getMilestone()) <= 0)
+        if (liveCae.isPresent() && Milestone.compareTo(liveCae.get().getComponentSpec().getMilestone(), getCmcc().getStatus().getMilestone()) <= 0)
             resources.addAll(cmccIngressGeneratorFactory.instance(this, getServiceNameFor("cae", "live")).buildLiveResources());
 
         return resources;

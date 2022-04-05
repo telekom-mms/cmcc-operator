@@ -12,6 +12,7 @@ package com.tsystemsmms.cmcc.cmccoperator.components.corba;
 
 import com.tsystemsmms.cmcc.cmccoperator.components.HasJdbcClient;
 import com.tsystemsmms.cmcc.cmccoperator.components.HasMongoDBClient;
+import com.tsystemsmms.cmcc.cmccoperator.components.HasSolrClient;
 import com.tsystemsmms.cmcc.cmccoperator.components.HasUapiClient;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.CustomResourceConfigError;
@@ -24,20 +25,20 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.tsystemsmms.cmcc.cmccoperator.components.HasSolrClient.SOLR_CLIENT_SECRET_REF_KIND;
 import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.EnvVarSimple;
+import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.concatOptional;
 
 @Slf4j
-public class CAEFeederComponent extends CorbaComponent implements HasJdbcClient, HasMongoDBClient {
+public class CAEFeederComponent extends CorbaComponent implements HasJdbcClient, HasMongoDBClient, HasSolrClient {
 
     public static final String KIND_LIVE = "live";
     public static final String KIND_PREVIEW = "preview";
     public static final String EXTRA_DATABASE_SCHEMA = "databaseSchema";
 
-    @Getter
-    String solrCollection;
-
     public CAEFeederComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec componentSpec) {
         super(kubernetesClient, targetState, componentSpec, "cae-feeder");
+
         if (getComponentSpec().getKind() == null)
             throw new CustomResourceConfigError("kind must be set to either " + KIND_LIVE + " or " + KIND_PREVIEW);
         switch (componentSpec.getKind()) {
@@ -45,17 +46,17 @@ public class CAEFeederComponent extends CorbaComponent implements HasJdbcClient,
                 setDefaultSchemas(Map.of(
                         JDBC_CLIENT_SECRET_REF_KIND, "mcaefeeder",
                         MONGODB_CLIENT_SECRET_REF_KIND, "blueprint",
+                        SOLR_CLIENT_SECRET_REF_KIND, HasSolrClient.getSolrClientSecretRefName("live", SOLR_CLIENT_SERVER_LEADER),
                         UAPI_CLIENT_SECRET_REF_KIND, "feeder"
                 ));
-                solrCollection = "live";
                 break;
             case KIND_PREVIEW:
                 setDefaultSchemas(Map.of(
                         JDBC_CLIENT_SECRET_REF_KIND, "caefeeder",
                         MONGODB_CLIENT_SECRET_REF_KIND, "blueprint",
+                        SOLR_CLIENT_SECRET_REF_KIND, HasSolrClient.getSolrClientSecretRefName("preview", SOLR_CLIENT_SERVER_LEADER),
                         UAPI_CLIENT_SECRET_REF_KIND, "feeder"
                 ));
-                solrCollection = "preview";
                 break;
             default:
                 throw new CustomResourceConfigError("kind \"" + getComponentSpec().getKind() + "\" is illegal, must be either " + KIND_LIVE + " or " + KIND_PREVIEW);
@@ -69,6 +70,7 @@ public class CAEFeederComponent extends CorbaComponent implements HasJdbcClient,
         super.requestRequiredResources();
         getMongoDBClientSecretRef();
         getJdbcClientSecretRef();
+        getSolrClientSecretRef();
     }
 
     @Override
@@ -84,7 +86,7 @@ public class CAEFeederComponent extends CorbaComponent implements HasJdbcClient,
 
         env.addAll(getJdbcClientEnvVars("JDBC"));
         env.addAll(getMongoDBEnvVars());
-        env.addAll(getSolrEnvVars("cae", solrCollection));
+        env.addAll(getSolrEnvVars("cae"));
 
         if (getComponentSpec().getKind().equals(KIND_LIVE))
             env.add(EnvVarSimple("REPOSITORY_URL", getTargetState().getServiceUrlFor("content-server", "mls")));
