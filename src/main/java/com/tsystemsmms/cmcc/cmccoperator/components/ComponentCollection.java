@@ -44,12 +44,12 @@ public class ComponentCollection {
      * @return the created/updated component
      */
     public Component add(ComponentSpec componentSpec) {
-        if (componentSpec.getMilestone() == null)
-            componentSpec.setMilestone(Milestone.ManagementReady);
         ComponentReference cr = new ComponentReference(componentSpec);
         Component c = components.get(cr);
         if (c == null) {
             c = createComponentByComponentSpec(componentSpec);
+            if (componentSpec.getMilestone() == null)
+                componentSpec.setMilestone(Milestone.ManagementReady);
             components.put(cr, c);
         } else {
             c.updateComponentSpec(componentSpec);

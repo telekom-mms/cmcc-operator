@@ -553,6 +553,8 @@ Runs an NGINX web server image, for example, to make static files available with
 
 The Solr component creates one or more Solr instances, controlled by the `extra.replicas` property. With `extra.replicas=1`, a single Solr leader instance is created. With `extra.replicas=2` or higher, one or more follower instances are created that replicate the leader automatically.
 
+The operator will automatically create the cores in the followers, but executing the core admin API request, as documented in the Search Manual.
+
 ### Component `studio-client`
 
 The Studio single-page app.

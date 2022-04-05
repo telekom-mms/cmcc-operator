@@ -11,38 +11,55 @@
 package com.tsystemsmms.cmcc.cmccoperator.components.generic;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tsystemsmms.cmcc.cmccoperator.components.AbstractComponent;
 import com.tsystemsmms.cmcc.cmccoperator.components.Component;
 import com.tsystemsmms.cmcc.cmccoperator.components.HasService;
+import com.tsystemsmms.cmcc.cmccoperator.crds.ClientSecretRef;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
 import com.tsystemsmms.cmcc.cmccoperator.crds.Milestone;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.ClientSecret;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.CustomResourceConfigError;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 import com.tsystemsmms.cmcc.cmccoperator.utils.EnvVarSet;
+import com.tsystemsmms.cmcc.cmccoperator.utils.SimpleExecListener;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetSpecBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.dsl.ExecListener;
+import io.fabric8.kubernetes.client.dsl.ExecWatch;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.util.UriBuilder;
+import org.springframework.web.util.UriBuilderFactory;
+import org.springframework.web.util.UriComponentsBuilder;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 import static com.tsystemsmms.cmcc.cmccoperator.components.HasSolrClient.SOLR_CLIENT_SECRET_REF_KIND;
+import static com.tsystemsmms.cmcc.cmccoperator.components.HasSolrClient.SOLR_CLIENT_SERVER_FOLLOWER;
 import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.EnvVarSimple;
+import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.concatOptional;
 
+@Slf4j
 public class SolrComponent extends AbstractComponent implements HasService {
     public static final String SOLR_PERSISTENT_STORAGE = "solr-persistent-storage";
     public static final String SOLR_REPLICAS = "replicas";
     public static final String SOLR_CONFIG_SETS = "configSets";
     public static final String SOLR_LEADER_COMPONENT = "leader";
 
-    private HashMap<String, String> configSets = new HashMap<>(Map.of(
+    private final HashMap<String, String> configSets = new HashMap<>(Map.of(
             "live", "cae",
             "preview", "cae",
             "studio", "studio"
@@ -55,14 +72,14 @@ public class SolrComponent extends AbstractComponent implements HasService {
         if (!componentSpec.getKind().isBlank())
             throw new CustomResourceConfigError("Invalid specification \"kind\" for \"solr\": there are no different kinds.");
         if (componentSpec.getExtra().containsKey(SOLR_REPLICAS))
-            replicas = Integer.parseInt(componentSpec.getExtra().get(SOLR_REPLICAS).toString());
+            replicas = Integer.parseInt(componentSpec.getExtra().get(SOLR_REPLICAS));
     }
 
     @Override
     public Component updateComponentSpec(ComponentSpec newCs) {
         super.updateComponentSpec(newCs);
         if (newCs.getExtra().containsKey(SOLR_REPLICAS))
-            replicas = Integer.parseInt(newCs.getExtra().get(SOLR_REPLICAS).toString());
+            replicas = Integer.parseInt(newCs.getExtra().get(SOLR_REPLICAS));
         if (newCs.getExtra().containsKey(SOLR_CONFIG_SETS))
             configSets.putAll(getTargetState().getYamlMapper().load(newCs.getExtra().get(SOLR_CONFIG_SETS), new TypeReference<HashMap<String, String>>() {
                     },
@@ -84,6 +101,25 @@ public class SolrComponent extends AbstractComponent implements HasService {
         for (int i = 1; i < replicas; i++) {
             resources.add(buildStatefulSetFollower(i));
             resources.add(buildPvc(getTargetState().getResourceNameFor(this, getFollowerName(i))));
+        }
+        for (Map.Entry<String, ClientSecret> e : getTargetState().getClientSecrets(SOLR_CLIENT_SECRET_REF_KIND).entrySet()) {
+            String[] parts = e.getKey().split("-");
+            if (parts.length < 2)
+                continue;
+            String server = parts[parts.length-1];
+            if (server.equals(SOLR_CLIENT_SERVER_FOLLOWER)) {
+                // create schema on follower
+                for (int i = 1; i < replicas; i++) {
+                    String name = getTargetState().getResourceNameFor(this, getFollowerName(i));
+                    String flag = concatOptional("solr-index", name, "created");
+                    if (getTargetState().isFlag(flag))
+                        continue;
+                    if (!getTargetState().isStatefulSetReady(name))
+                        continue;
+                    createIndex(name, e.getValue().getStringData().get(e.getValue().getRef().getSchemaKey()));
+                    getTargetState().setFlag(flag, true);
+                }
+            }
         }
 
         return resources;
@@ -153,7 +189,7 @@ public class SolrComponent extends AbstractComponent implements HasService {
     /**
      * Build a service for just the leader.
      *
-     * @return
+     * @return the service for the leader
      */
     private Service buildServiceLeader() {
         return new ServiceBuilder()
@@ -200,26 +236,40 @@ public class SolrComponent extends AbstractComponent implements HasService {
     }
 
     /**
-     * Create a Solr index in a follower.
+     * Create a Solr index in a follower. This is a bit ugly, since exec() doesn't appear to be able to capture the
+     * commands' exit code.
+     *
+     * <pre>curl 'http://localhost:8983/solr/admin/cores?action=CREATE&name=studio&configSet=content&dataDir=data'</pre>
      *
      * @param name name of the index to create
      */
-    public void createIndex(String name) {
-        URI uri = URI.create("http://solr/foo");
-        try {
-            HttpClient client = HttpClient.newHttpClient();
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(uri)
-                    .build();
-            HttpResponse<String> response =
-                    client.send(request, HttpResponse.BodyHandlers.ofString());
-            if (response.statusCode() != 200) {
-                throw new CustomResourceConfigError("Unable to create Solr index for \"" + name + "\" on Solr \"" + uri.toString() + "\": code " + response.statusCode() + ", " + response.body());
-            }
-        } catch (IOException e) {
-            throw new CustomResourceConfigError("Unable to create Solr index for \"" + name + "\" on Solr \"" + uri.toString() + "\": " + e.getMessage(), e);
-        } catch (InterruptedException e) {
-            // ignore?
+    public void createIndex(String resource, String name) {
+        String podName = concatOptional(resource, "0");
+        String configSet = Objects.requireNonNull(configSets.get(name), () -> "No configSet available for Solr collection \"" + name + "\"");
+        String url = UriComponentsBuilder.fromHttpUrl("http://localhost:8983/solr/admin/cores")
+                .queryParam("action", "CREATE")
+                .queryParam("name", name)
+                .queryParam("configSet", configSet)
+                .queryParam("dataDir", "data")
+                .toUriString();
+//        "http://localhost:8983/solr/admin/cores?action=CREATE&name=" + name + "&configSet=" + configSet + "&dataDir=data";
+        log.debug("Creating Solr Core {} on pod {}, using {}", name, podName, url);
+        SimpleExecListener listener = new SimpleExecListener();
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+        ExecWatch watch = getKubernetesClient().pods().inNamespace(getNamespace()).withName(podName)
+                .inContainer("solr")
+                .readingInput(InputStream.nullInputStream())
+                .writingOutput(out)
+                .writingError(err)
+                .usingListener(listener)
+                .exec("sh", "-c", "curl -fs '" + url + "' || echo \"error $?\" >&2");
+        listener.awaitUninterruptable();
+        watch.close();
+        log.debug("Process out:\n{}", out.toString(StandardCharsets.UTF_8));
+        log.debug("Process err:\n{}", err.toString(StandardCharsets.UTF_8));
+        if (err.size() != 0) {
+            throw new CustomResourceConfigError("Unable to create Solr core \"" + name + "\" on pod \"" + podName + "\": " + err);
         }
     }
 
@@ -315,12 +365,6 @@ public class SolrComponent extends AbstractComponent implements HasService {
         else
             return "http://" + getTargetState().getResourceNameFor(this, SOLR_LEADER_COMPONENT) + ":8983/solr";
     }
-
-    /*
-     curl 'http://localhost:40081/solr/admin/cores?action=CREATE&name=studio&configSet=content&dataDir=data'
-
-     curl 'http://localhost:8983/solr/admin/cores?action=CREATE&name=studio&configSet=content&dataDir=data'
-     */
 
     @Override
     public Optional<Boolean> isReady() {

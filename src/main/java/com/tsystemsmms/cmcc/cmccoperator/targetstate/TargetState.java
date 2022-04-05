@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
+import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.booleanOf;
 import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.concatOptional;
 
 /**
@@ -136,6 +137,27 @@ public interface TargetState {
      * @return component collection
      */
     ComponentCollection getComponentCollection();
+
+    /**
+     * Returns the string value of the named flag.
+     *
+     * @param name of flag
+     * @return value
+     */
+    default String getFlag(String name, String def) {
+        return getCmcc().getStatus().getFlags().getOrDefault(name, def);
+    }
+
+    /**
+     * Returns the boolean value of the named flag. Returns false unless the value is a boolean and true, or a String
+     * that is true-ish.
+     *
+     * @param name of flag
+     * @return value
+     */
+    default boolean isFlag(String name) {
+        return booleanOf(getFlag(name, "false"), false);
+    }
 
     /**
      * Returns a hostname for the given name. If the name does not contain periods, extend it with the prefix and
@@ -343,4 +365,24 @@ public interface TargetState {
      * Reconcile the current cluster state with the target state.
      */
     void reconcile();
+
+    /**
+     * Sets the named flag to the string value
+     *
+     * @param name  of flag
+     * @param value of the flag
+     */
+    default void setFlag(String name, String value) {
+        getCmcc().getStatus().getFlags().put(name, value);
+    }
+
+    /**
+     * Sets the named flag to the boolean value.
+     *
+     * @param name  of flag
+     * @param value of flag
+     */
+    default void setFlag(String name, boolean value) {
+        setFlag(name, value ? "true" : "false");
+    }
 }
