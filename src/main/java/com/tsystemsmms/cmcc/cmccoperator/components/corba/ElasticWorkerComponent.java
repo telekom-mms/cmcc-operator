@@ -33,7 +33,7 @@ public class ElasticWorkerComponent extends CorbaComponent implements HasMongoDB
         super(kubernetesClient, targetState, componentSpec, "elastic-worker");
         setDefaultSchemas(Map.of(
                 MONGODB_CLIENT_SECRET_REF_KIND, "blueprint",
-                SOLR_CLIENT_SECRET_REF_KIND, "studio",
+                SOLR_CLIENT_SECRET_REF_KIND, HasSolrClient.getSolrClientSecretRefName("studio", SOLR_CLIENT_SERVER_LEADER),
                 UAPI_CLIENT_SECRET_REF_KIND, "webserver"
         ));
     }

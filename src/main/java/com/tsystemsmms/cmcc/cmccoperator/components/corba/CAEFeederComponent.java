@@ -27,6 +27,7 @@ import java.util.Map;
 
 import static com.tsystemsmms.cmcc.cmccoperator.components.HasSolrClient.SOLR_CLIENT_SECRET_REF_KIND;
 import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.EnvVarSimple;
+import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.concatOptional;
 
 @Slf4j
 public class CAEFeederComponent extends CorbaComponent implements HasJdbcClient, HasMongoDBClient, HasSolrClient {
@@ -45,7 +46,7 @@ public class CAEFeederComponent extends CorbaComponent implements HasJdbcClient,
                 setDefaultSchemas(Map.of(
                         JDBC_CLIENT_SECRET_REF_KIND, "mcaefeeder",
                         MONGODB_CLIENT_SECRET_REF_KIND, "blueprint",
-                        SOLR_CLIENT_SECRET_REF_KIND, "live",
+                        SOLR_CLIENT_SECRET_REF_KIND, HasSolrClient.getSolrClientSecretRefName("live", SOLR_CLIENT_SERVER_LEADER),
                         UAPI_CLIENT_SECRET_REF_KIND, "feeder"
                 ));
                 break;
@@ -53,7 +54,7 @@ public class CAEFeederComponent extends CorbaComponent implements HasJdbcClient,
                 setDefaultSchemas(Map.of(
                         JDBC_CLIENT_SECRET_REF_KIND, "caefeeder",
                         MONGODB_CLIENT_SECRET_REF_KIND, "blueprint",
-                        SOLR_CLIENT_SECRET_REF_KIND, "preview",
+                        SOLR_CLIENT_SECRET_REF_KIND, HasSolrClient.getSolrClientSecretRefName("preview", SOLR_CLIENT_SERVER_LEADER),
                         UAPI_CLIENT_SECRET_REF_KIND, "feeder"
                 ));
                 break;

@@ -39,7 +39,7 @@ public class StudioServerComponent extends CorbaComponent implements HasMongoDBC
         setDefaultSchemas(Map.of(
                 JDBC_CLIENT_SECRET_REF_KIND, "studio",
                 MONGODB_CLIENT_SECRET_REF_KIND, "blueprint",
-                SOLR_CLIENT_SECRET_REF_KIND, "studio",
+                SOLR_CLIENT_SECRET_REF_KIND, HasSolrClient.getSolrClientSecretRefName("studio", SOLR_CLIENT_SERVER_LEADER),
                 UAPI_CLIENT_SECRET_REF_KIND, "studio"
         ));
         solrCollection = "studio";

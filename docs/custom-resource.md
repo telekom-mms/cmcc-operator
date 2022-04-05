@@ -166,20 +166,20 @@ properties that the components take for database configuration.
 
 This tables shows the component types and the client secrets they use.
 
-| Component type/kind    | `jdbc`        | `mongodb`   | `uapi`      | Description |
-|------------------------|---------------|-------------|-------------|-------------|
-| `content-server`/`cms` | `management`  |             | `publisher` | To the MLS  |
-| `content-server`/`mls` | `master`      |             |             |             |
-| `content-server`/`rls` | `replication` |             | `publisher` | To the MLS  |
-| `cae`/`live`           |               | `blueprint` | `webserver` |             |
-| `cae`/`preview`        |               | `blueprint` | `webserver` |             |
-| `cae-feeder`/`live`    | `caefeeder`   | `blueprint` | `webserver` |             |
-| `cae-feeder`/`preview` | `mcaefeeder`  | `blueprint` | `webserver` |             |
-| `content-feeder`       |               | `blueprint` | `feeder`    |             |
-| `elastic-worker`       |               | `blueprint` | `webserver` |             |
-| `studio-server`        | `studio`      | `blueprint` | `studio`    |             |
-| `user-changes`         |               | `blueprint` | `studio`    |             |
-| `workflow-server`      | `management`  | `blueprint` | `workflow`  |             |
+| Component type/kind    | `jdbc`        | `mongodb`   | `solr`    | `uapi`      | Description |
+|------------------------|---------------|-------------|-----------|-------------|-------------|
+| `content-server`/`cms` | `management`  |             |           | `publisher` | To the MLS  |
+| `content-server`/`mls` | `master`      |             |           |             |             |
+| `content-server`/`rls` | `replication` |             |           | `publisher` | To the MLS  |
+| `cae`/`live`           |               | `blueprint` | `live`    | `webserver` |             |
+| `cae`/`preview`        |               | `blueprint` | `preview` | `webserver` |             |
+| `cae-feeder`/`live`    | `caefeeder`   | `blueprint` | `live`    | `webserver` |             |
+| `cae-feeder`/`preview` | `mcaefeeder`  | `blueprint` | `preview` | `webserver` |             |
+| `content-feeder`       |               | `blueprint` | `studio`  | `feeder`    |             |
+| `elastic-worker`       |               | `blueprint` | `studio`  | `webserver` |             |
+| `studio-server`        | `studio`      | `blueprint` | `studio`  | `studio`    |             |
+| `user-changes`         |               | `blueprint` | `         | `studio`    |             |
+| `workflow-server`      | `management`  | `blueprint` |           | `workflow`  |             |
 
 You can override the schema/user names for each component by adding an entry to the components `schemas` map, for example:
 
@@ -235,6 +235,16 @@ kubectl create secret generic mysql-management \
 
 The components only use the `urlKey` to configure the MongoDB client. You must provide the authentication in the URL, if
 the MongoDB server requires it.
+
+### `clientSecretRef.solr`
+
+While Solr does not use authentication (unless explicitly enabled through a plugin), the operator uses the secrets to configure the Solr Core/collection name and server URL. For each collection, two secrets are used: *schemaname*`-leader` and *schemaname*`-follower`. The leader can be used to connect to the Solr leader (used for indexing and quick turnaround querying in the Studio and preview); the follower secret connects to the follower instances that replicate the cores from the leader, for example in the Live CAE.
+
+By default, the following secrets are required:
+* `solr-live-follower`
+* `solr-live-leader`
+* `solr-preview-leader`
+* `solr-studio-leader`
 
 ### `clientSecretRef.uapi`
 
@@ -541,9 +551,7 @@ Runs an NGINX web server image, for example, to make static files available with
 
 ### Component `solr`
 
-The Solr type has two kinds: `leader` and `follower`. The name defaults to `solr-leader` and `solr-follower`,
-respectively. Note that if you want to add more than one follower, you will need to assign individual names to the
-components yourself.
+The Solr component creates one or more Solr instances, controlled by the `extra.replicas` property. With `extra.replicas=1`, a single Solr leader instance is created. With `extra.replicas=2` or higher, one or more follower instances are created that replicate the leader automatically.
 
 ### Component `studio-client`
 

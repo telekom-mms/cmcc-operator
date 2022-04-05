@@ -14,8 +14,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.tsystemsmms.cmcc.cmccoperator.components.AbstractComponent;
 import com.tsystemsmms.cmcc.cmccoperator.components.Component;
 import com.tsystemsmms.cmcc.cmccoperator.components.HasService;
-import com.tsystemsmms.cmcc.cmccoperator.crds.ClientSecretRef;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
+import com.tsystemsmms.cmcc.cmccoperator.crds.Milestone;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.ClientSecret;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.CustomResourceConfigError;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
@@ -31,10 +31,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static com.tsystemsmms.cmcc.cmccoperator.components.HasSolrClient.SOLR_CLIENT_SECRET_REF_KIND;
 import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.EnvVarSimple;
@@ -76,6 +73,10 @@ public class SolrComponent extends AbstractComponent implements HasService {
     @Override
     public List<HasMetadata> buildResources() {
         List<HasMetadata> resources = new LinkedList<>();
+
+        if (replicas < 1)
+            throw new CustomResourceConfigError("Replicas must be 1 or higher, not " + replicas);
+
         resources.add(buildService());
         resources.add(buildServiceLeader());
         resources.add(buildStatefulSetLeader());
@@ -83,10 +84,6 @@ public class SolrComponent extends AbstractComponent implements HasService {
         for (int i = 1; i < replicas; i++) {
             resources.add(buildStatefulSetFollower(i));
             resources.add(buildPvc(getTargetState().getResourceNameFor(this, getFollowerName(i))));
-        }
-
-        for (ClientSecret secret : getTargetState().getClientSecrets(SOLR_CLIENT_SECRET_REF_KIND).values()) {
-
         }
 
         return resources;
@@ -123,7 +120,7 @@ public class SolrComponent extends AbstractComponent implements HasService {
     public StatefulSet buildStatefulSetFollower(int i) {
         EnvVarSet env = getEnvVars();
         env.add(EnvVarSimple("SOLR_FOLLOWER", "true"));
-        env.add(EnvVarSimple("SOLR_LEADER_URL", getServiceUrl()));
+        env.add(EnvVarSimple("SOLR_LEADER_URL", getServiceUrl(SOLR_LEADER_COMPONENT)));
         env.addAll(getComponentSpec().getEnv());
 
         return new StatefulSetBuilder()
@@ -162,7 +159,7 @@ public class SolrComponent extends AbstractComponent implements HasService {
         return new ServiceBuilder()
                 .withMetadata(getTargetState().getResourceMetadataFor(this, SOLR_LEADER_COMPONENT))
                 .withSpec(new ServiceSpecBuilder()
-                        .withSelector(getSelectorLabels())
+                        .withSelector(getSelectorLabels(SOLR_LEADER_COMPONENT))
                         .withPorts(getServicePorts())
                         .build())
                 .build();
@@ -308,11 +305,29 @@ public class SolrComponent extends AbstractComponent implements HasService {
 
     @Override
     public String getServiceUrl() {
-        return "http://" + getTargetState().getResourceNameFor(this) + ":8983/solr";
+        throw new CustomResourceConfigError("Component implements multiple services, need to call getServiceUrl(variant) instead");
     }
 
-    public String getServiceUrlLeader() {
-        return "http://" + getTargetState().getResourceNameFor(this, SOLR_LEADER_COMPONENT) + ":8983/solr";
+    @Override
+    public String getServiceUrl(String variant) {
+        if (replicas > 1)
+            return "http://" + getTargetState().getResourceNameFor(this, variant) + ":8983/solr";
+        else
+            return "http://" + getTargetState().getResourceNameFor(this, SOLR_LEADER_COMPONENT) + ":8983/solr";
     }
+
+    /*
+     curl 'http://localhost:40081/solr/admin/cores?action=CREATE&name=studio&configSet=content&dataDir=data'
+
+     curl 'http://localhost:8983/solr/admin/cores?action=CREATE&name=studio&configSet=content&dataDir=data'
+     */
+
+    @Override
+    public Optional<Boolean> isReady() {
+        if (Milestone.compareTo(getCmcc().getStatus().getMilestone(), getComponentSpec().getMilestone()) < 0)
+            return Optional.empty();
+        return Optional.of(getTargetState().isStatefulSetReady(getTargetState().getResourceNameFor(this, SOLR_LEADER_COMPONENT)));
+    }
+
 
 }

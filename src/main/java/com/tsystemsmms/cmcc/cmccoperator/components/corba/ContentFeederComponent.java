@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.tsystemsmms.cmcc.cmccoperator.components.HasSolrClient.SOLR_CLIENT_SECRET_REF_KIND;
+import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.concatOptional;
 
 @Slf4j
 public class ContentFeederComponent extends CorbaComponent implements HasMongoDBClient, HasSolrClient {
@@ -32,7 +33,7 @@ public class ContentFeederComponent extends CorbaComponent implements HasMongoDB
         super(kubernetesClient, targetState, componentSpec, "content-feeder");
         setDefaultSchemas(Map.of(
                 MONGODB_CLIENT_SECRET_REF_KIND, "blueprint",
-                SOLR_CLIENT_SECRET_REF_KIND, "studio",
+                SOLR_CLIENT_SECRET_REF_KIND, HasSolrClient.getSolrClientSecretRefName("studio", SOLR_CLIENT_SERVER_LEADER),
                 UAPI_CLIENT_SECRET_REF_KIND, "feeder"
         ));
     }

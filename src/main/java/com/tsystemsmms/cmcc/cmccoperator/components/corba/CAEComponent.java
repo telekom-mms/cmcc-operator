@@ -13,6 +13,7 @@ package com.tsystemsmms.cmcc.cmccoperator.components.corba;
 import com.tsystemsmms.cmcc.cmccoperator.components.HasMongoDBClient;
 import com.tsystemsmms.cmcc.cmccoperator.components.HasService;
 import com.tsystemsmms.cmcc.cmccoperator.components.HasSolrClient;
+import com.tsystemsmms.cmcc.cmccoperator.crds.ClientSecretRef;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
 import com.tsystemsmms.cmcc.cmccoperator.crds.SiteMapping;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.CustomResourceConfigError;
@@ -34,30 +35,32 @@ public class CAEComponent extends CorbaComponent implements HasMongoDBClient, Ha
 
     public static final String KIND_LIVE = "live";
     public static final String KIND_PREVIEW = "preview";
+    public static final String SOLR_COLLECTION_LIVE = "live";
+    public static final String SOLR_COLLECTION_PREVIEW = "preview";
 
     String servletPathPattern;
 
     public CAEComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec componentSpec) {
         super(kubernetesClient, targetState, componentSpec, "cae-preview");
 
-        String solrCollection;
+        String solrCsr;
 
         if (getComponentSpec().getKind() == null)
             throw new CustomResourceConfigError("kind must be set to either " + KIND_LIVE + " or " + KIND_PREVIEW);
         switch (componentSpec.getKind()) {
             case KIND_LIVE:
-                solrCollection = "live";
+                solrCsr = HasSolrClient.getSolrClientSecretRefName(SOLR_COLLECTION_LIVE, SOLR_CLIENT_SERVER_FOLLOWER);
                 setImageRepository("cae-live");
                 break;
             case KIND_PREVIEW:
-                solrCollection = "preview";
+                solrCsr = HasSolrClient.getSolrClientSecretRefName(SOLR_COLLECTION_PREVIEW, SOLR_CLIENT_SERVER_LEADER);
                 break;
             default:
                 throw new CustomResourceConfigError("kind \"" + getComponentSpec().getKind() + "\" is illegal, must be either " + KIND_LIVE + " or " + KIND_PREVIEW);
         }
         setDefaultSchemas(Map.of(
                 MONGODB_CLIENT_SECRET_REF_KIND, "blueprint",
-                SOLR_CLIENT_SECRET_REF_KIND, solrCollection,
+                SOLR_CLIENT_SECRET_REF_KIND, solrCsr,
                 UAPI_CLIENT_SECRET_REF_KIND, "webserver"
         ));
         servletPathPattern = String.join("|", getDefaults().getServletNames());
@@ -150,6 +153,17 @@ public class CAEComponent extends CorbaComponent implements HasMongoDBClient, Ha
         return List.of(
                 new ServicePortBuilder().withName("http").withPort(8080).withNewTargetPort("http").build(),
                 new ServicePortBuilder().withName("management").withPort(8081).withNewTargetPort("management").build());
+    }
+
+    @Override
+    public ClientSecretRef getSolrClientSecretRef() {
+        switch (getComponentSpec().getKind()) {
+            case KIND_LIVE:
+                return getSolrClientSecretRef(HasSolrClient.getSolrClientSecretRefName(SOLR_COLLECTION_LIVE, SOLR_CLIENT_SERVER_FOLLOWER));
+            case KIND_PREVIEW:
+                return getSolrClientSecretRef(HasSolrClient.getSolrClientSecretRefName(SOLR_COLLECTION_PREVIEW, SOLR_CLIENT_SERVER_LEADER));
+        }
+        return null;
     }
 
     @Override
