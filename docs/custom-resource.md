@@ -85,21 +85,12 @@ network to authorized users.**
 
 The operator can create Replication Live Servers and Live CAEs and configure a Horizontal Pod Autoscaler for the CAEs.
 
-`with.delivery.rls` determines the number of Replication Live Servers the operator should create. The default of `0`
-means that all CAEs will be connected to the Master Live Server, and no RLS will be created. Note that while it is
-possible to increase the number of RLS after the CoreMedia installation has been created, the operator currently cannot
-create additional database schemas for any new RLS, and can not clone database contents from the Master Live Server to
-any new RLS. If you want to increase the number of RLS after initial setup, you would need to take care of that
-manually.
+`with.delivery.minCae` and `with.delivery.maxCae` determine how many Live CAEs should be created per RLS. The defaults are both `0`, which disables the creation of Live CAEs. When `with.delivery.minCae` is set to a value equal or larger than `with.delivery.maxCae`, a fixed number of Live CAEs will be configured. 
 
-`with.delivery.minCae` and `with.delivery.maxCae` determine how many Live CAEs should be created per RLS. The defaults
-are both `0`, which disables the creation of Live CAEs. When `with.delivery.minCae` is set to a value equal or larger
-than `with.delivery.maxCae`, a fixed number of Live CAEs will be configured. When `with.delivery.minCae` is set to a
-value smaller than `with.delivery.maxCae`, a horizontal pod autoscaler will be configured that will scale the number of
-CAEs from the minimum to the maximum amount based on the CPU load of the CAEs.
+**Future functionality**: When `with.delivery.minCae` is set to a value smaller than `with.delivery.maxCae`, a horizontal pod autoscaler will be configured that will scale the number of CAEs from the minimum to the maximum amount based on the CPU load of the CAEs.
 
-**Note** At this time, the operator can only configure a single Live CAE connected to the Master Live Server; any other
-configuration will lead to an error.
+**Future functionality**: `with.delivery.rls` determines the number of Replication Live Servers the operator should create. The default of `0` means that all CAEs will be connected to the Master Live Server, and no RLS will be created. Note that while it is possible to increase the number of RLS after the CoreMedia installation has been created, the operator currently cannot create additional database schemas for any new RLS, and can not clone database contents from the Master Live Server to any new RLS. If you want to increase the number of RLS after initial setup, you would need to take care of that manually.
+
 
 #### Example: development setup with one Live CAE
 
