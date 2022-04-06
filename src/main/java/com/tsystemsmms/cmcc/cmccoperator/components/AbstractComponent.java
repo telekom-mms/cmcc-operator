@@ -15,7 +15,9 @@ import com.tsystemsmms.cmcc.cmccoperator.customresource.CustomResource;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 import com.tsystemsmms.cmcc.cmccoperator.utils.EnvVarSet;
 import io.fabric8.kubernetes.api.model.*;
-import io.fabric8.kubernetes.api.model.apps.*;
+import io.fabric8.kubernetes.api.model.apps.StatefulSet;
+import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
+import io.fabric8.kubernetes.api.model.apps.StatefulSetSpecBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import lombok.Getter;
 import lombok.Setter;
@@ -210,9 +212,19 @@ public abstract class AbstractComponent implements Component {
      * @return the created StatefulSet.
      */
     public StatefulSet buildStatefulSet() {
+        return buildStatefulSet(1);
+    }
+
+    /**
+     * Create the StatefulSet for reconciliation.
+     *
+     * @return the created StatefulSet.
+     */
+    public StatefulSet buildStatefulSet(int replicas) {
         return new StatefulSetBuilder()
                 .withMetadata(getResourceMetadata())
                 .withSpec(new StatefulSetSpecBuilder()
+                        .withReplicas(replicas)
                         .withServiceName(getTargetState().getServiceNameFor(this))
                         .withSelector(new LabelSelectorBuilder()
                                 .withMatchLabels(getSelectorLabels())
@@ -229,35 +241,7 @@ public abstract class AbstractComponent implements Component {
                                         .withVolumes(getVolumes())
                                         .build())
                                 .build())
-                        .build())
-                .build();
-    }
-
-    /**
-     * Create the StatefulSet for reconciliation.
-     *
-     * @return the created StatefulSet.
-     */
-    public Deployment buildDeployment(int replicas) {
-        return new DeploymentBuilder()
-                .withMetadata(getResourceMetadata())
-                .withSpec(new DeploymentSpecBuilder()
-                        .withReplicas(replicas)
-                        .withSelector(new LabelSelectorBuilder()
-                                .withMatchLabels(getSelectorLabels())
-                                .build())
-                        .withTemplate(new PodTemplateSpecBuilder()
-                                .withMetadata(new ObjectMetaBuilder()
-                                        .withLabels(getSelectorLabels())
-                                        .build())
-                                .withSpec(new PodSpecBuilder()
-                                        .withContainers(buildContainers())
-                                        .withInitContainers(getInitContainers())
-                                        .withSecurityContext(getPodSecurityContext())
-                                        .withTerminationGracePeriodSeconds(getTerminationGracePeriodSeconds())
-                                        .withVolumes(getVolumes())
-                                        .build())
-                                .build())
+                        .withVolumeClaimTemplates(getVolumeClaims())
                         .build())
                 .build();
     }
@@ -310,11 +294,7 @@ public abstract class AbstractComponent implements Component {
         return containers;
     }
 
-    public PersistentVolumeClaim buildPvc() {
-        return buildPvc(getTargetState().getResourceNameFor(this));
-    }
-
-    public PersistentVolumeClaim buildPvc(String name) {
+    public PersistentVolumeClaim getPersistentVolumeClaim(String name) {
         String sc = getDefaults().getStorageClass();
         if (sc.isEmpty())
             sc = null;
@@ -361,6 +341,16 @@ public abstract class AbstractComponent implements Component {
                         .withEmptyDir(new EmptyDirVolumeSource())
                         .build()
         );
+    }
+
+    /**
+     * Returns the list of persistent volume clains. This can either be used to build resources directly, or as a
+     * template in a StatefulSet.
+     *
+     * @return List of PersistentVolumeClaims
+     */
+    public List<PersistentVolumeClaim> getVolumeClaims() {
+        return new LinkedList<>();
     }
 
     /**

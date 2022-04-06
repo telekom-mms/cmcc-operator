@@ -11,11 +11,9 @@
 package com.tsystemsmms.cmcc.cmccoperator.components.generic;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tsystemsmms.cmcc.cmccoperator.components.AbstractComponent;
 import com.tsystemsmms.cmcc.cmccoperator.components.Component;
 import com.tsystemsmms.cmcc.cmccoperator.components.HasService;
-import com.tsystemsmms.cmcc.cmccoperator.crds.ClientSecretRef;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
 import com.tsystemsmms.cmcc.cmccoperator.crds.Milestone;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.ClientSecret;
@@ -28,22 +26,12 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetSpecBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.dsl.ExecListener;
 import io.fabric8.kubernetes.client.dsl.ExecWatch;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.util.UriBuilder;
-import org.springframework.web.util.UriBuilderFactory;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
@@ -97,10 +85,10 @@ public class SolrComponent extends AbstractComponent implements HasService {
         resources.add(buildService());
         resources.add(buildServiceLeader());
         resources.add(buildStatefulSetLeader());
-        resources.add(buildPvc(getTargetState().getResourceNameFor(this, SOLR_LEADER_COMPONENT)));
+        resources.add(getPersistentVolumeClaim(getTargetState().getResourceNameFor(this, SOLR_LEADER_COMPONENT)));
         for (int i = 1; i < replicas; i++) {
             resources.add(buildStatefulSetFollower(i));
-            resources.add(buildPvc(getTargetState().getResourceNameFor(this, getFollowerName(i))));
+            resources.add(getPersistentVolumeClaim(getTargetState().getResourceNameFor(this, getFollowerName(i))));
         }
         for (Map.Entry<String, ClientSecret> e : getTargetState().getClientSecrets(SOLR_CLIENT_SECRET_REF_KIND).entrySet()) {
             String[] parts = e.getKey().split("-");

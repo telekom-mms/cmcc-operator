@@ -27,8 +27,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.concatOptional;
-
 @Slf4j
 public class StudioServerComponent extends CorbaComponent implements HasMongoDBClient, HasJdbcClient, HasService, HasSolrClient {
 
@@ -93,7 +91,7 @@ public class StudioServerComponent extends CorbaComponent implements HasMongoDBC
         Map<String, String> properties = super.getSpringBootProperties();
 
         properties.putAll(getSiteMappingProperties());
-        properties.put("studio.preview-url-prefix", "https://" + concatOptional(getDefaults().getNamePrefix(), "preview.") + getDefaults().getIngressDomain());
+        properties.put("studio.preview-url-prefix", "https://" + getTargetState().getPreviewHostname());
         properties.put("themeImporter.apiKeyStore.basePath", "/var/tmp/themeimporter");
 
         return properties;

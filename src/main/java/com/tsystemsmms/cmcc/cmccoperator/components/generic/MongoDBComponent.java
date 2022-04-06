@@ -13,8 +13,8 @@ package com.tsystemsmms.cmcc.cmccoperator.components.generic;
 import com.tsystemsmms.cmcc.cmccoperator.components.AbstractComponent;
 import com.tsystemsmms.cmcc.cmccoperator.components.HasService;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
-import com.tsystemsmms.cmcc.cmccoperator.targetstate.CustomResourceConfigError;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.ClientSecret;
+import com.tsystemsmms.cmcc.cmccoperator.targetstate.CustomResourceConfigError;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 import com.tsystemsmms.cmcc.cmccoperator.utils.EnvVarSet;
 import io.fabric8.kubernetes.api.model.*;
@@ -27,7 +27,8 @@ import java.util.List;
 import java.util.Map;
 
 import static com.tsystemsmms.cmcc.cmccoperator.components.HasMongoDBClient.MONGODB_CLIENT_SECRET_REF_KIND;
-import static com.tsystemsmms.cmcc.cmccoperator.crds.ClientSecretRef.*;
+import static com.tsystemsmms.cmcc.cmccoperator.crds.ClientSecretRef.DEFAULT_PASSWORD_KEY;
+import static com.tsystemsmms.cmcc.cmccoperator.crds.ClientSecretRef.DEFAULT_USERNAME_KEY;
 import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.EnvVarSecret;
 import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.format;
 
@@ -55,7 +56,7 @@ public class MongoDBComponent extends AbstractComponent implements HasService {
     @Override
     public List<HasMetadata> buildResources() {
         List<HasMetadata> resources = new LinkedList<>();
-        resources.add(buildPvc());
+        resources.add(getPersistentVolumeClaim(getTargetState().getResourceNameFor(this)));
         resources.add(buildStatefulSet());
         resources.add(buildService());
         resources.addAll(buildExtraConfigMaps());

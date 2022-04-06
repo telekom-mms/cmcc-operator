@@ -10,25 +10,24 @@
 
 package com.tsystemsmms.cmcc.cmccoperator.components.corba;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.tsystemsmms.cmcc.cmccoperator.components.Component;
 import com.tsystemsmms.cmcc.cmccoperator.components.HasMongoDBClient;
 import com.tsystemsmms.cmcc.cmccoperator.components.HasService;
 import com.tsystemsmms.cmcc.cmccoperator.components.HasSolrClient;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ClientSecretRef;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
-import com.tsystemsmms.cmcc.cmccoperator.crds.Milestone;
 import com.tsystemsmms.cmcc.cmccoperator.crds.SiteMapping;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.CustomResourceConfigError;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 import com.tsystemsmms.cmcc.cmccoperator.utils.EnvVarSet;
 import io.fabric8.kubernetes.api.model.*;
-import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.concatOptional;
 
@@ -92,9 +91,8 @@ public class CAEComponent extends CorbaComponent implements HasMongoDBClient, Ha
     @Override
     public List<HasMetadata> buildResources() {
         List<HasMetadata> resources = new LinkedList<>();
-        resources.add(buildDeployment(replicas));
+        resources.add(buildStatefulSet(replicas));
         resources.add(buildService());
-        resources.add(buildPvc());
         return resources;
     }
 
@@ -126,7 +124,8 @@ public class CAEComponent extends CorbaComponent implements HasMongoDBClient, Ha
                 "server.tomcat.accesslog.file-date-format", "",
                 "server.tomcat.accesslog.pattern", "[ACCESS] %l %t %D %F %B %S",
                 "server.tomcat.accesslog.rotate", "false",
-                "com.coremedia.transform.blobCache.basePath", "/coremedia/persistent-cache/transformed-blob"
+                "com.coremedia.transform.blobCache.basePath", "/coremedia/persistent-cache/transformed-blob",
+                "cae.preview.pbe.studio-url-whitelist[0]", "https://" + getTargetState().getStudioHostname()
         ));
 
         if (getComponentSpec().getKind().equals(KIND_LIVE)) {
@@ -183,17 +182,12 @@ public class CAEComponent extends CorbaComponent implements HasMongoDBClient, Ha
     }
 
     @Override
-    public List<Volume> getVolumes() {
-        LinkedList<Volume> volumes = new LinkedList<>(super.getVolumes());
+    public List<PersistentVolumeClaim> getVolumeClaims() {
+        List<PersistentVolumeClaim> claims = super.getVolumeClaims();
 
-        volumes.add(new VolumeBuilder()
-                .withName("coremedia-persistent-cache")
-                .withPersistentVolumeClaim(new PersistentVolumeClaimVolumeSourceBuilder()
-                        .withClaimName(getTargetState().getResourceNameFor(this))
-                        .build())
-                .build());
+        claims.add(getPersistentVolumeClaim("persistent-cache"));
 
-        return volumes;
+        return claims;
     }
 
     @Override
@@ -201,20 +195,10 @@ public class CAEComponent extends CorbaComponent implements HasMongoDBClient, Ha
         LinkedList<VolumeMount> volumeMounts = new LinkedList<>(super.getVolumeMounts());
 
         volumeMounts.add(new VolumeMountBuilder()
-                .withName("coremedia-persistent-cache")
+                .withName("persistent-cache")
                 .withMountPath("/coremedia/persistent-cache")
                 .build());
 
         return volumeMounts;
     }
-
-    @Override
-    public Optional<Boolean> isReady() {
-        if (Milestone.compareTo(getCmcc().getStatus().getMilestone(), getComponentSpec().getMilestone()) < 0)
-            return Optional.empty();
-        RollableScalableResource<Deployment> deployment =
-                getKubernetesClient().apps().deployments().inNamespace(getNamespace()).withName(getTargetState().getResourceNameFor(this));
-        return Optional.of(deployment.isReady());
-    }
-
 }

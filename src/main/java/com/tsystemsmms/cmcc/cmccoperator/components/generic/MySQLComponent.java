@@ -14,8 +14,8 @@ import com.tsystemsmms.cmcc.cmccoperator.components.AbstractComponent;
 import com.tsystemsmms.cmcc.cmccoperator.components.HasService;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ClientSecretRef;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
-import com.tsystemsmms.cmcc.cmccoperator.targetstate.CustomResourceConfigError;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.ClientSecret;
+import com.tsystemsmms.cmcc.cmccoperator.targetstate.CustomResourceConfigError;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 import com.tsystemsmms.cmcc.cmccoperator.utils.EnvVarSet;
 import io.fabric8.kubernetes.api.model.*;
@@ -55,7 +55,7 @@ public class MySQLComponent extends AbstractComponent implements HasService {
     @Override
     public List<HasMetadata> buildResources() {
         List<HasMetadata> resources = new LinkedList<>();
-        resources.add(buildPvc());
+        resources.add(getPersistentVolumeClaim(getTargetState().getResourceNameFor(this)));
         resources.add(buildStatefulSet());
         resources.add(buildService());
         resources.addAll(buildExtraConfigMaps());

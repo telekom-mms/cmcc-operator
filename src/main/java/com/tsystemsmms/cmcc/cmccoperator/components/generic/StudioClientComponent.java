@@ -19,7 +19,8 @@ import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.*;
+import java.util.LinkedList;
+import java.util.List;
 
 import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.EnvVarSimple;
 
@@ -48,7 +49,14 @@ public class StudioClientComponent extends AbstractComponent implements HasServi
 
     @Override
     public EnvVarSet getEnvVars() {
-        return EnvVarSet.of(EnvVarSimple("PROTOCOL", ""));
+        EnvVarSet env = new EnvVarSet();
+
+        env.addAll(EnvVarSet.of(
+                EnvVarSimple("PROTOCOL", ""),
+                EnvVarSimple("FRAME_SRC", getTargetState().getPreviewHostname())
+        ));
+
+        return env;
     }
 
 

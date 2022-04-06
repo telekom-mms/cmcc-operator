@@ -80,7 +80,7 @@ public abstract class CorbaComponent extends SpringBootComponent implements HasS
 
     public Map<String, String> getSiteMappingProperties() {
         HashMap<String, String> properties = new HashMap<>();
-        String preview = "//" + getTargetState().getPreviewHostname();
+        String preview = "https://" + getTargetState().getPreviewHostname();
 
         for (SiteMapping siteMapping : getSpec().getSiteMappings()) {
             properties.put("blueprint.site.mapping." + siteMapping.getPrimarySegment(), preview);
@@ -129,19 +129,14 @@ public abstract class CorbaComponent extends SpringBootComponent implements HasS
     }
 
     @Override
-    public List<Volume> getVolumes() {
-        LinkedList<Volume> volumes = new LinkedList<>(super.getVolumes());
+    public List<PersistentVolumeClaim> getVolumeClaims() {
+        List<PersistentVolumeClaim> claims = super.getVolumeClaims();
 
-        volumes.add(new VolumeBuilder()
-                .withName("persistent-transformed-blobcache")
-                .withEmptyDir(new EmptyDirVolumeSource())
-                .build());
-        volumes.add(new VolumeBuilder()
-                .withName("uapi-blobcache")
-                .withEmptyDir(new EmptyDirVolumeSource())
-                .build());
+        claims.add(getPersistentVolumeClaim("persistent-cache"));
+        claims.add(getPersistentVolumeClaim("persistent-transformed-blobcache"));
+        claims.add(getPersistentVolumeClaim("uapi-blobcache"));
 
-        return volumes;
+        return claims;
     }
 
     @Override
