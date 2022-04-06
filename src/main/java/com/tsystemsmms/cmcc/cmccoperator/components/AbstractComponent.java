@@ -10,15 +10,12 @@
 
 package com.tsystemsmms.cmcc.cmccoperator.components;
 
-import com.tsystemsmms.cmcc.cmccoperator.customresource.ConfigMapCustomResource;
 import com.tsystemsmms.cmcc.cmccoperator.crds.*;
 import com.tsystemsmms.cmcc.cmccoperator.customresource.CustomResource;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 import com.tsystemsmms.cmcc.cmccoperator.utils.EnvVarSet;
 import io.fabric8.kubernetes.api.model.*;
-import io.fabric8.kubernetes.api.model.apps.StatefulSet;
-import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
-import io.fabric8.kubernetes.api.model.apps.StatefulSetSpecBuilder;
+import io.fabric8.kubernetes.api.model.apps.*;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import lombok.Getter;
 import lombok.Setter;
@@ -217,6 +214,35 @@ public abstract class AbstractComponent implements Component {
                 .withMetadata(getResourceMetadata())
                 .withSpec(new StatefulSetSpecBuilder()
                         .withServiceName(getTargetState().getServiceNameFor(this))
+                        .withSelector(new LabelSelectorBuilder()
+                                .withMatchLabels(getSelectorLabels())
+                                .build())
+                        .withTemplate(new PodTemplateSpecBuilder()
+                                .withMetadata(new ObjectMetaBuilder()
+                                        .withLabels(getSelectorLabels())
+                                        .build())
+                                .withSpec(new PodSpecBuilder()
+                                        .withContainers(buildContainers())
+                                        .withInitContainers(getInitContainers())
+                                        .withSecurityContext(getPodSecurityContext())
+                                        .withTerminationGracePeriodSeconds(getTerminationGracePeriodSeconds())
+                                        .withVolumes(getVolumes())
+                                        .build())
+                                .build())
+                        .build())
+                .build();
+    }
+
+    /**
+     * Create the StatefulSet for reconciliation.
+     *
+     * @return the created StatefulSet.
+     */
+    public Deployment buildDeployment(int replicas) {
+        return new DeploymentBuilder()
+                .withMetadata(getResourceMetadata())
+                .withSpec(new DeploymentSpecBuilder()
+                        .withReplicas(replicas)
                         .withSelector(new LabelSelectorBuilder()
                                 .withMatchLabels(getSelectorLabels())
                                 .build())

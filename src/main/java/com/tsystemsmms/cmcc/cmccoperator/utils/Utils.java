@@ -13,6 +13,7 @@ package com.tsystemsmms.cmcc.cmccoperator.utils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarSource;
+import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.SecretKeySelector;
 import lombok.SneakyThrows;
 
@@ -171,5 +172,17 @@ public class Utils {
             // ignore
         }
         return l != 0 || s.equals("on") || s.equals("true") || s.equals("yes");
+    }
+
+    /**
+     * Returns the integer value from a IntOrString, converting a string to integer if necessary.
+     *
+     * @param v value
+     * @return integer value
+     */
+    public static int getInt(IntOrString v) {
+        if (v.getIntVal() != null)
+            return v.getIntVal();
+        return Integer.parseInt(v.getStrVal());
     }
 }

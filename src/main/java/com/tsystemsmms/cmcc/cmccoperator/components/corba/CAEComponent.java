@@ -10,23 +10,25 @@
 
 package com.tsystemsmms.cmcc.cmccoperator.components.corba;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.tsystemsmms.cmcc.cmccoperator.components.Component;
 import com.tsystemsmms.cmcc.cmccoperator.components.HasMongoDBClient;
 import com.tsystemsmms.cmcc.cmccoperator.components.HasService;
 import com.tsystemsmms.cmcc.cmccoperator.components.HasSolrClient;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ClientSecretRef;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
+import com.tsystemsmms.cmcc.cmccoperator.crds.Milestone;
 import com.tsystemsmms.cmcc.cmccoperator.crds.SiteMapping;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.CustomResourceConfigError;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 import com.tsystemsmms.cmcc.cmccoperator.utils.EnvVarSet;
 import io.fabric8.kubernetes.api.model.*;
+import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.concatOptional;
 
@@ -37,8 +39,11 @@ public class CAEComponent extends CorbaComponent implements HasMongoDBClient, Ha
     public static final String KIND_PREVIEW = "preview";
     public static final String SOLR_COLLECTION_LIVE = "live";
     public static final String SOLR_COLLECTION_PREVIEW = "preview";
+    public static final String EXTRA_REPLICAS = "replicas";
 
     String servletPathPattern;
+
+    private int replicas = 1;
 
     public CAEComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec componentSpec) {
         super(kubernetesClient, targetState, componentSpec, "cae-preview");
@@ -64,7 +69,18 @@ public class CAEComponent extends CorbaComponent implements HasMongoDBClient, Ha
                 UAPI_CLIENT_SECRET_REF_KIND, "webserver"
         ));
         servletPathPattern = String.join("|", getDefaults().getServletNames());
+        if (componentSpec.getExtra().containsKey(EXTRA_REPLICAS))
+            replicas = Integer.parseInt(componentSpec.getExtra().get(EXTRA_REPLICAS));
     }
+
+    @Override
+    public Component updateComponentSpec(ComponentSpec newCs) {
+        super.updateComponentSpec(newCs);
+        if (newCs.getExtra().containsKey(EXTRA_REPLICAS))
+            replicas = Integer.parseInt(newCs.getExtra().get(EXTRA_REPLICAS));
+        return this;
+    }
+
 
     @Override
     public void requestRequiredResources() {
@@ -76,7 +92,7 @@ public class CAEComponent extends CorbaComponent implements HasMongoDBClient, Ha
     @Override
     public List<HasMetadata> buildResources() {
         List<HasMetadata> resources = new LinkedList<>();
-        resources.add(buildStatefulSet());
+        resources.add(buildDeployment(replicas));
         resources.add(buildService());
         resources.add(buildPvc());
         return resources;
@@ -191,4 +207,14 @@ public class CAEComponent extends CorbaComponent implements HasMongoDBClient, Ha
 
         return volumeMounts;
     }
+
+    @Override
+    public Optional<Boolean> isReady() {
+        if (Milestone.compareTo(getCmcc().getStatus().getMilestone(), getComponentSpec().getMilestone()) < 0)
+            return Optional.empty();
+        RollableScalableResource<Deployment> deployment =
+                getKubernetesClient().apps().deployments().inNamespace(getNamespace()).withName(getTargetState().getResourceNameFor(this));
+        return Optional.of(deployment.isReady());
+    }
+
 }

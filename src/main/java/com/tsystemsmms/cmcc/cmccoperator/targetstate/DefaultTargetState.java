@@ -10,6 +10,8 @@
 
 package com.tsystemsmms.cmcc.cmccoperator.targetstate;
 
+import com.tsystemsmms.cmcc.cmccoperator.components.corba.CAEComponent;
+import com.tsystemsmms.cmcc.cmccoperator.crds.WithOptions;
 import com.tsystemsmms.cmcc.cmccoperator.customresource.CustomResource;
 import com.tsystemsmms.cmcc.cmccoperator.components.ComponentSpecBuilder;
 import com.tsystemsmms.cmcc.cmccoperator.components.generic.MongoDBComponent;
@@ -25,7 +27,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.BeanFactory;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+
+import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.getInt;
 
 /**
  * Create the runtime config based on the CRD data.
@@ -85,14 +90,17 @@ public class DefaultTargetState extends AbstractTargetState {
             ));
         }
 
-        if (cmcc.getSpec().getWith().getDelivery().getRls() != 0
-                || cmcc.getSpec().getWith().getDelivery().getMinCae() > 1
-                || cmcc.getSpec().getWith().getDelivery().getMaxCae() > cmcc.getSpec().getWith().getDelivery().getMinCae()) {
+        WithOptions.WithDelivery delivery = cmcc.getSpec().getWith().getDelivery();
+        if (getInt(delivery.getRls()) != 0
+                || getInt(delivery.getMaxCae()) > getInt(delivery.getMinCae())) {
             throw new RuntimeException("Unable to configure RLS and HPA, not implemented yet");
         }
-        if (cmcc.getSpec().getWith().getDelivery().getMinCae() == 1) {
+        if (getInt(delivery.getMinCae()) > 0) {
+            Map<String, String> liveCaeExtra = Map.of(
+                    CAEComponent.EXTRA_REPLICAS, String.valueOf(getInt(delivery.getMinCae()))
+            );
             componentCollection.addAll(List.of(
-                    ComponentSpecBuilder.ofType("cae").withKind("live").build()
+                    ComponentSpecBuilder.ofType("cae").withKind("live").withExtra(liveCaeExtra).build()
             ));
         }
     }

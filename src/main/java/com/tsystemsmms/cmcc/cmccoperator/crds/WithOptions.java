@@ -11,6 +11,7 @@
 package com.tsystemsmms.cmcc.cmccoperator.crds;
 
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
+import io.fabric8.kubernetes.api.model.IntOrString;
 import lombok.Data;
 
 @Data
@@ -30,10 +31,10 @@ public class WithOptions {
     @Data
     public static class WithDelivery {
         @JsonPropertyDescription("Number of RLS to create")
-        int rls = 0;
+        IntOrString rls = new IntOrString(0);
         @JsonPropertyDescription("Minimum number of CAEs per RLS")
-        int minCae = 0;
+        IntOrString minCae = new IntOrString(0);
         @JsonPropertyDescription("Maximum number of CAEs per RLS")
-        int maxCae = 0;
+        IntOrString maxCae = new IntOrString(0);
     }
 }

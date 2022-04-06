@@ -315,14 +315,23 @@ spec:
                     description: Create default components for the delivery stage
                     properties:
                       rls:
+                        anyOf:
+                        - type: integer
+                        - type: string
                         description: Number of RLS to create
-                        type: integer
+                        x-kubernetes-int-or-string: true
                       minCae:
+                        anyOf:
+                        - type: integer
+                        - type: string
                         description: Minimum number of CAEs per RLS
-                        type: integer
+                        x-kubernetes-int-or-string: true
                       maxCae:
+                        anyOf:
+                        - type: integer
+                        - type: string
                         description: Maximum number of CAEs per RLS
-                        type: integer
+                        x-kubernetes-int-or-string: true
                     type: object
                   management:
                     description: Create default components for the management stage

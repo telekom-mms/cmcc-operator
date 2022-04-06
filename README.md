@@ -10,18 +10,19 @@
 
 The operator:
 * manages the creation and updating of all the Kubernetes resources required to run CoreMedia Content Cloud. Care has been taken to have sensible defaults for all parameters wherever possible.
-* can create a fresh installation from scratch, creating MariaDB and MongoDB database servers, and initialize the necessary database schemas and secrets.
+* can create a fresh installation from scratch, creating MariaDB and MongoDB database servers, and initialize the necessary database schemas and secrets, suitable for a development environment. For production, persistence should be provided, for example by using cloud services, or using other operators to provision databases.
 * can deploy against existing databases, using pre-existing secrets provided.
-* can use a custom resource definition or a config map to supply the values.
+* can use a custom resource definition or a config map to supply the values. This makes it possible to use the operator even on clusters where you cannot install cluster-wide resources.
 * deploys the CoreMedia Content Cloud components step by step. This ensures that components that require other components are only started when the dependencies have been initialized successfully.
 * imports test users and contents initially.
-* builds ingresses automatically from CAE site mappings.
-* creates random passwords for all components and configures them to use them (MariaDB, MongoDB, and UAPI/Corba).
 * run additional jobs, for example to re-import content into a running installation.
+* configures the live CAE deployment with the desired number of replicas.
+* builds ingresses automatically from CAE site mappings.
+* creates random passwords for all components and configures the components to use them (MariaDB, MongoDB, and UAPI/Corba).
+* configures Solr clustering by specifying the number of replicas to create.
 
 Planned features include:
-* Creating a scalable delivery stage automatically by simply providing the number of Replication Live Servers and minimum and maximum number of Content Application Engines.
-* Configure Solr clustering by specifying the number of replicas to create.
+* Creating a scalable delivery stage automatically by simply providing the number of Replication Live Servers.
 * Support for Traefik ingress controller and its resource types (in addition to the [kubernetes/ingress-nginx](https://github.com/kubernetes/ingress-nginx)).
 * Admission webhook that verifies consistency of the custom resource, and can migrate between CRD versions.
 
@@ -29,10 +30,10 @@ Planned features include:
 
 * [Helm chart cmcc-operator](charts/cmcc-operator) to install the operator
 * [Helm chart cmcc](charts/cmcc) to create a CoreMedia Content Cloud deployment with the operator
-* [CoreMediaContentClouds custom resource documentation](docs/custom-resource.md)
+* [Configuring provisioning through the CoreMediaContentClouds custom resource](docs/custom-resource.md): complete description of all options
 * [Installing the Operator](#preparing-your-cluster-and-installing-the-operator)
-* [Using the Operator to create a CoreMedia installation](#using-the-operator)
-* [Customizing the CMCC Operator](docs/customizing-the-operator.md) information for developers
+* [Using the Operator to create a CoreMedia installation](#using-the-operator): quick start
+* [Customizing the CMCC Operator](docs/customizing-the-operator.md): information for developers
 * [ghcr.io/t-systems-mms/cmcc-operator/cmcc-operator](https://github.com/T-Systems-MMS/cmcc-operator/pkgs/container/cmcc-operator%2Fcmcc-operator) Docker Image
 
 ## Preparing Your Cluster and Installing the Operator
@@ -103,7 +104,7 @@ kubectl apply -f https://raw.githubusercontent.com/T-Systems-MMS/cmcc-operator/m
 
 ### Using the Custom Resource Definition
 
-You need to add the [Custom Resource Definition](k8s/cmcc-crd.yaml) `CoreMediaContentClouds` (or `cmcc` for short) to the cluster, and create a number of object for the operator: a ClusterRole, a ClusterRoleMapping, a ServiceAccount, and a Deployment for the operator. An example can be found in [`k8s/cmcc-operator.yaml`](k8s/cmcc-operator.yaml).
+You need to add the [Custom Resource Definition](k8s/cmcc-crd.yaml) `CoreMediaContentClouds` (or `cmcc` for short) to the cluster, and create a number of objects for the operator: a ClusterRole, a ClusterRoleMapping, a ServiceAccount, and a Deployment for the operator. An example can be found in [`k8s/cmcc-operator.yaml`](k8s/cmcc-operator.yaml).
 
 
 ### Using a Config Map
