@@ -164,8 +164,8 @@ This tables shows the component types and the client secrets they use.
 | `content-server`/`rls` | `replication` |             |           | `publisher` | To the MLS  |
 | `cae`/`live`           |               | `blueprint` | `live`    | `webserver` |             |
 | `cae`/`preview`        |               | `blueprint` | `preview` | `webserver` |             |
-| `cae-feeder`/`live`    | `caefeeder`   | `blueprint` | `live`    | `webserver` |             |
-| `cae-feeder`/`preview` | `mcaefeeder`  | `blueprint` | `preview` | `webserver` |             |
+| `cae-feeder`/`preview` | `caefeeder`   | `blueprint` | `preview` | `webserver` |             |
+| `cae-feeder`/`live`    | `mcaefeeder`  | `blueprint` | `live`    | `webserver` |             |
 | `content-feeder`       |               | `blueprint` | `studio`  | `feeder`    |             |
 | `elastic-worker`       |               | `blueprint` | `studio`  | `webserver` |             |
 | `studio-server`        | `studio`      | `blueprint` | `studio`  | `studio`    |             |
