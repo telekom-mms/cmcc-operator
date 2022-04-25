@@ -24,10 +24,7 @@ import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.concatOptional;
 
@@ -171,14 +168,14 @@ public class CAEComponent extends CorbaComponent implements HasMongoDBClient, Ha
     }
 
     @Override
-    public ClientSecretRef getSolrClientSecretRef() {
+    public Optional<ClientSecretRef> getSolrClientSecretRef() {
         switch (getComponentSpec().getKind()) {
             case KIND_LIVE:
                 return getSolrClientSecretRef(HasSolrClient.getSolrClientSecretRefName(SOLR_COLLECTION_LIVE, SOLR_CLIENT_SERVER_FOLLOWER));
             case KIND_PREVIEW:
                 return getSolrClientSecretRef(HasSolrClient.getSolrClientSecretRefName(SOLR_COLLECTION_PREVIEW, SOLR_CLIENT_SERVER_LEADER));
         }
-        return null;
+        return Optional.empty();
     }
 
     @Override

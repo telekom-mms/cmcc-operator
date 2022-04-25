@@ -29,7 +29,7 @@ public interface HasJdbcClient extends Component {
      */
     default String getJdbcClientDefaultSchema() {
         return Objects.requireNonNull(getSchemas().get(JDBC_CLIENT_SECRET_REF_KIND), () -> "A schema name was requested for " + JDBC_CLIENT_SECRET_REF_KIND + ", but the component " + this.getSpecName() + " does not define one.");
-    };
+    }
 
     /**
      * Returns the secret reference for the default collection prefix.
@@ -46,19 +46,13 @@ public interface HasJdbcClient extends Component {
      * @return reference
      */
     default ClientSecretRef getJdbcClientSecretRef(String schemaName) {
-        String secretName = getTargetState().getSecretName(JDBC_CLIENT_SECRET_REF_KIND, schemaName);
-        String serviceName = getTargetState().getServiceNameFor("mysql");
-
-        if (!getTargetState().getCmcc().getSpec().getWith().getDatabases()) {
-            throw new CustomResourceConfigError("No MySQL client secret reference found for " + schemaName + ", and with.databases is false");
-        }
         return getTargetState().getClientSecretRef(JDBC_CLIENT_SECRET_REF_KIND, schemaName,
                 (clientSecret, password) -> getTargetState().loadOrBuildSecret(clientSecret, Map.of(
                                 ClientSecretRef.DEFAULT_DRIVER_KEY, "com.mysql.cj.jdbc.Driver",
-                                ClientSecretRef.DEFAULT_HOSTNAME_KEY, serviceName,
+                                ClientSecretRef.DEFAULT_HOSTNAME_KEY, getTargetState().getServiceNameFor("mysql"),
                                 ClientSecretRef.DEFAULT_PASSWORD_KEY, password,
                                 ClientSecretRef.DEFAULT_SCHEMA_KEY, schemaName,
-                                ClientSecretRef.DEFAULT_URL_KEY, "jdbc:mysql://" + serviceName + ":3306/" + schemaName,
+                                ClientSecretRef.DEFAULT_URL_KEY, "jdbc:mysql://" + getTargetState().getServiceNameFor("mysql") + ":3306/" + schemaName,
                                 ClientSecretRef.DEFAULT_USERNAME_KEY, schemaName
                         )
                 )

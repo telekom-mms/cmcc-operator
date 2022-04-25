@@ -229,9 +229,9 @@ the MongoDB server requires it.
 
 ### `clientSecretRef.solr`
 
-While Solr does not use authentication (unless explicitly enabled through a plugin), the operator uses the secrets to configure the Solr Core/collection name and server URL. For each collection, two secrets are used: *schemaname*`-leader` and *schemaname*`-follower`. The leader can be used to connect to the Solr leader (used for indexing and quick turnaround querying in the Studio and preview); the follower secret connects to the follower instances that replicate the cores from the leader, for example in the Live CAE.
+While Solr does not use authentication (unless explicitly enabled through a plugin), the operator can use secrets to configure the Solr Core/collection name and server URL. For each collection, two secrets are used: *schemaname*`-leader` and *schemaname*`-follower`. The leader can be used to connect to the Solr leader (used for indexing and quick turnaround querying in the Studio and preview); the follower secret connects to the follower instances that replicate the cores from the leader, for example in the Live CAE.
 
-By default, the following secrets are required:
+If any of the following secret references are defined in `clientSecretRefs.solr`, the operator will configure the client components to use the `url` property from each for the connection string. If no such secret reference is defined, the connection URL will be set directly based on the Solr service names.
 * `solr-live-follower`
 * `solr-live-leader`
 * `solr-preview-leader`
@@ -544,7 +544,7 @@ Runs an NGINX web server image, for example, to make static files available with
 
 The Solr component creates one or more Solr instances, controlled by the `extra.replicas` property. With `extra.replicas=1`, a single Solr leader instance is created. With `extra.replicas=2` or higher, one or more follower instances are created that replicate the leader automatically.
 
-The operator will automatically create the cores in the followers, but executing the core admin API request, as documented in the Search Manual.
+The operator will automatically create the cores in the followers, by executing the core admin API request, as documented in the Search Manual.
 
 ### Component `studio-client`
 

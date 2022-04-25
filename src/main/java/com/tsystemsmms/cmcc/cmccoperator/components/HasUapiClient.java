@@ -63,11 +63,6 @@ public interface HasUapiClient extends Component {
      * @return reference
      */
     default ClientSecretRef getUapiClientSecretRef(String schemaName) {
-        String secretName = getTargetState().getSecretName(UAPI_CLIENT_SECRET_REF_KIND, schemaName);
-
-        if (!getTargetState().getCmcc().getSpec().getWith().getDatabases()) {
-            throw new CustomResourceConfigError("No UAPI client secret reference found for " + schemaName + ", and with.databases is false");
-        }
         return getTargetState().getClientSecretRef(UAPI_CLIENT_SECRET_REF_KIND, schemaName,
                 (clientSecret, password) -> getTargetState().loadOrBuildSecret(clientSecret, Map.of(
                         ClientSecretRef.DEFAULT_PASSWORD_KEY, password,

@@ -43,17 +43,11 @@ public interface HasMongoDBClient extends Component {
      * @return reference
      */
     default ClientSecretRef getMongoDBClientSecretRef(String schemaName) {
-        String secretName = getTargetState().getSecretName(MONGODB_CLIENT_SECRET_REF_KIND, schemaName);
-        String serviceName = getTargetState().getServiceNameFor("mongodb");
-
-        if (!getTargetState().getCmcc().getSpec().getWith().getDatabases()) {
-            throw new CustomResourceConfigError("No MongoDB client secret reference found for " + schemaName + ", and with.databases is false");
-        }
         return getTargetState().getClientSecretRef(MONGODB_CLIENT_SECRET_REF_KIND, schemaName,
                 (clientSecret, password) -> getTargetState().loadOrBuildSecret(clientSecret, Map.of(
                         ClientSecretRef.DEFAULT_PASSWORD_KEY, password,
                         ClientSecretRef.DEFAULT_SCHEMA_KEY, schemaName,
-                        ClientSecretRef.DEFAULT_URL_KEY, "mongodb://" + schemaName + ":" + password + "@" + serviceName + ":27017/" + schemaName,
+                        ClientSecretRef.DEFAULT_URL_KEY, "mongodb://" + schemaName + ":" + password + "@" + getTargetState().getServiceNameFor("mongodb") + ":27017/" + schemaName,
                         ClientSecretRef.DEFAULT_USERNAME_KEY, schemaName
                 ))
         );

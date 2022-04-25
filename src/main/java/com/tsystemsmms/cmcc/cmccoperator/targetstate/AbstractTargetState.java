@@ -69,6 +69,9 @@ public abstract class AbstractTargetState implements TargetState {
                                ResourceReconcilerManager resourceReconcilerManager,
                                YamlMapper yamlMapper,
                                CustomResource cmcc) {
+        if (cmcc == null || cmcc.getSpec() == null) {
+            throw new CustomResourceConfigError("custom resource is null");
+        }
         this.kubernetesClient = kubernetesClient;
         this.cmccIngressGeneratorFactory = cmccIngressGeneratorFactory;
         this.cmcc = cmcc;
@@ -151,12 +154,14 @@ public abstract class AbstractTargetState implements TargetState {
         }
     }
 
+    /**
+     * Add the declared clientSecretRefs to the list of all clientSecretRefs, both declared and managed
+     */
     public void buildClientSecretRefs() {
-        // add the declared clientSecretRefs to the list of all clientSecretRefs, both declared and managed
         for (Map.Entry<String, Map<String, ClientSecretRef>> perKind : getCmcc().getSpec().getClientSecretRefs().entrySet()) {
             Map<String, ClientSecret> secrets = clientSecrets.computeIfAbsent(perKind.getKey(), k -> new HashMap<>());
             for (Map.Entry<String, ClientSecretRef> e : perKind.getValue().entrySet()) {
-                secrets.put(e.getKey(), new ClientSecret(e.getValue()));
+                secrets.put(e.getKey(), new ClientSecret(e.getValue().cloneWithDefaults()));
             }
         }
 
@@ -227,12 +232,14 @@ public abstract class AbstractTargetState implements TargetState {
     public LinkedList<HasMetadata> buildExtraResources() {
         final LinkedList<HasMetadata> resources = new LinkedList<>();
 
-        for (Map.Entry<String, Map<String, ClientSecret>> e : clientSecrets.entrySet()) {
-            for (ClientSecret clientSecret : e.getValue().values()) {
-                Secret secret = clientSecret.getSecret()
-                        .orElseThrow(() -> new CustomResourceConfigError("Unable to find secret for clientSecretRef \"" + clientSecret.getRef().getSecretName() + "\""));
-                if (isWeOwnThis(secret))
-                    resources.add(secret);
+        if (getCmcc().getSpec().getWith().getDatabases()) {
+            for (Map.Entry<String, Map<String, ClientSecret>> e : clientSecrets.entrySet()) {
+                for (ClientSecret clientSecret : e.getValue().values()) {
+                    Secret secret = clientSecret.getSecret()
+                            .orElseThrow(() -> new CustomResourceConfigError("Unable to find secret for clientSecretRef \"" + clientSecret.getRef().getSecretName() + "\""));
+                    if (isWeOwnThis(secret))
+                        resources.add(secret);
+                }
             }
         }
         return resources;
@@ -291,17 +298,32 @@ public abstract class AbstractTargetState implements TargetState {
         return clientSecrets.get(kind);
     }
 
+    @Override
+    public Optional<ClientSecretRef> getClientSecretRef(String kind, String schema) {
+        Map<String, ClientSecret> perKind = clientSecrets.computeIfAbsent(kind, k -> new HashMap<>());
+        ClientSecret clientSecret = perKind.get(schema);
+
+        if (clientSecret != null) {
+            return Optional.of(clientSecret.getRef());
+        } else {
+            return Optional.empty();
+        }
+    }
+
 
     @Override
     public ClientSecretRef getClientSecretRef(String kind, String schema, BiConsumer<ClientSecret, String> buildOrLoadSecret) {
         Map<String, ClientSecret> perKind = clientSecrets.computeIfAbsent(kind, k -> new HashMap<>());
         ClientSecret clientSecret = perKind.get(schema);
 
-        // the individual HasFooClient interfaces are responsible for checking if generating a secret is desirable
-        if (clientSecret == null) {
-            clientSecret = new ClientSecret(ClientSecretRef.defaultClientSecretRef(getSecretName(kind, schema)));
-            perKind.put(schema, clientSecret);
+        if (clientSecret != null) {
+            return clientSecret.getRef();
         }
+        if (!getCmcc().getSpec().getWith().getDatabases()) {
+            throw new CustomResourceConfigError("No \"" + kind + "\" client secret reference found for \"" + schema + "\", and with.databases is false");
+        }
+        clientSecret = new ClientSecret(ClientSecretRef.defaultClientSecretRef(getSecretName(kind, schema)));
+        perKind.put(schema, clientSecret);
         buildOrLoadSecret.accept(clientSecret, getClientPassword());
         return clientSecret.getRef();
     }

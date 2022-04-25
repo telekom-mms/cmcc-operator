@@ -12,14 +12,19 @@ package com.tsystemsmms.cmcc.cmccoperator.components;
 
 import com.tsystemsmms.cmcc.cmccoperator.crds.ClientSecretRef;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.CustomResourceConfigError;
+import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 import com.tsystemsmms.cmcc.cmccoperator.utils.EnvVarSet;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
+import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.EnvVarSimple;
 import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.concatOptional;
 
+/**
+ * A component that uses a Solr client to connect to a Solr server.
+ */
 public interface HasSolrClient extends Component {
     String SOLR_CLIENT_SECRET_REF_KIND = "solr";
     String SOLR_CLIENT_SERVER_LEADER = "leader";
@@ -38,7 +43,7 @@ public interface HasSolrClient extends Component {
      *
      * @return reference
      */
-    default ClientSecretRef getSolrClientSecretRef() {
+    default Optional<ClientSecretRef> getSolrClientSecretRef() {
         return getSolrClientSecretRef(getSolrClientDefaultCollection());
     }
 
@@ -47,22 +52,10 @@ public interface HasSolrClient extends Component {
      *
      * @return reference
      */
-    default ClientSecretRef getSolrClientSecretRef(String csr) {
-        String[] parts = csr.split("-");
-        if (parts.length != 2) {
-            throw new CustomResourceConfigError("Solr ClientSecretRef name \"" + csr + "\" must consist of two parts separated by -");
-        }
-        String collection = parts[0];
-        String server = parts[1];
-        String url = getTargetState().getComponentCollection().getHasServiceComponent("solr").getServiceUrl(server);
-        return getTargetState().getClientSecretRef(SOLR_CLIENT_SECRET_REF_KIND, csr,
-                (clientSecret, password) -> getTargetState().loadOrBuildSecret(clientSecret, Map.of(
-                        ClientSecretRef.DEFAULT_PASSWORD_KEY, password,
-                        ClientSecretRef.DEFAULT_SCHEMA_KEY, collection,
-                        ClientSecretRef.DEFAULT_URL_KEY, url,
-                        ClientSecretRef.DEFAULT_USERNAME_KEY, collection
-                ))
-        );
+    default Optional<ClientSecretRef> getSolrClientSecretRef(String csr) {
+        SolrCoordinates c = new SolrCoordinates(csr, getTargetState());
+
+        return getTargetState().getClientSecretRef(SOLR_CLIENT_SECRET_REF_KIND, csr);
     }
 
     /**
@@ -79,17 +72,42 @@ public interface HasSolrClient extends Component {
     /**
      * Creates a set of environment variables suitable for this component.
      *
-     * @param component
-     * @return
+     * @param component component
+     * @return one or more environment variables
      */
     default EnvVarSet getSolrEnvVars(String component) {
         EnvVarSet env = new EnvVarSet();
-        ClientSecretRef csr = getSolrClientSecretRef();
+        Optional<ClientSecretRef> ocsr = getSolrClientSecretRef();
 
-        env.addAll(List.of(
-                csr.toEnvVar("SOLR_URL", csr.getUrlKey()),
-                csr.toEnvVar("SOLR_" + component.toUpperCase() + "_COLLECTION", csr.getSchemaKey())
-        ));
+        if (ocsr.isPresent()) {
+            ClientSecretRef csr = ocsr.get();
+            env.addAll(List.of(
+                    csr.toEnvVar("SOLR_URL", csr.getUrlKey()),
+                    csr.toEnvVar("SOLR_" + component.toUpperCase() + "_COLLECTION", csr.getSchemaKey())
+            ));
+        } else {
+            SolrCoordinates c = new SolrCoordinates(getSolrClientDefaultCollection(), getTargetState());
+            env.addAll(List.of(
+                    EnvVarSimple("SOLR_URL", c.url),
+                    EnvVarSimple("SOLR_" + component.toUpperCase() + "_COLLECTION", c.collection)
+            ));
+        }
         return env;
+    }
+
+    class SolrCoordinates {
+        public final String collection;
+        public final String server;
+        public final String url;
+
+        public SolrCoordinates(String csr, TargetState targetState) {
+            String[] parts = csr.split("-");
+            if (parts.length != 2) {
+                throw new CustomResourceConfigError("Solr ClientSecretRef name \"" + csr + "\" must consist of two parts separated by -");
+            }
+            collection = parts[0];
+            server = parts[1];
+            url = targetState.getComponentCollection().getHasServiceComponent("solr").getServiceUrl(server);
+        }
     }
 }

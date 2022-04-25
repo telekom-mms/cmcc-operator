@@ -22,10 +22,7 @@ import com.tsystemsmms.cmcc.cmccoperator.utils.YamlMapper;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.client.KubernetesClient;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.BiConsumer;
 
 import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.booleanOf;
@@ -75,6 +72,17 @@ public interface TargetState {
      * @return resource name
      */
     String getContextForLogging();
+
+    /**
+     * Returns a ClientSecretRef for a client connection. This allows a component to request the secret ref for a
+     * connection to a service, including the service address key, the username key, and the password key, so they
+     * can be added as environment variables to a pod. If no reference has been defined, returns an empty Optional.
+     *
+     * @param kind              kind of network client, for example "jdbc", "mongodb", or "uapi".
+     * @param schema            schema or account name. Must be unique among all entries of a kind.
+     * @return the optional secret reference
+     */
+    Optional<ClientSecretRef> getClientSecretRef(String kind, String schema);
 
     /**
      * Returns a ClientSecretRef for a client connection. This allows a component to request the secret ref for a

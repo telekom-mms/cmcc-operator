@@ -84,4 +84,27 @@ public class ClientSecretRef {
     public EnvVar toEnvVar(String prefix, String name, String key) {
         return EnvVarSecret(concatOptionalWithJoiner("_", prefix, name), getSecretName(), key);
     }
+
+    /**
+     * Return a new ClientSecretRef, with any null values replaced by their default values.
+     *
+     * @return a clone
+     */
+    public ClientSecretRef cloneWithDefaults() {
+        ClientSecretRef csr = defaultClientSecretRef(this.getSecretName());
+
+        if (this.driverKey != null)
+            csr.driverKey = this.driverKey;
+        if (this.hostnameKey != null)
+            csr.hostnameKey = this.hostnameKey;
+        if (this.passwordKey != null)
+            csr.passwordKey = this.passwordKey;
+        if (this.schemaKey != null)
+            csr.schemaKey = this.schemaKey;
+        if (this.urlKey != null)
+            csr.urlKey = this.urlKey;
+        if (this.usernameKey != null)
+            csr.usernameKey = this.usernameKey;
+        return csr;
+    }
 }
