@@ -79,12 +79,12 @@ public class DefaultTargetState extends AbstractTargetState {
                     ComponentSpecBuilder.ofType("studio-client").build(),
                     ComponentSpecBuilder.ofType("studio-server").build(),
                     ComponentSpecBuilder.ofType("user-changes").build(),
-                    ComponentSpecBuilder.ofType("workflow-server").build(),
+                    ComponentSpecBuilder.ofType("workflow-server").withMilestone(Milestone.ContentServerReady).build(),
                     ComponentSpecBuilder.ofType("overview").withMilestone(Milestone.ManagementReady).build(),
 
                     ComponentSpecBuilder.ofType("management-tools")
                             .withName("initcms")
-                            .withMilestone(Milestone.ContentServerReady)
+                            .withMilestone(Milestone.ContentServerInitialized)
                             .withArgs(List.of("change-passwords"))
                             .build()
             ));
