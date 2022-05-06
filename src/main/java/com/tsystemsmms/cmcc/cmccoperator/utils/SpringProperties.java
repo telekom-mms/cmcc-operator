@@ -87,7 +87,10 @@ public class SpringProperties {
 
     private EnvVar entryToEnvVar(Map.Entry<String, String> e) {
         EnvVar env = new EnvVar();
-        env.setName(e.getKey().replaceAll("[^A-Za-z0-9]+", "_").toUpperCase(Locale.ROOT));
+        env.setName(e.getKey()
+                .replaceAll("[^A-Za-z0-9]+", "_")
+                .replaceAll("_$", "")
+                .toUpperCase(Locale.ROOT));
         env.setValue(e.getValue());
         return env;
     }
