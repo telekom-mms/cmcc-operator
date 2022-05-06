@@ -121,8 +121,7 @@ public class CAEComponent extends CorbaComponent implements HasMongoDBClient, Ha
                 "server.tomcat.accesslog.file-date-format", "",
                 "server.tomcat.accesslog.pattern", "[ACCESS] %l %t %D %F %B %S",
                 "server.tomcat.accesslog.rotate", "false",
-                "com.coremedia.transform.blobCache.basePath", "/coremedia/persistent-cache/transformed-blob",
-                "cae.preview.pbe.studio-url-whitelist[0]", "https://" + getTargetState().getStudioHostname()
+                "com.coremedia.transform.blobCache.basePath", "/coremedia/persistent-cache/transformed-blob"
         ));
 
         if (getComponentSpec().getKind().equals(KIND_LIVE)) {
