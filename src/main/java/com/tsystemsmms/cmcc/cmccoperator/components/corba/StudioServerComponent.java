@@ -91,7 +91,7 @@ public class StudioServerComponent extends CorbaComponent implements HasMongoDBC
         Map<String, String> properties = super.getSpringBootProperties();
 
         properties.putAll(getSiteMappingProperties());
-        properties.put("studio.preview-url-prefix", "https://" + getTargetState().getPreviewHostname());
+        properties.put("studio.previewUrlPrefix", "https://" + getTargetState().getPreviewHostname());
         properties.put("themeImporter.apiKeyStore.basePath", "/var/tmp/themeimporter");
 
         return properties;
