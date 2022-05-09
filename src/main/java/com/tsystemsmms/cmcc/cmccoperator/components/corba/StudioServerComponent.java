@@ -92,6 +92,10 @@ public class StudioServerComponent extends CorbaComponent implements HasMongoDBC
 
         properties.putAll(getSiteMappingProperties());
         properties.put("studio.previewUrlPrefix", "https://" + getTargetState().getPreviewHostname());
+        // add the Studio URL twice time to work around CoreMedia bug CMS-21564. Normally, it should be sufficient
+        // to only have previewUrlPrefix set.
+        properties.put("studio.preview-url-whitelist[0]", "https://" + getTargetState().getPreviewHostname());
+        properties.put("studio.preview-url-whitelist[1]", "https://" + getTargetState().getPreviewHostname());
         properties.put("themeImporter.apiKeyStore.basePath", "/var/tmp/themeimporter");
 
         return properties;
