@@ -121,4 +121,9 @@ public class ComponentBeanFactories {
         return new WorkflowServerComponent(kubernetesClient, targetState, cs);
     }
 
+    @Bean("component:generic-client")
+    @Scope(SCOPE_PROTOTYPE)
+    public GenericClientComponent genericClientComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec cs) {
+        return new GenericClientComponent(kubernetesClient, targetState, cs);
+    }
 }
