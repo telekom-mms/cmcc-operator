@@ -42,9 +42,9 @@ public class GenericClientComponent extends CorbaComponent implements HasMongoDB
                 MONGODB_CLIENT_SECRET_REF_KIND, "blueprint",
                 UAPI_CLIENT_SECRET_REF_KIND, "webserver"
         ));
-        String solrCsr = getSolrClientRefName().orElseThrow(() -> {
-            throw new CustomResourceConfigError(SOLR_SERVER_KEY + " (server type, either " + SOLR_CLIENT_SERVER_FOLLOWER + " or " + SOLR_CLIENT_SERVER_LEADER + ") and " + SOLR_COLLECTION_KEY + " (solr core to access) must be set in extra section");
-        });
+        String solrCsr = getSolrClientRefName().orElseThrow(() ->
+           new CustomResourceConfigError(SOLR_SERVER_KEY + " (server type, either " + SOLR_CLIENT_SERVER_FOLLOWER + " or " + SOLR_CLIENT_SERVER_LEADER + ") and " + SOLR_COLLECTION_KEY + " (solr core to access) must be set in extra section")
+        );
 
         defaultSchemas.put(SOLR_CLIENT_SECRET_REF_KIND, solrCsr);
         setDefaultSchemas(defaultSchemas);
