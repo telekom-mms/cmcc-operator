@@ -79,7 +79,6 @@ public class GenericClientComponent extends CorbaComponent implements HasMongoDB
 
     public Map<String, String> getSpringBootProperties() {
         Map<String, String> properties = super.getSpringBootProperties();
-        properties.putAll(getSiteMappingProperties());
 
         if (getComponentSpec().getExtra().containsKey(USE_MLS_KEY)) {
             properties.put("repository.url", getTargetState().getServiceUrlFor("content-server", "mls"));
