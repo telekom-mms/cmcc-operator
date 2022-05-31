@@ -30,7 +30,7 @@ public class GenericClientComponent extends CorbaComponent implements HasMongoDB
 
     public static final String SOLR_SERVER_KEY = "solr-server";
     public static final String SOLR_COLLECTION_KEY = "solr-collection";
-    public static final String USE_MLS_KEY = "use-mls";
+    public static final String CONTENT_SERVER_TYPE_KEY = "content-server-type";
     public static final String UAPI_CLIENT_KIND_REF_KEY = "uapi-connection";
     public static final String SOLR_COLLECTION_PROPERTY_PREFIX = "solr-collection-prefix";
 
@@ -86,7 +86,7 @@ public class GenericClientComponent extends CorbaComponent implements HasMongoDB
     public Map<String, String> getSpringBootProperties() {
         Map<String, String> properties = super.getSpringBootProperties();
 
-        if (getComponentSpec().getExtra().containsKey(USE_MLS_KEY)) {
+        if (ContentServerComponent.KIND_MLS.equals(getComponentSpec().getExtra().get(CONTENT_SERVER_TYPE_KEY))) {
             properties.put("repository.url", getTargetState().getServiceUrlFor("content-server", "mls"));
         }
 
