@@ -31,6 +31,8 @@ public class GenericClientComponent extends CorbaComponent implements HasMongoDB
     public static final String SOLR_SERVER_KEY = "solr-server";
     public static final String SOLR_COLLECTION_KEY = "solr-collection";
     public static final String USE_MLS_KEY = "use-mls";
+    public static final String UAPI_CLIENT_KIND_REF_KEY = "uapi-connection";
+    public static final String SOLR_COLLECTION_PROPERTY_PREFIX = "solr-collection-prefix";
 
     String servletPathPattern;
 
@@ -39,13 +41,17 @@ public class GenericClientComponent extends CorbaComponent implements HasMongoDB
         super(kubernetesClient, targetState, componentSpec, null);
 
         Map<String, String> defaultSchemas = new HashMap<>(Map.of(
-                MONGODB_CLIENT_SECRET_REF_KIND, "blueprint",
-                UAPI_CLIENT_SECRET_REF_KIND, "webserver"
+                MONGODB_CLIENT_SECRET_REF_KIND, "blueprint"
         ));
         String solrCsr = getSolrClientRefName().orElseThrow(() ->
-           new CustomResourceConfigError(SOLR_SERVER_KEY + " (server type, either " + SOLR_CLIENT_SERVER_FOLLOWER + " or " + SOLR_CLIENT_SERVER_LEADER + ") and " + SOLR_COLLECTION_KEY + " (solr core to access) must be set in extra section")
+                new CustomResourceConfigError(SOLR_SERVER_KEY + " (server type, either " + SOLR_CLIENT_SERVER_FOLLOWER + " or " + SOLR_CLIENT_SERVER_LEADER + ") and " + SOLR_COLLECTION_KEY + " (solr core to access) must be set in extra section")
         );
 
+        String uapiCsr = Optional.ofNullable(getComponentSpec().getExtra().get(UAPI_CLIENT_KIND_REF_KEY)).orElseThrow(() ->
+                new CustomResourceConfigError(UAPI_CLIENT_KIND_REF_KEY + " must be set in extra section to type of uapi connection")
+        );
+
+        defaultSchemas.put(UAPI_CLIENT_SECRET_REF_KIND, uapiCsr);
         defaultSchemas.put(SOLR_CLIENT_SECRET_REF_KIND, solrCsr);
         setDefaultSchemas(defaultSchemas);
         servletPathPattern = String.join("|", getDefaults().getServletNames());
@@ -69,7 +75,7 @@ public class GenericClientComponent extends CorbaComponent implements HasMongoDB
     @Override
     public EnvVarSet getEnvVars() {
         EnvVarSet env = super.getEnvVars();
-        String appPropsPrefix = getComponentSpec().getName().replace("-", "_");
+        String appPropsPrefix = getComponentSpec().getExtra().getOrDefault(SOLR_COLLECTION_PROPERTY_PREFIX, getComponentSpec().getName().replace("-", "_"));
 
         env.addAll(getMongoDBEnvVars());
         env.addAll(getSolrEnvVars(appPropsPrefix));
@@ -85,27 +91,6 @@ public class GenericClientComponent extends CorbaComponent implements HasMongoDB
         }
 
         return properties;
-    }
-
-    @Override
-    public List<ContainerPort> getContainerPorts() {
-        return List.of(
-                new ContainerPortBuilder()
-                        .withName("http")
-                        .withContainerPort(8080)
-                        .build(),
-                new ContainerPortBuilder()
-                        .withName("management")
-                        .withContainerPort(8081)
-                        .build()
-        );
-    }
-
-    @Override
-    public List<ServicePort> getServicePorts() {
-        return List.of(
-                new ServicePortBuilder().withName("http").withPort(8080).withNewTargetPort("http").build(),
-                new ServicePortBuilder().withName("management").withPort(8081).withNewTargetPort("management").build());
     }
 
     @Override
