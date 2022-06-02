@@ -526,6 +526,23 @@ components:
 
 The Elastic Worker application.
 
+### Component `generic-client`
+
+The Generic-Client can be used for a variety of applications that require connections to the content-server,
+mongodb and solr.
+Most of its implementation is provided by the abstract CorbaComponent,
+resulting in persistent volume claims to standard coremedia caches as well as a service that exposes 8080, 8081 and 8083 ports.
+Thus, supplying an image-repository via the component-spec is mandatory, as the component class can not presume the correct repository beforehand.
+Most of its base configuration can be set in the component's `extra` section, using the following keys:
+
+| Property                | Type      | Optional  | Default                     | Description                                                                                                                                                                                                                                    |
+|-------------------------|-----------|-----------|-----------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `uapi-connection`       | String    | no        | -                           | The uapi-user that is used to authenticate against the content-server (ends up as repository.user env).                                                                                                                                        |
+| `content-server-type`   | String    | yes       | `cms`                       | Set the value to `mls` for establishing a connection to the master-live-server instead of the content-management-server.                                                                                                                       |
+| `solr-server`           | String    | no        | -                           | Specifies the solr server type that is utilized by the client. Can be either `leader` or `follower`.                                                                                                                                           |
+| `solr-collection`       | String    | no        | -                           | The collection that solr should use as the index.                                                                                                                                                                                              |
+| `solr-collection-prefix`| String    | yes       | upper-case name of component| The prefix used for writing the solr-collection as an env var as in `SOLR_${solr-collection-prefix}_COLLECTION`. Setting the parameter to CAE is helpful for apps that establish a solr connection using the cm SolrCaeConfigurationProperties.|
+
 ### Component `mongodb`
 
 If `with.databases` is enabled, the operator creates a MongoDB instance and the necessary secrets for the components to
