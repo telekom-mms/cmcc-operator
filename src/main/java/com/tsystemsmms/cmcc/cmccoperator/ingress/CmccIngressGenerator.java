@@ -11,6 +11,7 @@
 package com.tsystemsmms.cmcc.cmccoperator.ingress;
 
 import com.tsystemsmms.cmcc.cmccoperator.crds.IngressTls;
+import com.tsystemsmms.cmcc.cmccoperator.crds.SiteMapping;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 
 import java.util.Collection;
@@ -27,11 +28,29 @@ public interface CmccIngressGenerator {
     Collection<? extends HasMetadata> buildLiveResources();
 
     /**
+     * Returns the absolute URL for the given segment for the live CAE. This is the same function that the CAE link
+     * builder performs.
+     *
+     * @param segment site segment which URL should be computed
+     * @return absolute URL for that site
+     */
+    String buildLiveUrl(SiteMapping siteMapping, String segment);
+
+    /**
      * Build the ingress resources for the preview CAE. Can build additional resources if necessary.
      *
      * @return collection of Kubernetes resources.
      */
     Collection<? extends HasMetadata> buildPreviewResources();
+
+    /**
+     * Returns the absolute URL for the given segment for the preview CAE. This is the same function that the CAE link
+     * builder performs.
+     *
+     * @param segment site segment which URL should be computed
+     * @return absolute URL for that site
+     */
+    String buildPreviewUrl(SiteMapping siteMapping, String segment);
 
     /**
      * Build the ingress resources for the Studio. Can build additional resources if necessary.
@@ -43,7 +62,7 @@ public interface CmccIngressGenerator {
     /**
      * Generate a generic ingress for additional components like overview.
      *
-     * @param name name for the resource
+     * @param name     name for the resource
      * @param hostname hostname for the ingress
      * @return an ingress builder
      */

@@ -13,6 +13,7 @@ package com.tsystemsmms.cmcc.cmccoperator.ingress;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentDefaults;
 import com.tsystemsmms.cmcc.cmccoperator.crds.CoreMediaContentCloudSpec;
 import com.tsystemsmms.cmcc.cmccoperator.crds.IngressTls;
+import com.tsystemsmms.cmcc.cmccoperator.crds.SiteMapping;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import lombok.Getter;
@@ -78,6 +79,10 @@ public abstract class AbstractCmccIngressGenerator implements CmccIngressGenerat
         return ingresses;
     }
 
+    @Override
+    public String buildPreviewUrl(SiteMapping siteMapping, String segment) {
+        return "https://" + getTargetState().getPreviewHostname() + "/" + segment;
+    }
 
     @Override
     public Collection<? extends HasMetadata> buildStudioResources() {

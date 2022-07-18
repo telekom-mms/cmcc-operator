@@ -15,7 +15,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tsystemsmms.cmcc.cmccoperator.components.AbstractComponent;
 import com.tsystemsmms.cmcc.cmccoperator.components.HasService;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
+import com.tsystemsmms.cmcc.cmccoperator.crds.IngressTls;
 import com.tsystemsmms.cmcc.cmccoperator.crds.SiteMapping;
+import com.tsystemsmms.cmcc.cmccoperator.ingress.CmccIngressGenerator;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 import com.tsystemsmms.cmcc.cmccoperator.utils.EnvVarSet;
 import io.fabric8.kubernetes.api.model.*;
@@ -76,18 +78,36 @@ public class OverviewComponent extends AbstractComponent implements HasService {
 
         Info info = new Info();
         info.comment = getSpec().getComment();
+        info.ingressBuilder = getTargetState().getCmccIngressGeneratorFactory().getClass().getCanonicalName();
         info.name = getCmcc().getMetadata().getName();
         info.prefix = getDefaults().getNamePrefix();
         info.previewUrl = "https://" + getTargetState().getPreviewHostname();
         info.studioUrl = "https://" + getTargetState().getStudioHostname();
 
-        info.siteMappings = new HashSet<>();
+        CmccIngressGenerator liveIngressGenerator = getTargetState().getCmccIngressGeneratorFactory().instance(getTargetState(), getTargetState().getServiceNameFor("cae", "live"));
+        CmccIngressGenerator previewIngressGenerator = getTargetState().getCmccIngressGeneratorFactory().instance(getTargetState(), getTargetState().getServiceNameFor("cae", "preview"));
+        info.siteMappings = new TreeSet<>(Comparator.comparing(InfoSiteMapping::getHostname));
         for (SiteMapping siteMapping : getSpec().getSiteMappings()) {
             String fqdn = concatOptional(getDefaults().getNamePrefix(), siteMapping.getHostname()) + "." + getDefaults().getIngressDomain();
             if (siteMapping.getFqdn() != null && !siteMapping.getFqdn().isEmpty())
                 fqdn = siteMapping.getFqdn();
-            siteMapping.setFqdn(fqdn);
-            info.siteMappings.add(siteMapping);
+            InfoSiteMapping ism = new InfoSiteMapping();
+            ism.additionalSegments = siteMapping.getAdditionalSegments();
+            ism.setFqdn(fqdn);
+            ism.hostname = siteMapping.getHostname();
+            ism.primarySegment = siteMapping.getPrimarySegment();
+            ism.tls = siteMapping.getTls();
+            ism.liveUrls = new HashMap<>();
+            ism.liveUrls.put(siteMapping.getPrimarySegment(), liveIngressGenerator.buildLiveUrl(siteMapping, siteMapping.getPrimarySegment()));
+            for (String segment : siteMapping.getAdditionalSegments()) {
+                ism.liveUrls.put(segment, liveIngressGenerator.buildLiveUrl(siteMapping, segment));
+            }
+            ism.previewUrls = new HashMap<>();
+            ism.previewUrls.put(siteMapping.getPrimarySegment(), previewIngressGenerator.buildPreviewUrl(siteMapping, siteMapping.getPrimarySegment()));
+            for (String segment : siteMapping.getAdditionalSegments()) {
+                ism.previewUrls.put(segment, previewIngressGenerator.buildPreviewUrl(siteMapping, segment));
+            }
+            info.siteMappings.add(ism);
         }
 
         try {
@@ -239,10 +259,22 @@ public class OverviewComponent extends AbstractComponent implements HasService {
     private static class Info {
         String comment;
         String name;
+        String ingressBuilder;
         String prefix;
         String previewUrl;
-        Set<SiteMapping> siteMappings;
+        Set<InfoSiteMapping> siteMappings;
         String studioUrl;
     }
 
+    @Data
+    private static class InfoSiteMapping {
+        private Set<String> additionalSegments = Collections.emptySet();
+        private String fqdn = "";
+        private String hostname;
+        private Map<String, String> liveUrls;
+        private Map<String, String> previewUrls;
+        private String primarySegment;
+        private IngressTls tls;
+
+    }
 }

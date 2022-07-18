@@ -87,6 +87,14 @@ public class OnlyLangCmccIngressGenerator extends AbstractCmccIngressGenerator {
         return ingresses;
     }
 
+    @Override
+    public String buildLiveUrl(SiteMapping siteMapping, String segment) {
+        String fqdn = concatOptional(getDefaults().getNamePrefix(), siteMapping.getHostname()) + "." + getDefaults().getIngressDomain();
+        if (!siteMapping.getFqdn().isBlank())
+            fqdn = siteMapping.getFqdn();
+        return "https://" + fqdn + "/" + getLanguage(segment);
+    }
+
     private String getLanguage(String segment) {
         String[] parts = segment.split("-");
         if (parts.length < 3)

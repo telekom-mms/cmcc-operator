@@ -16,6 +16,11 @@
         <option name="name" value="cmcc.useCrd" />
         <option name="value" value="false" />
       </param>
+      <param>
+        <option name="enabled" value="true" />
+        <option name="name" value="cmcc.ingressbuilder" />
+        <option name="value" value="onlylang" />
+      </param>
     </additionalParameters>
     <method v="2">
       <option name="Make" enabled="true" />

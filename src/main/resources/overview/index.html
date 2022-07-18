@@ -5,6 +5,9 @@
     <link rel="stylesheet" href="overview.css">
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            Handlebars.registerHelper('get', function (urls, key) {
+                return urls[key];
+            })
             let body = document.querySelector('#template').innerHTML;
             let bodyTemplate = Handlebars.compile(body);
             let titleTemplate = Handlebars.compile("CoreMedia Content Cloud Overview for {{ name }}");
@@ -35,9 +38,9 @@
             <li>
                 <h3>{{mapping.hostname}}</h3>
                 <ul class="preview-links">
-                    <li><a href="{{ ../previewUrl }}/{{mapping.primarySegment}}" target="_blank">{{mapping.primarySegment}}</a></li>
+                    <li><a href="{{ get mapping.previewUrls mapping.primarySegment }}" target="_blank">{{mapping.primarySegment}}</a></li>
                     {{#each mapping.additionalSegments as |segment|}}
-                        <li><a href="{{ ../../previewUrl }}/{{segment}}" target="_blank">{{segment}}</a></li>
+                        <li><a href="{{ get mapping.previewUrls segment }}" target="_blank">{{segment}}</a></li>
                     {{/each}}
                 </ul>
             </li>
@@ -49,9 +52,9 @@
             <li>
                 <h3>{{mapping.hostname}}</h3>
                 <ul class="delivery-links">
-                    <li><a href="https://{{ mapping.fqdn }}" target="_blank">{{mapping.primarySegment}}</a></li>
+                    <li><a href="{{ get mapping.liveUrls mapping.primarySegment }}" target="_blank">{{mapping.primarySegment}}</a></li>
                     {{#each mapping.additionalSegments as |segment|}}
-                        <li><a href="https://{{ mapping.fqdn }}/{{segment}}" target="_blank">{{segment}}</a></li>
+                        <li><a href="{{ get mapping.liveUrls segment }}" target="_blank">{{segment}}</a></li>
                     {{/each}}
                 </ul>
             </li>

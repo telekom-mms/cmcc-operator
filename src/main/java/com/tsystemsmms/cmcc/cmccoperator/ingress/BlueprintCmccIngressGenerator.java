@@ -63,4 +63,16 @@ public class BlueprintCmccIngressGenerator extends AbstractCmccIngressGenerator 
 
         return ingresses;
     }
+
+    @Override
+    public String buildLiveUrl(SiteMapping siteMapping, String segment) {
+        String site = siteMapping.getHostname();
+        String fqdn = concatOptional(getDefaults().getNamePrefix(), site) + "." + getDefaults().getIngressDomain();
+
+        if (!siteMapping.getFqdn().isBlank())
+            fqdn = siteMapping.getFqdn();
+
+        return "https://" + fqdn + "/" + segment;
+    }
+
 }
