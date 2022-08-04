@@ -35,6 +35,7 @@ Planned features include:
 * [Using the Operator to create a CoreMedia installation](#using-the-operator): quick start
 * [Customizing the CMCC Operator](docs/customizing-the-operator.md): information for developers
 * [ghcr.io/t-systems-mms/cmcc-operator/cmcc-operator](https://github.com/T-Systems-MMS/cmcc-operator/pkgs/container/cmcc-operator%2Fcmcc-operator) Docker Image
+* [Cluster Roles and Rights](docs/cluster-roles.md) that the operator requires.
 
 ## Preparing Your Cluster and Installing the Operator
 
