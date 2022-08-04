@@ -11,7 +11,6 @@
 package com.tsystemsmms.cmcc.cmccoperator;
 
 import com.tsystemsmms.cmcc.cmccoperator.components.job.MgmtToolsJobComponent;
-import com.tsystemsmms.cmcc.cmccoperator.crds.CoreMediaContentCloud;
 import com.tsystemsmms.cmcc.cmccoperator.crds.CoreMediaContentCloudStatus;
 import com.tsystemsmms.cmcc.cmccoperator.customresource.ConfigMapCustomResource;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
@@ -26,6 +25,7 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static com.tsystemsmms.cmcc.cmccoperator.CoreMediaContentCloudReconciler.OPERATOR_SELECTOR_LABELS;
@@ -79,8 +79,8 @@ public class CmccConfigMapReconciler implements Reconciler<ConfigMap>, ErrorStat
     }
 
     @Override
-    public List<EventSource> prepareEventSources(EventSourceContext<ConfigMap> context) {
-        return List.of(new InformerEventSource<>(kubernetesClient.batch().v1().jobs().inAnyNamespace().withLabels(MgmtToolsJobComponent.getJobLabels()).runnableInformer(1200), Mappers.fromOwnerReference()),
+    public Map<String, EventSource> prepareEventSources(EventSourceContext<ConfigMap> context) {
+        return EventSourceInitializer.nameEventSources(new InformerEventSource<>(kubernetesClient.batch().v1().jobs().inAnyNamespace().withLabels(MgmtToolsJobComponent.getJobLabels()).runnableInformer(1200), Mappers.fromOwnerReference()),
                 new InformerEventSource<>(kubernetesClient.apps().statefulSets().inAnyNamespace().withLabels(OPERATOR_SELECTOR_LABELS).runnableInformer(1200), Mappers.fromOwnerReference()));
     }
 }
