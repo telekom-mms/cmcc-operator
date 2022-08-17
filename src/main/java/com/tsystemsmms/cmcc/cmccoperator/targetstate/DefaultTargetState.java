@@ -56,14 +56,20 @@ public class DefaultTargetState extends AbstractTargetState {
     @Override
     public void convergeDefaultComponents() {
         if (cmcc.getSpec().getWith().getDatabases()) {
-            componentCollection.addAll(List.of(
-                    ComponentSpecBuilder.ofType("mongodb")
-                            .withMilestone(Milestone.Created)
-                            .build(),
-                    ComponentSpecBuilder.ofType("mysql")
-                            .withMilestone(Milestone.Created)
-                            .build()
-            ));
+            if (cmcc.getSpec().getWith().databaseCreateForKind("mongodb")) {
+                componentCollection.addAll(List.of(
+                        ComponentSpecBuilder.ofType("mongodb")
+                                .withMilestone(Milestone.Created)
+                                .build()
+                ));
+            }
+            if (cmcc.getSpec().getWith().databaseCreateForKind("mysql")) {
+                componentCollection.addAll(List.of(
+                        ComponentSpecBuilder.ofType("mysql")
+                                .withMilestone(Milestone.Created)
+                                .build()
+                ));
+            }
         }
 
         if (cmcc.getSpec().getWith().getManagement()) {
@@ -108,16 +114,22 @@ public class DefaultTargetState extends AbstractTargetState {
     @Override
     public void convergeOverrideResources() {
         if (cmcc.getSpec().getWith().getDatabases()) {
-            componentCollection.addAll(List.of(
-                    ComponentSpecBuilder.ofType("mongodb")
-                            .withMilestone(Milestone.Created)
-                            .withExtra(MongoDBComponent.createUsersFromClientSecrets(this))
-                            .build(),
-                    ComponentSpecBuilder.ofType("mysql")
-                            .withMilestone(Milestone.Created)
-                            .withExtra(MySQLComponent.createUsersFromClientSecrets(this))
-                            .build()
-            ));
+            if (cmcc.getSpec().getWith().databaseCreateForKind("mongodb")) {
+                componentCollection.addAll(List.of(
+                        ComponentSpecBuilder.ofType("mongodb")
+                                .withMilestone(Milestone.Created)
+                                .withExtra(MongoDBComponent.createUsersFromClientSecrets(this))
+                                .build()
+                ));
+            }
+            if (cmcc.getSpec().getWith().databaseCreateForKind("mysql")) {
+                componentCollection.addAll(List.of(
+                        ComponentSpecBuilder.ofType("mysql")
+                                .withMilestone(Milestone.Created)
+                                .withExtra(MySQLComponent.createUsersFromClientSecrets(this))
+                                .build()
+                ));
+            }
         }
 
         if (cmcc.getStatus().getMilestone() == Milestone.Ready && !getCmcc().getSpec().getJob().isBlank()) {

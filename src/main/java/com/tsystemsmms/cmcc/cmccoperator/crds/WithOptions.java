@@ -14,13 +14,19 @@ import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import lombok.Data;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @Data
 public class WithOptions {
     @JsonPropertyDescription("Import content, users, themes and workflows")
     Boolean contentImport = true;
 
-    @JsonPropertyDescription("Create databases for CoreMedia")
+    @JsonPropertyDescription("Create databases and secrets for CoreMedia")
     Boolean databases = false;
+
+    @JsonPropertyDescription("Create databases and secrets, except for these")
+    Map<String, Boolean> datasesOverride = new HashMap<>();
 
     @JsonPropertyDescription("Create default components for the delivery stage")
     WithDelivery delivery = new WithDelivery();
@@ -36,5 +42,17 @@ public class WithOptions {
         IntOrString minCae = new IntOrString(0);
         @JsonPropertyDescription("Maximum number of CAEs per RLS")
         IntOrString maxCae = new IntOrString(0);
+    }
+
+    /**
+     * Returns true if databases and secrets should be created for the given kind.
+     *
+     * @param kind kind of secret
+     * @return true if databases and secrets should be created
+     */
+    public boolean databaseCreateForKind(String kind) {
+        if (datasesOverride.containsKey(kind))
+            return datasesOverride.get(kind);
+        return true;
     }
 }

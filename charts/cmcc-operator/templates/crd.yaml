@@ -309,8 +309,13 @@ spec:
                     description: "Import content, users, themes and workflows"
                     type: boolean
                   databases:
-                    description: Create databases for CoreMedia
+                    description: Create databases and secrets for CoreMedia
                     type: boolean
+                  datasesOverride:
+                    additionalProperties:
+                      type: boolean
+                    description: "Create databases and secrets, except for these"
+                    type: object
                   delivery:
                     description: Create default components for the delivery stage
                     properties:

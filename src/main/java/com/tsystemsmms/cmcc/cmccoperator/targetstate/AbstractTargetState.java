@@ -234,11 +234,13 @@ public abstract class AbstractTargetState implements TargetState {
 
         if (getCmcc().getSpec().getWith().getDatabases()) {
             for (Map.Entry<String, Map<String, ClientSecret>> e : clientSecrets.entrySet()) {
-                for (ClientSecret clientSecret : e.getValue().values()) {
-                    Secret secret = clientSecret.getSecret()
-                            .orElseThrow(() -> new CustomResourceConfigError("Unable to find secret for clientSecretRef \"" + clientSecret.getRef().getSecretName() + "\""));
-                    if (isWeOwnThis(secret))
-                        resources.add(secret);
+                if (cmcc.getSpec().getWith().databaseCreateForKind(e.getKey())) {
+                    for (ClientSecret clientSecret : e.getValue().values()) {
+                        Secret secret = clientSecret.getSecret()
+                                .orElseThrow(() -> new CustomResourceConfigError("Unable to find secret for clientSecretRef \"" + clientSecret.getRef().getSecretName() + "\""));
+                        if (isWeOwnThis(secret))
+                            resources.add(secret);
+                    }
                 }
             }
         }
@@ -433,8 +435,10 @@ public abstract class AbstractTargetState implements TargetState {
         if (secret != null && secret.getStringData() == null) {
             Map<String, String> stringData = new HashMap<>();
             secret.setStringData(stringData);
-            for (Map.Entry<String, String> e : secret.getData().entrySet()) {
-                stringData.put(e.getKey(), new String(Base64.getDecoder().decode(e.getValue()), StandardCharsets.UTF_8));
+            if (secret.getData() != null) {
+                for (Map.Entry<String, String> e : secret.getData().entrySet()) {
+                    stringData.put(e.getKey(), new String(Base64.getDecoder().decode(e.getValue()), StandardCharsets.UTF_8));
+                }
             }
         }
         return secret;
