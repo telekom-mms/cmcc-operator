@@ -310,7 +310,7 @@ spec:
                   databases:
                     description: Create databases and secrets for CoreMedia
                     type: boolean
-                  datasesOverride:
+                  databasesOverride:
                     additionalProperties:
                       type: boolean
                     description: "Create databases and secrets, except for these"

@@ -26,7 +26,7 @@ public class WithOptions {
     Boolean databases = false;
 
     @JsonPropertyDescription("Create databases and secrets, except for these")
-    Map<String, Boolean> datasesOverride = new HashMap<>();
+    Map<String, Boolean> databasesOverride = new HashMap<>();
 
     @JsonPropertyDescription("Create default components for the delivery stage")
     WithDelivery delivery = new WithDelivery();
@@ -51,8 +51,8 @@ public class WithOptions {
      * @return true if databases and secrets should be created
      */
     public boolean databaseCreateForKind(String kind) {
-        if (datasesOverride.containsKey(kind))
-            return datasesOverride.get(kind);
+        if (databasesOverride.containsKey(kind))
+            return databasesOverride.get(kind);
         return true;
     }
 }

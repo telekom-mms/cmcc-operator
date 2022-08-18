@@ -61,8 +61,8 @@ properties have suitable defaults.
 | `siteMappings`                      | array                | –                              | Mappings between DNS names and site segments, see below                                                                                     |
 | `with`                              | object               | –                              | Optional special components and configurations                                                                                              |
 | `with.databases`                    | boolean              | false                          | Create both a MariaDB and MongoDB server, and schemas and secrets for all components that require them                                      |
-| `with.datasesOverride`              | object               | –                              | If `with.databases` is `true`, override the creation for specific kinds.                                                                    |
-| `with.datasesOverride.`*kind*       | boolean              | true                           | When set to `false`, do not create database and secrets for *kind*. If set to true, or the entry is missing, do create them.                |
+| `with.databasesOverride`            | object               | –                              | If `with.databases` is `true`, override the creation for specific kinds.                                                                    |
+| `with.databasesOverride.`*kind*     | boolean              | true                           | When set to `false`, do not create database and secrets for *kind*. If set to true, or the entry is missing, do create them.                |
 | `with.delivery`                     | object               | –                              | Create all components required for a CoreMedia delivery stage                                                                               |
 | `with.delivery.rls`                 | int                  | 0                              | Number of Replication Live Servers to create                                                                                                |
 | `with.delivery.minCae`              | int                  | 0                              | Minimum number of CAEs per RLS                                                                                                              |
@@ -83,7 +83,7 @@ If you would like to connect to the databases with a constant password, you can 
 . **DANGER You should only set this property if you are certain that the database server is only accessible over the
 network to authorized users.**
 
-YOu can further customize which databases and secrets are created by setting `with.datasesOverride.`*kind* to `false`
+YOu can further customize which databases and secrets are created by setting `with.databasesOverride.`*kind* to `false`
 for those kinds that you do want to manage the services and secrets yourself. See [Overview of Secrets for Components](#overview-of-secrets-for-components) for a list of kinds.
 
 ### Delivery Components `with.delivery`
