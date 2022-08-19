@@ -282,6 +282,12 @@ spec:
                       description: Fully-qualified hostname of the site; defaults
                         to the simple hostname
                       type: string
+                    fqdnAliases:
+                      description: Optional additional FQDNs to create ingress resources
+                        for
+                      items:
+                        type: string
+                      type: array
                     hostname:
                       description: Simple hostname of the site; used as the key for
                         site mappings

@@ -19,8 +19,12 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.concatOptional;
 
@@ -52,8 +56,8 @@ public abstract class AbstractCmccIngressGenerator implements CmccIngressGenerat
         return getTargetState().getCmcc().getSpec();
     }
 
-    public String liveName(String site, String name) {
-        return concatOptional(getDefaults().getNamePrefix(), "live", site, name);
+    public String liveName(String site, String name, String... more) {
+        return concatOptional(Stream.concat(Stream.of(getDefaults().getNamePrefix(), "live", site, name), Arrays.stream(more)).collect(Collectors.toUnmodifiableList()));
     }
 
     public String previewName(String name) {

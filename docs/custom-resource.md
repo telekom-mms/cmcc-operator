@@ -35,39 +35,39 @@ The `milestone` status column shows the creation status of the installation:
 The `spec` field defines these properties to allow you to deploy a CoreMedia installation. Whenever possible, these
 properties have suitable defaults.
 
-| Property                            | Type                 | Default                        | Description                                                                                                                                 |
-|-------------------------------------|----------------------|--------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------|
-| `comment`                           | String               | ""                             | Arbitrary comment, can be used to force an update to the resource                                                                           |
-| `components`                        | array                | []                             | List of CoreMedia components to be created. See below for available components and their parameters                                         |
-| `clientSecretRefs`                  | map of map of object | –                              | Pre-existing secrets to use, see below                                                                                                      |
-| `defaults`                          | object               | –                              | Default values for components                                                                                                               |
-| `defaults.curlImage`                | String               | `docker.io/alpine/curl:latest` | A Docker image with curl available. Used in init containers to wait for Content Server components to become available.                      |
-| `defaults.image`                    | object               | –                              | Defaults for the image specification                                                                                                        |
-| `defaults.image.registry`           | String               | ""                             | Docker Image Registry to pull images from                                                                                                   |
-| `defaults.image.tag`                | String               | `latest`                       | Docker Image Tag to pull images from                                                                                                        |
-| `defaults.image.pullPolicy`         | String               | `IfNotPresent`                 | default imagePullPolicy                                                                                                                     |
-| `defaults.ingressDomain`            | String               | ""                             | Fully qualified domain name to append to ingress host names                                                                                 |
-| `defaults.insecureDatabasePassword` | String               | ""                             | **DO NOT SET**. See below for more information.                                                                                             |
-| `defaults.namePrefix`               | String               | ""                             | Prefix resources with this name plus '-'.                                                                                                   |
+| Property                            | Type                 | Default                        | Description                                                                                                                                  |
+|-------------------------------------|----------------------|--------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|
+| `comment`                           | String               | ""                             | Arbitrary comment, can be used to force an update to the resource                                                                            |
+| `components`                        | array                | []                             | List of CoreMedia components to be created. See below for available components and their parameters                                          |
+| `clientSecretRefs`                  | map of map of object | –                              | Pre-existing secrets to use, see below                                                                                                       |
+| `defaults`                          | object               | –                              | Default values for components                                                                                                                |
+| `defaults.curlImage`                | String               | `docker.io/alpine/curl:latest` | A Docker image with curl available. Used in init containers to wait for Content Server components to become available.                       |
+| `defaults.image`                    | object               | –                              | Defaults for the image specification                                                                                                         |
+| `defaults.image.registry`           | String               | ""                             | Docker Image Registry to pull images from                                                                                                    |
+| `defaults.image.tag`                | String               | `latest`                       | Docker Image Tag to pull images from                                                                                                         |
+| `defaults.image.pullPolicy`         | String               | `IfNotPresent`                 | default imagePullPolicy                                                                                                                      |
+| `defaults.ingressDomain`            | String               | ""                             | Fully qualified domain name to append to ingress host names                                                                                  |
+| `defaults.insecureDatabasePassword` | String               | ""                             | **DO NOT SET**. See below for more information.                                                                                              |
+| `defaults.namePrefix`               | String               | ""                             | Prefix resources with this name plus '-'.                                                                                                    |
 | `defaults.previewHostname`          | String               | `preview`                      | Hostname of the preview CAE. Unless it is a fully-qualified domain name, the `namePrefix` and the `ingressDomain` will be pre- and appended. |
-| `defaults.resources`                | resources            | –                              | Default [resources to apply to component pods](https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/pod-v1/#resources)    |
-| `defaults.studioHostname`           | String               | `studio`                       | Hostname of the Studio. Unless it is a fully-qualified domain name, the `namePrefix` and the `ingressDomain` will be pre- and appended.     |
-| `defaultIngressTls`                 | object               | –                              | Defaults for the site mapping TLS settings, see below                                                                                       |
-| `job`                               | String               | ""                             | name of a component to run as a job, see below                                                                                              |
-| `licenseSecrets`                    | object               | –                              | Names of the secrets containing the license                                                                                                 |
-| `licenseSecrets.CMSLicense`         | String               | `license-cms`                  | Name of the secret containing a `license.zip` entry with the appropriate file contents                                                      |
-| `licenseSecrets.MLSLicense`         | String               | `license-mls`                  | Name of the secret containing a `license.zip` entry with the appropriate file contents                                                      |
-| `licenseSecrets.RLSLicense`         | String               | `license-rls`                  | Name of the secret containing a `license.zip` entry with the appropriate file contents                                                      |
-| `siteMappings`                      | array                | –                              | Mappings between DNS names and site segments, see below                                                                                     |
-| `with`                              | object               | –                              | Optional special components and configurations                                                                                              |
-| `with.databases`                    | boolean              | false                          | Create both a MariaDB and MongoDB server, and schemas and secrets for all components that require them                                      |
-| `with.databasesOverride`            | object               | –                              | If `with.databases` is `true`, override the creation for specific kinds.                                                                    |
-| `with.databasesOverride.`*kind*     | boolean              | true                           | When set to `false`, do not create database and secrets for *kind*. If set to true, or the entry is missing, do create them.                |
-| `with.delivery`                     | object               | –                              | Create all components required for a CoreMedia delivery stage                                                                               |
-| `with.delivery.rls`                 | int                  | 0                              | Number of Replication Live Servers to create                                                                                                |
-| `with.delivery.minCae`              | int                  | 0                              | Minimum number of CAEs per RLS                                                                                                              |
-| `with.delivery.maxCae`              | int                  | 0                              | Maximum number of CAEs per RLS                                                                                                              |
-| `with.management`                   | boolean              | true                           | Create all components required for a CoreMedia management stage                                                                             |
+| `defaults.resources`                | resources            | –                              | Default [resources to apply to component pods](https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/pod-v1/#resources)     |
+| `defaults.studioHostname`           | String               | `studio`                       | Hostname of the Studio. Unless it is a fully-qualified domain name, the `namePrefix` and the `ingressDomain` will be pre- and appended.      |
+| `defaultIngressTls`                 | object               | –                              | Defaults for the site mapping TLS settings, see below                                                                                        |
+| `job`                               | String               | ""                             | name of a component to run as a job, see below                                                                                               |
+| `licenseSecrets`                    | object               | –                              | Names of the secrets containing the license                                                                                                  |
+| `licenseSecrets.CMSLicense`         | String               | `license-cms`                  | Name of the secret containing a `license.zip` entry with the appropriate file contents                                                       |
+| `licenseSecrets.MLSLicense`         | String               | `license-mls`                  | Name of the secret containing a `license.zip` entry with the appropriate file contents                                                       |
+| `licenseSecrets.RLSLicense`         | String               | `license-rls`                  | Name of the secret containing a `license.zip` entry with the appropriate file contents                                                       |
+| `siteMappings`                      | array                | –                              | Mappings between DNS names and site segments, see below                                                                                      |
+| `with`                              | object               | –                              | Optional special components and configurations                                                                                               |
+| `with.databases`                    | boolean              | false                          | Create both a MariaDB and MongoDB server, and schemas and secrets for all components that require them                                       |
+| `with.databasesOverride`            | object               | –                              | If `with.databases` is `true`, override the creation for specific kinds.                                                                     |
+| `with.databasesOverride.`*kind*     | boolean              | true                           | When set to `false`, do not create database and secrets for *kind*. If set to true, or the entry is missing, do create them.                 |
+| `with.delivery`                     | object               | –                              | Create all components required for a CoreMedia delivery stage                                                                                |
+| `with.delivery.rls`                 | int                  | 0                              | Number of Replication Live Servers to create                                                                                                 |
+| `with.delivery.minCae`              | int                  | 0                              | Minimum number of CAEs per RLS                                                                                                               |
+| `with.delivery.maxCae`              | int                  | 0                              | Maximum number of CAEs per RLS                                                                                                               |
+| `with.management`                   | boolean              | true                           | Create all components required for a CoreMedia management stage                                                                              |
 
 ## Enabling Convenience Options `with`
 
@@ -83,19 +83,28 @@ If you would like to connect to the databases with a constant password, you can 
 . **DANGER You should only set this property if you are certain that the database server is only accessible over the
 network to authorized users.**
 
-YOu can further customize which databases and secrets are created by setting `with.databasesOverride.`*kind* to `false`
-for those kinds that you do want to manage the services and secrets yourself. See [Overview of Secrets for Components](#overview-of-secrets-for-components) for a list of kinds.
+You can further customize which databases and secrets are created by setting `with.databasesOverride.`*kind* to `false`
+for those kinds that you do want to manage the services and secrets yourself.
+See [Overview of Secrets for Components](#overview-of-secrets-for-components) for a list of kinds.
 
 ### Delivery Components `with.delivery`
 
 The operator can create Replication Live Servers and Live CAEs and configure a Horizontal Pod Autoscaler for the CAEs.
 
-`with.delivery.minCae` and `with.delivery.maxCae` determine how many Live CAEs should be created per RLS. The defaults are both `0`, which disables the creation of Live CAEs. When `with.delivery.minCae` is set to a value equal or larger than `with.delivery.maxCae`, a fixed number of Live CAEs will be configured. 
+`with.delivery.minCae` and `with.delivery.maxCae` determine how many Live CAEs should be created per RLS. The defaults
+are both `0`, which disables the creation of Live CAEs. When `with.delivery.minCae` is set to a value equal or larger
+than `with.delivery.maxCae`, a fixed number of Live CAEs will be configured.
 
-**Future functionality**: When `with.delivery.minCae` is set to a value smaller than `with.delivery.maxCae`, a horizontal pod autoscaler will be configured that will scale the number of CAEs from the minimum to the maximum amount based on the CPU load of the CAEs.
+**Future functionality**: When `with.delivery.minCae` is set to a value smaller than `with.delivery.maxCae`, a
+horizontal pod autoscaler will be configured that will scale the number of CAEs from the minimum to the maximum amount
+based on the CPU load of the CAEs.
 
-**Future functionality**: `with.delivery.rls` determines the number of Replication Live Servers the operator should create. The default of `0` means that all CAEs will be connected to the Master Live Server, and no RLS will be created. Note that while it is possible to increase the number of RLS after the CoreMedia installation has been created, the operator currently cannot create additional database schemas for any new RLS, and can not clone database contents from the Master Live Server to any new RLS. If you want to increase the number of RLS after initial setup, you would need to take care of that manually.
-
+**Future functionality**: `with.delivery.rls` determines the number of Replication Live Servers the operator should
+create. The default of `0` means that all CAEs will be connected to the Master Live Server, and no RLS will be created.
+Note that while it is possible to increase the number of RLS after the CoreMedia installation has been created, the
+operator currently cannot create additional database schemas for any new RLS, and can not clone database contents from
+the Master Live Server to any new RLS. If you want to increase the number of RLS after initial setup, you would need to
+take care of that manually.
 
 #### Example: development setup with one Live CAE
 
@@ -177,16 +186,16 @@ This tables shows the component types and the client secrets they use.
 | `user-changes`         |               | `blueprint` | `         | `studio`    |             |
 | `workflow-server`      | `management`  | `blueprint` |           | `workflow`  |             |
 
-You can override the schema/user names for each component by adding an entry to the components `schemas` map, for example:
+You can override the schema/user names for each component by adding an entry to the components `schemas` map, for
+example:
 
 ```yaml
 components:
-   - type: cae-feeder
-     kind: live
-     schemas:
-       jdbc: live-cae-feeder
+  - type: cae-feeder
+    kind: live
+    schemas:
+      jdbc: live-cae-feeder
 ```
-
 
 ### `clientSecretRef.jdbc`
 
@@ -234,9 +243,16 @@ the MongoDB server requires it.
 
 ### `clientSecretRef.solr`
 
-While Solr does not use authentication (unless explicitly enabled through a plugin), the operator can use secrets to configure the Solr Core/collection name and server URL. For each collection, two secrets are used: *schemaname*`-leader` and *schemaname*`-follower`. The leader can be used to connect to the Solr leader (used for indexing and quick turnaround querying in the Studio and preview); the follower secret connects to the follower instances that replicate the cores from the leader, for example in the Live CAE.
+While Solr does not use authentication (unless explicitly enabled through a plugin), the operator can use secrets to
+configure the Solr Core/collection name and server URL. For each collection, two secrets are used: *schemaname*`-leader`
+and *schemaname*`-follower`. The leader can be used to connect to the Solr leader (used for indexing and quick
+turnaround querying in the Studio and preview); the follower secret connects to the follower instances that replicate
+the cores from the leader, for example in the Live CAE.
 
-If any of the following secret references are defined in `clientSecretRefs.solr`, the operator will configure the client components to use the `url` property from each for the connection string. If no such secret reference is defined, the connection URL will be set directly based on the Solr service names.
+If any of the following secret references are defined in `clientSecretRefs.solr`, the operator will configure the client
+components to use the `url` property from each for the connection string. If no such secret reference is defined, the
+connection URL will be set directly based on the Solr service names.
+
 * `solr-live-follower`
 * `solr-live-leader`
 * `solr-preview-leader`
@@ -344,15 +360,16 @@ the [kubernetes/ingress-nginx](https://github.com/kubernetes/ingress-nginx).
 
 Each entry defines one DNS name and all the site segments that will be served under this name.
 
-| Property             | Type            | Default | Description                                                                                                                                                         |
-|----------------------|-----------------|---------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `hostname`           | String          | –       | Short name of the mapping; also used as the key for this entry.                                                                                                     |
-| `fqdn`               | String          | –       | DNS name, either a fully-qualified domain name (FQDN, www.example.com). Defaults to the `hostname` with the default ingress domain appended.                        |
-| `primarySegment`     | String          | –       | Primary site segment; this is the site for the `/` URI.                                                                                                             |
-| `additionalSegments` | array of String | –       | Segments of additional sites served from this host.                                                                                                                 |
-| `tls`                | object          | –       | TLS settings for this host                                                                                                                                          |
-| `tls.enabled`        | boolean         | true    | Should TLS be enabled for this ingress                                                                                                                              |
-| `tls.secretName`     | object          | –       | Name of the secret that store the certificate and key for this hostname. Some Ingress controllers allow this to be empty, they will then use a default certificate. |
+| Property             | Type            | Default | Description                                                                                                                                                          |
+|----------------------|-----------------|---------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `hostname`           | String          | –       | Short name of the mapping; also used as the key for this entry.                                                                                                      |
+| `fqdn`               | String          | –       | DNS name, either a fully-qualified domain name (FQDN, www.example.com). Defaults to the `hostname` with the default ingress domain appended.                         |
+| `fqdnAliases`        | array of String | –       | Additional FQDNs that should also map to this host. Note that the CAE will only generate links to `fqdn`.                                                            |
+| `primarySegment`     | String          | –       | Primary site segment; this is the site for the `/` URI.                                                                                                              |
+| `additionalSegments` | array of String | –       | Segments of additional sites served from this host.                                                                                                                  |
+| `tls`                | object          | –       | TLS settings for this host                                                                                                                                           |
+| `tls.enabled`        | boolean         | true    | Should TLS be enabled for this ingress                                                                                                                               |
+| `tls.secretName`     | object          | –       | Name of the secret that stores the certificate and key for this hostname. Some Ingress controllers allow this to be empty, they will then use a default certificate. |
 
 If you have a single certificate for your setup (for example, a certificate with SNI for all hosts, or a wildcard
 certificate), you can simply configure `defaultIngressTls.secretName` with the name of that secret, and leave out
@@ -377,6 +394,20 @@ This makes the Chef Corp. example site available under these URLs:
 * `https://corporate.example.com/corporate-de-de`
 * `https://corporate.example.com/corporate-en-ca`
 * `https://corporate.example.com/corporate-en-gb`
+
+### FQDN Aliases
+
+In certain situations, it might be beneficial to have the Ingress controller recognize more than one hostname for a
+site. For example, you might want your monitoring system to use a direct access to the Kubernetes cluster, while end
+users access the site through a load balancer, TLS termination appliance, or a web-application firewall. Or you might
+need to configure an origin URL for your CDN to use.
+
+You can define additional hostnames with `siteMappings.fqdnAliases`. For each of these hosts, a set of Ingress
+resources will be built. You can use the empty string for an alias entry to have the operator generate a hostname, as
+described above.
+
+**Note** The CAE will only create URLs pointing to the FQDN of the site, so you will need to make sure that those URLs
+always work.
 
 ### Configuring the Ingress Builder
 
@@ -533,12 +564,11 @@ The Elastic Worker application.
 
 ### Component `generic-client`
 
-The Generic-Client can be used for a variety of applications that require connections to the content-server,
-mongodb and solr.
-Most of its implementation is provided by the abstract CorbaComponent,
-resulting in persistent volume claims to standard coremedia caches as well as a service that exposes 8080, 8081 and 8083 ports.
-Thus, supplying an image-repository via the component-spec is mandatory, as the component class can not presume the correct repository beforehand.
-Most of its base configuration can be set in the component's `extra` section, using the following keys:
+The Generic-Client can be used for a variety of applications that require connections to the content-server, mongodb and
+solr. Most of its implementation is provided by the abstract CorbaComponent, resulting in persistent volume claims to
+standard coremedia caches as well as a service that exposes 8080, 8081 and 8083 ports. Thus, supplying an
+image-repository via the component-spec is mandatory, as the component class can not presume the correct repository
+beforehand. Most of its base configuration can be set in the component's `extra` section, using the following keys:
 
 | Property                | Type      | Optional  | Default                     | Description                                                                                                                                                                                                                                    |
 |-------------------------|-----------|-----------|-----------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -560,13 +590,17 @@ access it.
 
 ### Component `nginx`
 
-Runs an NGINX web server image, for example, to make static files available within the cluster. The server is expected to run on port 80; the environment variable NGINX_PORT is set to enable that.
+Runs an NGINX web server image, for example, to make static files available within the cluster. The server is expected
+to run on port 80; the environment variable NGINX_PORT is set to enable that.
 
 ### Component `solr`
 
-The Solr component creates one or more Solr instances, controlled by the `extra.replicas` property. With `extra.replicas=1`, a single Solr leader instance is created. With `extra.replicas=2` or higher, one or more follower instances are created that replicate the leader automatically.
+The Solr component creates one or more Solr instances, controlled by the `extra.replicas` property.
+With `extra.replicas=1`, a single Solr leader instance is created. With `extra.replicas=2` or higher, one or more
+follower instances are created that replicate the leader automatically.
 
-The operator will automatically create the cores in the followers, by executing the core admin API request, as documented in the Search Manual.
+The operator will automatically create the cores in the followers, by executing the core admin API request, as
+documented in the Search Manual.
 
 ### Component `studio-client`
 

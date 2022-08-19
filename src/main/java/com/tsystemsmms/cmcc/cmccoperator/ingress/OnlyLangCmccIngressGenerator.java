@@ -17,10 +17,7 @@ import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.concatOptional;
@@ -65,23 +62,28 @@ public class OnlyLangCmccIngressGenerator extends AbstractCmccIngressGenerator {
 
         for (SiteMapping siteMapping : targetState.getCmcc().getSpec().getSiteMappings()) {
             String site = siteMapping.getHostname();
-            String fqdn = concatOptional(getDefaults().getNamePrefix(), site) + "." + getDefaults().getIngressDomain();
             IngressTls tls = targetState.getCmcc().getSpec().getDefaultIngressTls();
             Set<String> segments = new TreeSet<>(siteMapping.getAdditionalSegments());
             segments.add(siteMapping.getPrimarySegment());
             String languagePattern = segments.stream().map(this::getLanguage).collect(Collectors.joining("|"));
 
-            if (!siteMapping.getFqdn().isBlank())
-                fqdn = siteMapping.getFqdn();
+            List<String> fqdns = new LinkedList<>(List.of(siteMapping.getFqdn()));
+            fqdns.addAll(siteMapping.getFqdnAliases());
 
-            ingresses.addAll(ingressBuilderFactory.builder(targetState, liveName(site, "home"), fqdn, tls)
-                    .pathExact("/", serviceName).redirect("/" + getLanguage(siteMapping.getPrimarySegment())).build());
-            ingresses.addAll(ingressBuilderFactory.builder(targetState, liveName(site, "blueprint"), fqdn, tls)
-                    .pathPrefix("/blueprint", serviceName).build());
-            ingresses.addAll(ingressBuilderFactory.builder(targetState, liveName(site, "all"), fqdn, tls)
-                    .pathPattern("/(.*)", serviceName).rewrite("/blueprint/servlet/$1").build());
-            ingresses.addAll(ingressBuilderFactory.builder(targetState, liveName(site, "language"), fqdn, tls)
-                    .pathPattern("/(" + languagePattern + ")(.*)", serviceName).rewrite("/blueprint/servlet/" + getReplacement(siteMapping.getPrimarySegment()) + "$2").build());
+            for (int i = 0; i < fqdns.size(); i++) {
+                String fqdn = fqdns.get(i);
+                String suffix = i == 0 ? "" : Character.toString('a' - 1 + i);
+                if (fqdn.isBlank())
+                    fqdn = concatOptional(getDefaults().getNamePrefix(), site) + "." + getDefaults().getIngressDomain();
+                ingresses.addAll(ingressBuilderFactory.builder(targetState, liveName(site, "home", suffix), fqdn, tls)
+                        .pathExact("/", serviceName).redirect("/" + getLanguage(siteMapping.getPrimarySegment())).build());
+                ingresses.addAll(ingressBuilderFactory.builder(targetState, liveName(site, "blueprint", suffix), fqdn, tls)
+                        .pathPrefix("/blueprint", serviceName).build());
+                ingresses.addAll(ingressBuilderFactory.builder(targetState, liveName(site, "all", suffix), fqdn, tls)
+                        .pathPattern("/(.*)", serviceName).rewrite("/blueprint/servlet/$1").build());
+                ingresses.addAll(ingressBuilderFactory.builder(targetState, liveName(site, "language", suffix), fqdn, tls)
+                        .pathPattern("/(" + languagePattern + ")(.*)", serviceName).rewrite("/blueprint/servlet/" + getReplacement(siteMapping.getPrimarySegment()) + "$2").build());
+            }
         }
 
         return ingresses;

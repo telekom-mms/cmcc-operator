@@ -14,6 +14,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import lombok.Data;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 @Data
@@ -23,6 +24,9 @@ public class SiteMapping {
 
     @JsonPropertyDescription("Fully-qualified hostname of the site; defaults to the simple hostname")
     private String fqdn = "";
+
+    @JsonPropertyDescription("Optional additional FQDNs to create ingress resources for")
+    private List<String> fqdnAliases = Collections.emptyList();
 
     @JsonPropertyDescription("Simple hostname of the site; used as the key for site mappings")
     private String hostname;
