@@ -28,6 +28,7 @@ public class NginxIngressBuilder extends AbstractIngressBuilder {
     private final IngressTls tls;
 
     public NginxIngressBuilder(TargetState targetState, String name, String hostname, IngressTls tls) {
+        this.annotations.putAll(targetState.getCmcc().getSpec().getWith().getIngressAnnotations());
         this.hostname = hostname;
         this.name = name;
         this.targetState = targetState;

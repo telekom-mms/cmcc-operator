@@ -344,6 +344,11 @@ spec:
                         description: Maximum number of CAEs per RLS
                         x-kubernetes-int-or-string: true
                     type: object
+                  ingressAnnotations:
+                    additionalProperties:
+                      type: string
+                    description: Add these annotations to the managed Ingress resources
+                    type: object
                   management:
                     description: Create default components for the management stage
                     type: boolean

@@ -67,6 +67,7 @@ properties have suitable defaults.
 | `with.delivery.rls`                 | int                  | 0                              | Number of Replication Live Servers to create                                                                                                 |
 | `with.delivery.minCae`              | int                  | 0                              | Minimum number of CAEs per RLS                                                                                                               |
 | `with.delivery.maxCae`              | int                  | 0                              | Maximum number of CAEs per RLS                                                                                                               |
+| `with.ingressAnnotations`           | map                  | –                              | Additional annotation to add to all Ingress resources                                                                                        |
 | `with.management`                   | boolean              | true                           | Create all components required for a CoreMedia management stage                                                                              |
 
 ## Enabling Convenience Options `with`
@@ -438,6 +439,18 @@ This will create ingresses for:
 * `https://corporate.example.ca/fr` maps to `corporate-en-fr`
 
 **Note** You will need to your own code in the CAE to have it generate links in this form.
+
+### Ingress Annotations
+
+In some cases, it might be necessary to add additional annotations to the generated Ingress object. For example, to
+enable sticky sessions, the annotation `nginx.ingress.kubernetes.io/affinity: cookie` needs to be added. You can
+add these by setting `with.ingressAnnotations` to the desired annotations.
+
+```yaml
+with:
+  ingressAnnotations:
+     "nginx.ingress.kubernetes.io/affinity": "cookie"
+```
 
 ## Components
 

@@ -31,6 +31,9 @@ public class WithOptions {
     @JsonPropertyDescription("Create default components for the delivery stage")
     WithDelivery delivery = new WithDelivery();
 
+    @JsonPropertyDescription("Add these annotations to the managed Ingress resources")
+    Map<String, String> ingressAnnotations = new HashMap<>();
+
     @JsonPropertyDescription("Create default components for the management stage")
     Boolean management = true;
 
