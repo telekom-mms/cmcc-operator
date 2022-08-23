@@ -615,6 +615,12 @@ follower instances are created that replicate the leader automatically.
 The operator will automatically create the cores in the followers, by executing the core admin API request, as
 documented in the Search Manual.
 
+The operator creates two services for Solr:
+
+* `solr`, which maps to both the leader and any followers, suitable for any component that only wants to query the
+  index, and
+* `solr-leader` that maps to just the leader, suitable for components that need to update an index.
+
 ### Component `studio-client`
 
 The Studio single-page app.

@@ -174,6 +174,24 @@ public class SolrComponent extends AbstractComponent implements HasService {
         return "follower-" + i;
     }
 
+    @Override
+    public Service buildService() {
+        return new ServiceBuilder()
+                .withMetadata(getTargetState().getResourceMetadataFor(this))
+                .withSpec(new ServiceSpecBuilder()
+                        .withSelector(getSelectorLabelsForService())
+                        .withPorts(getServicePorts())
+                        .build())
+                .build();
+    }
+
+    public HashMap<String, String> getSelectorLabelsForService() {
+        HashMap<String, String> labels = getTargetState().getSelectorLabels();
+        // do not key off the name of the component, only the type (and standard selectors), so we match any Solr pod
+        labels.put("cmcc.tsystemsmms.com/type", getComponentSpec().getType());
+        return labels;
+    }
+
     /**
      * Build a service for just the leader.
      *
