@@ -80,7 +80,7 @@ public class SolrComponent extends AbstractComponent implements HasService {
         List<HasMetadata> resources = new LinkedList<>();
 
         if (replicas < 1)
-            throw new CustomResourceConfigError("Replicas must be 1 or higher, not " + replicas);
+            throw new CustomResourceConfigError("component solr: extra.replicas must be 1 or higher, not " + replicas);
 
         resources.add(buildService());
         resources.add(buildServiceLeader());
