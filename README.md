@@ -6,12 +6,23 @@
 
 [Kubernetes Operators](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) are specialized software packages that help manage applications and resources in a k8s cluster. This operator will create, initialize and run a [CoreMedia Content Cloud](https://www.coremedia.com) application. A custom resource definition is used to define all relevant parameters.
 
+## Quick Links
+
+* [Helm chart cmcc-operator](charts/cmcc-operator) to install the operator
+* [Helm chart cmcc](charts/cmcc) to create a CoreMedia Content Cloud deployment with the operator
+* [Configuring provisioning through the CoreMediaContentClouds custom resource](docs/custom-resource.md): complete description of all options
+* [Installing the Operator](#preparing-your-cluster-and-installing-the-operator)
+* [Using the Operator to create a CoreMedia installation](#using-the-operator): quick start
+* [Customizing the CMCC Operator](docs/customizing-the-operator.md): information for developers
+* [ghcr.io/t-systems-mms/cmcc-operator/cmcc-operator](https://github.com/T-Systems-MMS/cmcc-operator/pkgs/container/cmcc-operator%2Fcmcc-operator) Docker Image
+* [Cluster Roles and Rights](docs/cluster-roles.md) that the operator requires.
+
+## Table of Contents
 <!-- npx markdown-toc --maxdepth 3 -i README.md -->
 
 <!-- toc -->
 
 - [Features](#features)
-- [Quick Links](#quick-links)
 - [Preparing Your Cluster and Installing the Operator](#preparing-your-cluster-and-installing-the-operator)
   * [Preparing the Kubernetes Cluster](#preparing-the-kubernetes-cluster)
   * [Required DNS Names](#required-dns-names)
@@ -62,17 +73,6 @@ Planned features include:
 * Support for Traefik ingress controller and its resource types (in addition to the [kubernetes/ingress-nginx](https://github.com/kubernetes/ingress-nginx)).
 * Admission webhook that verifies consistency of the custom resource, and can migrate between CRD versions.
 * Configuring a horizontal pod autoscaler for the live CAEs.
-
-## Quick Links
-
-* [Helm chart cmcc-operator](charts/cmcc-operator) to install the operator
-* [Helm chart cmcc](charts/cmcc) to create a CoreMedia Content Cloud deployment with the operator
-* [Configuring provisioning through the CoreMediaContentClouds custom resource](docs/custom-resource.md): complete description of all options
-* [Installing the Operator](#preparing-your-cluster-and-installing-the-operator)
-* [Using the Operator to create a CoreMedia installation](#using-the-operator): quick start
-* [Customizing the CMCC Operator](docs/customizing-the-operator.md): information for developers
-* [ghcr.io/t-systems-mms/cmcc-operator/cmcc-operator](https://github.com/T-Systems-MMS/cmcc-operator/pkgs/container/cmcc-operator%2Fcmcc-operator) Docker Image
-* [Cluster Roles and Rights](docs/cluster-roles.md) that the operator requires.
 
 ## Preparing Your Cluster and Installing the Operator
 
