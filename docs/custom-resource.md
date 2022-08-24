@@ -3,6 +3,53 @@
 The Custom Resource `CoreMediaContentClouds` (`cmcc` for short) defines all aspects of a CoreMedia Content Cloud
 installation to be deployed. This document explains all properties and their use.
 
+<!-- npx markdown-toc --maxdepth 3 -i docs/custom-resource.md-->
+
+# Table of Contents
+
+<!-- toc -->
+
+- [Custom Resource Properties Status](#custom-resource-properties-status)
+- [Custom Resource Properties Specification](#custom-resource-properties-specification)
+- [Enabling Convenience Options `with`](#enabling-convenience-options-with)
+  * [Local database servers `with.databases`](#local-database-servers-withdatabases)
+  * [Delivery Components `with.delivery`](#delivery-components-withdelivery)
+  * [Management Components `with.management`](#management-components-withmanagement)
+- [Using Pre-Existing Secrets](#using-pre-existing-secrets)
+  * [Overview of Secrets for Components](#overview-of-secrets-for-components)
+  * [`clientSecretRef.jdbc`](#clientsecretrefjdbc)
+  * [`clientSecretRef.mongodb`](#clientsecretrefmongodb)
+  * [`clientSecretRef.solr`](#clientsecretrefsolr)
+  * [`clientSecretRef.uapi`](#clientsecretrefuapi)
+- [Running Additional Jobs](#running-additional-jobs)
+  * [Running a Job During Deployment](#running-a-job-during-deployment)
+  * [Running a Job After Deployment](#running-a-job-after-deployment)
+- [Automatic Generation of Ingresses and Site Mappings `siteMappings`](#automatic-generation-of-ingresses-and-site-mappings-sitemappings)
+  * [Site Mappings](#site-mappings)
+  * [FQDN Aliases](#fqdn-aliases)
+  * [Configuring the Ingress Builder](#configuring-the-ingress-builder)
+  * [Ingress Annotations](#ingress-annotations)
+- [Components](#components)
+  * [Component `blob-server`](#component-blob-server)
+  * [Component `content-feeder`](#component-content-feeder)
+  * [Component `cae`](#component-cae)
+  * [Component `cae-feeder`](#component-cae-feeder)
+  * [Component `content-server`](#component-content-server)
+  * [Component `overview`](#component-overview)
+  * [Component `elastic-worker`](#component-elastic-worker)
+  * [Component `generic-client`](#component-generic-client)
+  * [Component `mongodb`](#component-mongodb)
+  * [Component `mysql`](#component-mysql)
+  * [Component `nginx`](#component-nginx)
+  * [Component `solr`](#component-solr)
+  * [Component `studio-client`](#component-studio-client)
+  * [Component `studio-server`](#component-studio-server)
+  * [Component `management-tools`](#component-management-tools)
+  * [Component `user-changes`](#component-user-changes)
+  * [Component `workflow-server`](#component-workflow-server)
+
+<!-- tocstop -->
+
 ## Custom Resource Properties Status
 
 The `status` property of the custom resource has these fields:

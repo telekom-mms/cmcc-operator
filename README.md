@@ -4,9 +4,36 @@
 
 ## Introduction
 
-[Kubernetes Operators](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) are specialized software packages that help manage applications and resources in a k8s cluster. This operator will create, initialize and run a CoreMedia Content Cloud application. A custom resource definition is used to define all relevant parameters.
+[Kubernetes Operators](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) are specialized software packages that help manage applications and resources in a k8s cluster. This operator will create, initialize and run a [CoreMedia Content Cloud](https://www.coremedia.com) application. A custom resource definition is used to define all relevant parameters.
 
-### Features
+<!-- npx markdown-toc --maxdepth 3 -i README.md -->
+<!-- toc -->
+
+- [Features](#features)
+- [Quick Links](#quick-links)
+- [Preparing Your Cluster and Installing the Operator](#preparing-your-cluster-and-installing-the-operator)
+  * [Preparing the Kubernetes Cluster](#preparing-the-kubernetes-cluster)
+  * [Required DNS Names](#required-dns-names)
+  * [Using Docker Desktop](#using-docker-desktop)
+  * [Using k3d](#using-k3d)
+- [Installing the Operator](#installing-the-operator)
+  * [Installing the Operator Using the Helm Chart](#installing-the-operator-using-the-helm-chart)
+  * [Installing the Operator Manually](#installing-the-operator-manually)
+  * [Using the Custom Resource Definition](#using-the-custom-resource-definition)
+  * [Using a Config Map](#using-a-config-map)
+- [Configuring the Operator](#configuring-the-operator)
+- [Using the Operator](#using-the-operator)
+  * [Pull Secret](#pull-secret)
+  * [License Files](#license-files)
+  * [Creating a CoreMedia Installation – Helm Chart](#creating-a-coremedia-installation-%E2%80%93-helm-chart)
+  * [Creating a CoreMedia Installation – Custom Resource](#creating-a-coremedia-installation-%E2%80%93-custom-resource)
+  * [Creating a CoreMedia Installation – ConfigMap](#creating-a-coremedia-installation-%E2%80%93-configmap)
+  * [Deleting the CoreMedia Installation](#deleting-the-coremedia-installation)
+- [Building The Operator](#building-the-operator)
+
+<!-- tocstop -->
+
+## Features
 
 The operator:
 
@@ -28,6 +55,7 @@ The operator:
   UAPI/Corba). You can override any or all secrets for these usernames and password.
 * configures Solr clustering by specifying the number of replicas to create.
 * configures zero or more Replication Live Servers to provide redundancy in the delivery/live stage.
+* supports CoreMedia Content Cloud 11.
 
 Planned features include:
 * Support for Traefik ingress controller and its resource types (in addition to the [kubernetes/ingress-nginx](https://github.com/kubernetes/ingress-nginx)).
