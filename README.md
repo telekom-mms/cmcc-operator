@@ -7,6 +7,7 @@
 [Kubernetes Operators](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) are specialized software packages that help manage applications and resources in a k8s cluster. This operator will create, initialize and run a [CoreMedia Content Cloud](https://www.coremedia.com) application. A custom resource definition is used to define all relevant parameters.
 
 <!-- npx markdown-toc --maxdepth 3 -i README.md -->
+
 <!-- toc -->
 
 - [Features](#features)
@@ -25,9 +26,9 @@
 - [Using the Operator](#using-the-operator)
   * [Pull Secret](#pull-secret)
   * [License Files](#license-files)
-  * [Creating a CoreMedia Installation – Helm Chart](#creating-a-coremedia-installation-%E2%80%93-helm-chart)
-  * [Creating a CoreMedia Installation – Custom Resource](#creating-a-coremedia-installation-%E2%80%93-custom-resource)
-  * [Creating a CoreMedia Installation – ConfigMap](#creating-a-coremedia-installation-%E2%80%93-configmap)
+  * [Creating a CoreMedia Installation - Helm Chart](#creating-a-coremedia-installation---helm-chart)
+  * [Creating a CoreMedia Installation - Custom Resource](#creating-a-coremedia-installation---custom-resource)
+  * [Creating a CoreMedia Installation - ConfigMap](#creating-a-coremedia-installation---configmap)
   * [Deleting the CoreMedia Installation](#deleting-the-coremedia-installation)
 - [Building The Operator](#building-the-operator)
 
@@ -177,7 +178,7 @@ kubectl create secret generic license-cms --from-file=license.zip=license/cms-li
 
 The license secrets need to be created in the same namespace you plan to install CoreMedia in. See `licenseSecrets`, below.
 
-### Creating a CoreMedia Installation – Helm Chart
+### Creating a CoreMedia Installation - Helm Chart
 
 The [Helm chart cmcc](charts/cmcc) can be used to create a deployment for CoreMedia Content Cloud. See the documentation there for information on how to supply the necessary values to Helm.
 
@@ -186,7 +187,7 @@ $ helm repo add cmcc-operator https://t-systems-mms.github.io/cmcc-operator/
 $ helm upgrade --install my-release cmcc-operator/cmcc --values my-values.yaml
 ````
 
-### Creating a CoreMedia Installation – Custom Resource
+### Creating a CoreMedia Installation - Custom Resource
 
 You can create a complete CoreMedia installation by creating the custom resource `CoreMediaContentClouds` with the desired properties. An example can be found in [`k8s/example.yaml`](k8s/example.yaml), and can be created in the cluster like this:
 
@@ -204,7 +205,7 @@ obiwan   Created
 ```
 See below for the different milestones and their meaning.
 
-### Creating a CoreMedia Installation – ConfigMap
+### Creating a CoreMedia Installation - ConfigMap
 
 If you have enabled using a ConfigMap instead (or in addition to) the custom resource, you need to create a ConfigMap that maps the custom resource properties `spec` and `status` to `data` entries, and has a label `"cmcc.tsystemsmms.com.customresource": "cmcc"`. See the [`example-config.yaml`](k8s/example-configmap.yaml).
 
