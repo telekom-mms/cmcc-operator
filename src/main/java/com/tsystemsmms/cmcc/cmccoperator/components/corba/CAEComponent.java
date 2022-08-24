@@ -27,6 +27,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.*;
 
 import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.concatOptional;
+import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.getInt;
 
 @Slf4j
 public class CAEComponent extends CorbaComponent implements HasMongoDBClient, HasSolrClient, HasService {
@@ -36,6 +37,9 @@ public class CAEComponent extends CorbaComponent implements HasMongoDBClient, Ha
     public static final String SOLR_COLLECTION_LIVE = "live";
     public static final String SOLR_COLLECTION_PREVIEW = "preview";
     public static final String EXTRA_REPLICAS = "replicas";
+
+    public static final String PVC_TRANSFORMED_BLOBCACHE = "transformed-blobcache";
+    public static final String MOUNT_TRANSFORMED_BLOBCACHE = "/coremedia/cache/transformed-blobcache";
 
     String servletPathPattern;
 
@@ -121,12 +125,15 @@ public class CAEComponent extends CorbaComponent implements HasMongoDBClient, Ha
                 "server.tomcat.accesslog.file-date-format", "",
                 "server.tomcat.accesslog.pattern", "[ACCESS] %l %t %D %F %B %S",
                 "server.tomcat.accesslog.rotate", "false",
-                "com.coremedia.transform.blobCache.basePath", "/coremedia/persistent-cache/transformed-blob",
+                "com.coremedia.transform.blobCache.basePath", MOUNT_TRANSFORMED_BLOBCACHE,
                 "cae.preview.pbe.studio-url-whitelist[0]", "https://" + getTargetState().getStudioHostname()
         ));
 
         if (getComponentSpec().getKind().equals(KIND_LIVE)) {
-            properties.put("repository.url", getTargetState().getServiceUrlFor("content-server", "mls"));
+            if (getInt(getCmcc().getSpec().getWith().getDelivery().getRls()) == 0)
+                properties.put("repository.url", getTargetState().getServiceUrlFor("content-server", "mls"));
+            else
+                properties.put("repository.url", getTargetState().getServiceUrlFor("content-server", "rls"));
 
             for (SiteMapping siteMapping : getSpec().getSiteMappings()) {
                 String fqdn = concatOptional(getDefaults().getNamePrefix(), siteMapping.getHostname()) + "." + getDefaults().getIngressDomain();
@@ -182,7 +189,7 @@ public class CAEComponent extends CorbaComponent implements HasMongoDBClient, Ha
     public List<PersistentVolumeClaim> getVolumeClaims() {
         List<PersistentVolumeClaim> claims = super.getVolumeClaims();
 
-        claims.add(getPersistentVolumeClaim("persistent-cache"));
+        claims.add(getPersistentVolumeClaim(PVC_TRANSFORMED_BLOBCACHE));
 
         return claims;
     }
@@ -192,8 +199,8 @@ public class CAEComponent extends CorbaComponent implements HasMongoDBClient, Ha
         LinkedList<VolumeMount> volumeMounts = new LinkedList<>(super.getVolumeMounts());
 
         volumeMounts.add(new VolumeMountBuilder()
-                .withName("persistent-cache")
-                .withMountPath("/coremedia/persistent-cache")
+                .withName(PVC_TRANSFORMED_BLOBCACHE)
+                .withMountPath(MOUNT_TRANSFORMED_BLOBCACHE)
                 .build());
 
         return volumeMounts;

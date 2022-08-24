@@ -31,6 +31,9 @@ import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.EnvVarSimple;
 @Slf4j
 public abstract class CorbaComponent extends SpringBootComponent implements HasService, HasUapiClient {
 
+    public static final String PVC_UAPI_BLOBCACHE = "uapi-blobcache";
+    public static final String MOUNT_UAPI_BLOBCACHE = "/coremedia/cache/uapi-blobcache";
+
     public CorbaComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec componentSpec, String imageRepository) {
         super(kubernetesClient, targetState, componentSpec, imageRepository);
     }
@@ -129,12 +132,22 @@ public abstract class CorbaComponent extends SpringBootComponent implements HasS
     }
 
     @Override
+    public List<Volume> getVolumes() {
+        List<Volume> volumes = new LinkedList<>(super.getVolumes());
+        volumes.addAll(List.of(
+                new VolumeBuilder()
+                        .withName("coremedia-var-tmp")
+                        .withEmptyDir(new EmptyDirVolumeSource())
+                        .build()
+        ));
+        return volumes;
+    }
+
+    @Override
     public List<PersistentVolumeClaim> getVolumeClaims() {
         List<PersistentVolumeClaim> claims = super.getVolumeClaims();
 
-        claims.add(getPersistentVolumeClaim("persistent-cache"));
-        claims.add(getPersistentVolumeClaim("persistent-transformed-blobcache"));
-        claims.add(getPersistentVolumeClaim("uapi-blobcache"));
+        claims.add(getPersistentVolumeClaim(PVC_UAPI_BLOBCACHE));
 
         return claims;
     }
@@ -144,12 +157,8 @@ public abstract class CorbaComponent extends SpringBootComponent implements HasS
         LinkedList<VolumeMount> volumeMounts = new LinkedList<>(super.getVolumeMounts());
 
         volumeMounts.add(new VolumeMountBuilder()
-                .withName("persistent-transformed-blobcache")
-                .withMountPath("/coremedia/cache/persistent-transformed-blobcache")
-                .build());
-        volumeMounts.add(new VolumeMountBuilder()
-                .withName("uapi-blobcache")
-                .withMountPath("/coremedia/cache/uapi-blobcache")
+                .withName(PVC_UAPI_BLOBCACHE)
+                .withMountPath(MOUNT_UAPI_BLOBCACHE)
                 .build());
 
         return volumeMounts;

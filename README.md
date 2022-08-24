@@ -9,22 +9,30 @@
 ### Features
 
 The operator:
-* manages the creation and updating of all the Kubernetes resources required to run CoreMedia Content Cloud. Care has been taken to have sensible defaults for all parameters wherever possible.
-* can create a fresh installation from scratch, creating MariaDB and MongoDB database servers, and initialize the necessary database schemas and secrets, suitable for a development environment. For production, persistence should be provided, for example by using cloud services, or using other operators to provision databases.
+
+* manages the creation and updating of all the Kubernetes resources required to run CoreMedia Content Cloud. Care has
+  been taken to have sensible defaults for all parameters wherever possible.
+* can create a fresh installation from scratch, creating MariaDB and MongoDB database servers, and initialize the
+  necessary database schemas and secrets, suitable for a development environment. For production, persistence should be
+  provided, for example by using cloud services, or using other operators to provision databases.
 * can deploy against existing databases, using pre-existing secrets provided.
-* can use a custom resource definition or a config map to supply the values. This makes it possible to use the operator even on clusters where you cannot install cluster-wide resources.
-* deploys the CoreMedia Content Cloud components step by step. This ensures that components that require other components are only started when the dependencies have been initialized successfully.
+* can use a custom resource definition or a config map to supply the values. This makes it possible to use the operator
+  even on clusters where you cannot install cluster-wide resources.
+* deploys the CoreMedia Content Cloud components step by step. This ensures that components that require other
+  components are only started when the dependencies have been initialized successfully.
 * imports test users and contents initially.
 * run additional jobs, for example to re-import content into a running installation.
 * configures the live CAE deployment with the desired number of replicas.
 * builds ingresses automatically from CAE site mappings.
-* creates random passwords for all components and configures the components to use them (MariaDB, MongoDB, and UAPI/Corba).
+* can create random passwords for all components and configures the components to use them (MariaDB, MongoDB, and
+  UAPI/Corba). You can override any or all secrets for these usernames and password.
 * configures Solr clustering by specifying the number of replicas to create.
+* configures zero or more Replication Live Servers to provide redundancy in the delivery/live stage.
 
 Planned features include:
-* Creating a scalable delivery stage automatically by simply providing the number of Replication Live Servers.
 * Support for Traefik ingress controller and its resource types (in addition to the [kubernetes/ingress-nginx](https://github.com/kubernetes/ingress-nginx)).
 * Admission webhook that verifies consistency of the custom resource, and can migrate between CRD versions.
+* Configuring a horizontal pod autoscaler for the live CAEs.
 
 ## Quick Links
 

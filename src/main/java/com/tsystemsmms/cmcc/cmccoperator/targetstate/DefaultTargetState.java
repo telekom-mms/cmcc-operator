@@ -97,9 +97,13 @@ public class DefaultTargetState extends AbstractTargetState {
         }
 
         WithOptions.WithDelivery delivery = cmcc.getSpec().getWith().getDelivery();
-        if (getInt(delivery.getRls()) != 0
-                || getInt(delivery.getMaxCae()) > getInt(delivery.getMinCae())) {
-            throw new RuntimeException("Unable to configure RLS and HPA, not implemented yet");
+        if (getInt(delivery.getRls()) > 0) {
+            componentCollection.addAll(List.of(
+                    ComponentSpecBuilder.ofType("content-server").withKind("rls").withMilestone(Milestone.ManagementReady).build()
+            ));
+        }
+        if (getInt(delivery.getMaxCae()) > getInt(delivery.getMinCae())) {
+            throw new RuntimeException("Unable to configure Live CAE Horizontal Pod Autoscaler: not implemented yet");
         }
         if (getInt(delivery.getMinCae()) > 0) {
             Map<String, String> liveCaeExtra = Map.of(

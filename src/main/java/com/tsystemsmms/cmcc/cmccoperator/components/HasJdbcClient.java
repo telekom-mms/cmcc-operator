@@ -73,4 +73,18 @@ public interface HasJdbcClient extends Component {
         ));
         return env;
     }
+
+    default EnvVarSet getJdbcClientEnvVars(String prefix, ClientSecretRef csr) {
+        EnvVarSet env = new EnvVarSet();
+
+        env.addAll(List.of(
+                csr.toEnvVar("MYSQL_HOST", csr.getHostnameKey()),
+                csr.toEnvVar(prefix, "DRIVER", csr.getDriverKey()),
+                csr.toEnvVar(prefix, "PASSWORD", csr.getPasswordKey()),
+                csr.toEnvVar(prefix, "SCHEMA", csr.getSchemaKey()),
+                csr.toEnvVar(prefix, "URL", csr.getUrlKey()),
+                csr.toEnvVar(prefix, "USER", csr.getUsernameKey())
+        ));
+        return env;
+    }
 }
