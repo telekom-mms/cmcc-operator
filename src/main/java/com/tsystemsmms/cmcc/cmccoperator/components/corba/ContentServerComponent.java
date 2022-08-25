@@ -94,7 +94,8 @@ public class ContentServerComponent extends CorbaComponent implements HasJdbcCli
             // volumes etc
             for (int i = 1; i <= rls; i++) {
                 resources.add(buildStatefulSetRls(i));
-                resources.add(getPersistentVolumeClaim(getTargetState().getResourceNameFor(this, getRlsName(i))));
+                resources.add(getPersistentVolumeClaim(getTargetState().getResourceNameFor(this, getRlsName(i), PVC_TRANSFORMED_BLOBCACHE)));
+                resources.add(getPersistentVolumeClaim(getTargetState().getResourceNameFor(this, getRlsName(i), PVC_UAPI_BLOBCACHE)));
             }
         }
         return resources;
@@ -155,15 +156,6 @@ public class ContentServerComponent extends CorbaComponent implements HasJdbcCli
         return labels;
     }
 
-    @Override
-    public List<PersistentVolumeClaim> getVolumeClaims() {
-        List<PersistentVolumeClaim> claims = super.getVolumeClaims();
-
-        claims.add(getPersistentVolumeClaim(PVC_UAPI_BLOBCACHE));
-
-        return claims;
-    }
-
     /**
      * PVCs for RLSes.
      *
@@ -180,9 +172,15 @@ public class ContentServerComponent extends CorbaComponent implements HasJdbcCli
                         .build())
                 .build());
         volumes.add(new VolumeBuilder()
+                .withName(PVC_TRANSFORMED_BLOBCACHE)
+                .withPersistentVolumeClaim(new PersistentVolumeClaimVolumeSourceBuilder()
+                        .withClaimName(getTargetState().getResourceNameFor(this, name, PVC_TRANSFORMED_BLOBCACHE))
+                        .build())
+                .build());
+        volumes.add(new VolumeBuilder()
                 .withName(PVC_UAPI_BLOBCACHE)
                 .withPersistentVolumeClaim(new PersistentVolumeClaimVolumeSourceBuilder()
-                        .withClaimName(getTargetState().getResourceNameFor(this, name))
+                        .withClaimName(getTargetState().getResourceNameFor(this, name, PVC_UAPI_BLOBCACHE))
                         .build())
                 .build());
 
@@ -299,12 +297,6 @@ public class ContentServerComponent extends CorbaComponent implements HasJdbcCli
                 .withName(LICENSE_VOLUME_NAME)
                 .withSecret(new SecretVolumeSourceBuilder()
                         .withSecretName(licenseSecretName)
-                        .build())
-                .build());
-        volumes.add(new VolumeBuilder()
-                .withName(PVC_UAPI_BLOBCACHE)
-                .withPersistentVolumeClaim(new PersistentVolumeClaimVolumeSourceBuilder()
-                        .withClaimName(getTargetState().getResourceNameFor(this, PVC_UAPI_BLOBCACHE))
                         .build())
                 .build());
 

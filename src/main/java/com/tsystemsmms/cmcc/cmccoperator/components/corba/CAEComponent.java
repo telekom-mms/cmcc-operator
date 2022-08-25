@@ -38,9 +38,6 @@ public class CAEComponent extends CorbaComponent implements HasMongoDBClient, Ha
     public static final String SOLR_COLLECTION_PREVIEW = "preview";
     public static final String EXTRA_REPLICAS = "replicas";
 
-    public static final String PVC_TRANSFORMED_BLOBCACHE = "transformed-blobcache";
-    public static final String MOUNT_TRANSFORMED_BLOBCACHE = "/coremedia/cache/transformed-blobcache";
-
     String servletPathPattern;
 
     private int replicas = 1;
@@ -183,26 +180,5 @@ public class CAEComponent extends CorbaComponent implements HasMongoDBClient, Ha
                 return getSolrClientSecretRef(HasSolrClient.getSolrClientSecretRefName(SOLR_COLLECTION_PREVIEW, SOLR_CLIENT_SERVER_LEADER));
         }
         return Optional.empty();
-    }
-
-    @Override
-    public List<PersistentVolumeClaim> getVolumeClaims() {
-        List<PersistentVolumeClaim> claims = super.getVolumeClaims();
-
-        claims.add(getPersistentVolumeClaim(PVC_TRANSFORMED_BLOBCACHE));
-
-        return claims;
-    }
-
-    @Override
-    public List<VolumeMount> getVolumeMounts() {
-        LinkedList<VolumeMount> volumeMounts = new LinkedList<>(super.getVolumeMounts());
-
-        volumeMounts.add(new VolumeMountBuilder()
-                .withName(PVC_TRANSFORMED_BLOBCACHE)
-                .withMountPath(MOUNT_TRANSFORMED_BLOBCACHE)
-                .build());
-
-        return volumeMounts;
     }
 }

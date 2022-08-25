@@ -31,7 +31,10 @@ import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.EnvVarSimple;
 @Slf4j
 public abstract class CorbaComponent extends SpringBootComponent implements HasService, HasUapiClient {
 
-    public static final String PVC_UAPI_BLOBCACHE = "uapi-blobcache";
+    public static final String PVC_TRANSFORMED_BLOBCACHE = "tx-blob";
+    public static final String MOUNT_TRANSFORMED_BLOBCACHE = "/coremedia/cache/persistent-transformed-blobcache";
+
+    public static final String PVC_UAPI_BLOBCACHE = "uapi-blob";
     public static final String MOUNT_UAPI_BLOBCACHE = "/coremedia/cache/uapi-blobcache";
 
     public CorbaComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec componentSpec, String imageRepository) {
@@ -71,11 +74,11 @@ public abstract class CorbaComponent extends SpringBootComponent implements HasS
 
         properties.putAll(Map.of(
                 // needed in many applications
-                "com.coremedia.transform.blobCache.basePath", "/coremedia/cache/persistent-transformed-blobcache",
-                "repository.blob-cache-path", "/coremedia/cache/uapi-blobcache",
+                "com.coremedia.transform.blobCache.basePath", MOUNT_TRANSFORMED_BLOBCACHE,
+                "repository.blob-cache-path", MOUNT_UAPI_BLOBCACHE,
                 "repository.heap-cache-size", Integer.toString(128 * 1024 * 1024),
                 "repository.url", getTargetState().getServiceUrlFor("content-server", "cms"),
-                "management.health.diskspace.path", "/var/tmp"
+                "management.health.diskspace.path", MOUNT_UAPI_BLOBCACHE
         ));
         return properties;
     }
@@ -147,6 +150,7 @@ public abstract class CorbaComponent extends SpringBootComponent implements HasS
     public List<PersistentVolumeClaim> getVolumeClaims() {
         List<PersistentVolumeClaim> claims = super.getVolumeClaims();
 
+        claims.add(getPersistentVolumeClaim(PVC_TRANSFORMED_BLOBCACHE));
         claims.add(getPersistentVolumeClaim(PVC_UAPI_BLOBCACHE));
 
         return claims;
@@ -156,6 +160,10 @@ public abstract class CorbaComponent extends SpringBootComponent implements HasS
     public List<VolumeMount> getVolumeMounts() {
         LinkedList<VolumeMount> volumeMounts = new LinkedList<>(super.getVolumeMounts());
 
+        volumeMounts.add(new VolumeMountBuilder()
+                .withName(PVC_TRANSFORMED_BLOBCACHE)
+                .withMountPath(MOUNT_TRANSFORMED_BLOBCACHE)
+                .build());
         volumeMounts.add(new VolumeMountBuilder()
                 .withName(PVC_UAPI_BLOBCACHE)
                 .withMountPath(MOUNT_UAPI_BLOBCACHE)
