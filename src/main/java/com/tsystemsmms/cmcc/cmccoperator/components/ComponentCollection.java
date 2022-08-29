@@ -13,12 +13,16 @@ package com.tsystemsmms.cmcc.cmccoperator.components;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
 import com.tsystemsmms.cmcc.cmccoperator.crds.Milestone;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.CustomResourceConfigError;
+import com.tsystemsmms.cmcc.cmccoperator.targetstate.NoSuchComponentException;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import lombok.Data;
 import org.springframework.beans.factory.BeanFactory;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -69,6 +73,7 @@ public class ComponentCollection {
     public Optional<Component> getOfTypeAndKind(String type, String kind) {
         return components.values().stream().filter(c -> c.getComponentSpec().getType().equals(type) && c.getComponentSpec().getKind().equals(kind)).findAny();
     }
+
     /**
      * Returns all added components.
      *
@@ -82,7 +87,7 @@ public class ComponentCollection {
      * Find all components implementing clazz.
      *
      * @param clazz the class
-     * @param <T> the class
+     * @param <T>   the class
      * @return a list of components implementing class.
      */
     @SuppressWarnings("unchecked")
@@ -151,11 +156,11 @@ public class ComponentCollection {
     public HasService getHasServiceComponent(Predicate<Component> p) throws IllegalArgumentException {
         Optional<Component> component = getComponents().stream().filter(p).findAny();
         if (component.isEmpty())
-            throw new IllegalArgumentException("not found");
+            throw new NoSuchComponentException(null, "not found");
         if (component.get() instanceof HasService) {
             return (HasService) component.get();
         } else {
-            throw new IllegalArgumentException("exists but does not implement HasService");
+            throw new NoSuchComponentException(null, "exists but does not implement HasService");
         }
     }
 
@@ -221,8 +226,10 @@ public class ComponentCollection {
         try {
             HasService component = getHasServiceComponent(c -> c.getSpecName().equals(name));
             return targetState.getResourceNameFor(component);
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Component \"" + name + "\": " + e.getMessage());
+        } catch (NoSuchComponentException e) {
+            throw new NoSuchComponentException(name);
+        } catch (RuntimeException e) {
+            throw new RuntimeException("Unable to locate component \"" + name + "\"", e);
         }
     }
 

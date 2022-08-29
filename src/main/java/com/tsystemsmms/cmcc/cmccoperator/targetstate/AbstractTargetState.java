@@ -321,12 +321,13 @@ public abstract class AbstractTargetState implements TargetState {
         if (clientSecret != null) {
             return clientSecret.getRef();
         }
-        if (!getCmcc().getSpec().getWith().getDatabases()) {
-            throw new CustomResourceConfigError("No \"" + kind + "\" client secret reference found for \"" + schema + "\", and with.databases is false");
+        try {
+            clientSecret = new ClientSecret(ClientSecretRef.defaultClientSecretRef(getSecretName(kind, schema)));
+            perKind.put(schema, clientSecret);
+            buildOrLoadSecret.accept(clientSecret, getClientPassword());
+        } catch (NoSuchComponentException e) {
+            throw new CustomResourceConfigError("No \"" + kind + "\" client secret reference found for \"" + schema + "\" in custom resource definition");
         }
-        clientSecret = new ClientSecret(ClientSecretRef.defaultClientSecretRef(getSecretName(kind, schema)));
-        perKind.put(schema, clientSecret);
-        buildOrLoadSecret.accept(clientSecret, getClientPassword());
         return clientSecret.getRef();
     }
 
