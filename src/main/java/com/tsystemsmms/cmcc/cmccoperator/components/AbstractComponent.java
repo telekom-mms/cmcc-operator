@@ -149,6 +149,11 @@ public abstract class AbstractComponent implements Component {
         return spec.getRegistry() + "/" + spec.getRepository() + ":" + spec.getTag();
     }
 
+    @Override
+    public ResourceMgmt getResourceManagement() {
+        return getComponentSpec().getResources();
+    }
+
     /**
      * Get the image pull policy for the images of the main container of this component.
      *
@@ -259,7 +264,7 @@ public abstract class AbstractComponent implements Component {
                 .withName(specName)
                 .withImage(getImage())
                 .withImagePullPolicy(getImagePullPolicy())
-                .withResources(getDefaults().getResources())
+                .withResources(ResourceMgmt.withDefaults(getDefaults().getResources(), getResourceManagement()).getResources())
                 .withSecurityContext(getSecurityContext())
                 .withPorts(getContainerPorts())
                 .withArgs(getComponentSpec().getArgs())
@@ -280,7 +285,7 @@ public abstract class AbstractComponent implements Component {
                 .withName(specName)
                 .withImage(getImage())
                 .withImagePullPolicy(getImagePullPolicy())
-                .withResources(getDefaults().getResources())
+                .withResources(ResourceMgmt.withDefaults(getDefaults().getResources(), getResourceManagement()).getResources())
                 .withSecurityContext(getSecurityContext())
                 .withPorts(getContainerPorts())
                 .withArgs(getComponentSpec().getArgs())

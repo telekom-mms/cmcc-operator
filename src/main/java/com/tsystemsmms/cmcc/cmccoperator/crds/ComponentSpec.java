@@ -45,6 +45,9 @@ public class ComponentSpec {
     @JsonPropertyDescription("Make available with this milestone")
     private Milestone milestone = null;
 
+    @JsonPropertyDescription("Resource management (limits, requests)")
+    private ResourceMgmt resources;
+
     @JsonPropertyDescription("Schema names for JDBC, MongoDB, and/or UAPI")
     private Map<String, String> schemas = new HashMap<>();
 
@@ -66,6 +69,6 @@ public class ComponentSpec {
         this.getImage().update(that.getImage());
         if (that.getMilestone() != null)
             this.setMilestone(that.getMilestone());
-
+        this.resources = that.getResources();
     }
 }

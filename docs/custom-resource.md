@@ -97,7 +97,7 @@ properties have suitable defaults.
 | `defaults.insecureDatabasePassword` | String               | ""                             | **DO NOT SET**. See below for more information.                                                                                              |
 | `defaults.namePrefix`               | String               | ""                             | Prefix resources with this name plus '-'.                                                                                                    |
 | `defaults.previewHostname`          | String               | `preview`                      | Hostname of the preview CAE. Unless it is a fully-qualified domain name, the `namePrefix` and the `ingressDomain` will be pre- and appended. |
-| `defaults.resources`                | resources            | –                              | Default [resources to apply to component pods](https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/pod-v1/#resources)     |
+| `defaults.resources`                | resources            | –                              | Default resource limits and requests for components. See below [Components](#components)                                                     |
 | `defaults.studioHostname`           | String               | `studio`                       | Hostname of the Studio. Unless it is a fully-qualified domain name, the `namePrefix` and the `ingressDomain` will be pre- and appended.      |
 | `defaultIngressTls`                 | object               | –                              | Defaults for the site mapping TLS settings, see below                                                                                        |
 | `job`                               | String               | ""                             | name of a component to run as a job, see below                                                                                               |
@@ -515,17 +515,49 @@ specifies the type of component, and for some component types, `kind` as a sub-t
 | `type`             | String         | –               | Required type of the component                                                                                                               |
 | `kind`             | String         | –               | Sub-type, required for some component types                                                                                                  |
 | `name`             | String         | type            | The name of the component and the resources created for it. Defaults to a type-specific name, typically the type itself                      |
+| `args`             | list of String | –               | Args for the main container of the main pod. Defaults to unset, using the default from the image.                                            |
+| `env`              | list of EnvVar | –               | Additional environment variables to be made available to the containers                                                                      |
 | `image`            | object         | –               | Specification of the Docker Image to use for the main container of the main pod of the component                                             |
 | `image.registry`   | String         | `coremedia`     | Docker Image Registry to pull images from                                                                                                    |
 | `image.repository` | String         | see description | Docker Image Repository to pull images from. Default is type-specific based on the standard blueprint image names.                           |
 | `image.tag`        | String         | latest          | Docker Image Tag to pull images from                                                                                                         |
 | `image.pullPolicy` | String         | `IfNotPresent`  | default imagePullPolicy                                                                                                                      |
 | `milestone`        | enum           | `DatabaseReady` | Milestone that has to be reached before this component gets created.                                                                         |
-| `env`              | list of EnvVar | –               | Additional environment variables to be made available to the containers                                                                      |
-| `args`             | list of String | –               | Args for the main container of the main pod. Defaults to unset, using the default from the image.                                            |
+| `resources`        | object         | -               | `limits` and `resources`                                                                                                                     | 
 | `schemas`          | map            | –               | The name of the JDBC, MongoDB, and/or UAPI schemas that should be used for this component. Overrides the built-in default for the component. |
 
-You can set the milestone `Never` to define but disable a component.
+### Specification
+
+#### Milestone
+
+The milestone determines at which point during the bringup the component will be added. You can set the
+milestone `Never` to define but disable a component.
+
+#### Resources
+
+Each Kubernetes pod is optionally subject to resource management.
+See [Workload Resources, Pod](https://kubernetes.io/docs/reference/kubernetes-api/workload-resources/pod-v1/#resources)
+for details. The object consists of two properties, `limits` and `requests`, which in turn each have properties
+according to the cluster Kubernetes version. Typically, you will want to set `cpu` and `memory`.
+
+You can use `defaults.resources` to define resource limits and requests for all pods, and you can specify individual
+values for each component. If a component has more than one pod, all pods receive the same resources.
+
+Example:
+```yaml
+components:
+  - type: cae
+    kind: preview
+    resources:
+      limits:
+        cpu: 500m
+defaults:
+  resources:
+    limits:
+      cpu: 2
+```
+
+CPU time is limited to 2 cores by default; the preview CAE will only be allowed half a core.
 
 ### Component `blob-server`
 

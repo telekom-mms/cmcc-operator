@@ -33,15 +33,8 @@ public class ComponentDefaults {
     @JsonPropertyDescription("Use this password for all database accounts, instead of a random one.")
     private String insecureDatabasePassword = "";
 
-    @JsonPropertyDescription("Default resource declarations")
-    private ResourceRequirements resources = new ResourceRequirementsBuilder()
-            .withRequests(Map.of(
-                    "cpu", new Quantity("100m"),
-                    "memory", new Quantity("0.5G")))
-            .withLimits(Map.of(
-                    "cpu", new Quantity("2"),
-                    "memory", new Quantity("2G")))
-            .build();
+    @JsonPropertyDescription("Default resource management (limits, requests)")
+    private ResourceMgmt resources;
 
     @JsonPropertyDescription("Prefix resources with this name plus '-'. Empty string means no prefix")
     String namePrefix = "";

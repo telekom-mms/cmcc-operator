@@ -11,6 +11,7 @@
 package com.tsystemsmms.cmcc.cmccoperator.components;
 
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
+import com.tsystemsmms.cmcc.cmccoperator.crds.ResourceMgmt;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
@@ -49,6 +50,12 @@ public interface Component {
      * @return the specification
      */
     ComponentSpec getComponentSpec();
+
+    /**
+     * Returns the resource management for this component.
+     * @return resource management settings
+     */
+    ResourceMgmt getResourceManagement();
 
     /**
      * Returns a name suitable for a resource built from this component.

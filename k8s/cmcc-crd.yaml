@@ -134,6 +134,21 @@ spec:
                       - Never
                       - next
                       type: string
+                    resources:
+                      description: "Resource management (limits, requests)"
+                      properties:
+                        limits:
+                          additionalProperties:
+                            type: string
+                          description: Limits to resources for this components pods
+                          type: object
+                        requests:
+                          additionalProperties:
+                            type: string
+                          description: Requests for resources for this components
+                            pods
+                          type: object
+                      type: object
                     schemas:
                       additionalProperties:
                         type: string
@@ -214,21 +229,17 @@ spec:
                       \ of a random one."
                     type: string
                   resources:
-                    description: Default resource declarations
+                    description: "Default resource management (limits, requests)"
                     properties:
                       limits:
                         additionalProperties:
-                          anyOf:
-                          - type: integer
-                          - type: string
-                          x-kubernetes-int-or-string: true
+                          type: string
+                        description: Limits to resources for this components pods
                         type: object
                       requests:
                         additionalProperties:
-                          anyOf:
-                          - type: integer
-                          - type: string
-                          x-kubernetes-int-or-string: true
+                          type: string
+                        description: Requests for resources for this components pods
                         type: object
                     type: object
                   namePrefix:
