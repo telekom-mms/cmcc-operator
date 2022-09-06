@@ -67,13 +67,12 @@ public class ContentServerComponent extends CorbaComponent implements HasJdbcCli
                 break;
             case KIND_RLS:
                 rls = getInt(getCmcc().getSpec().getWith().getDelivery().getRls());
-                if (rls < 1) {
-                    throw new CustomResourceConfigError("with.delivery.rls must be 1 or higher, not " + rls);
+                if (rls >= 1) {
+                    licenseSecretName = getSpec().getLicenseSecrets().getRLSLicense();
+                    setDefaultSchemas(Map.of(
+                            UAPI_CLIENT_SECRET_REF_KIND, "publisher"
+                    ));
                 }
-                licenseSecretName = getSpec().getLicenseSecrets().getRLSLicense();
-                setDefaultSchemas(Map.of(
-                        UAPI_CLIENT_SECRET_REF_KIND, "publisher"
-                ));
                 break;
             default:
                 throw new CustomResourceConfigError("kind \"" + getComponentSpec().getKind() + "\" is illegal, must be either " + KIND_CMS + ", " + KIND_MLS + ", or " + KIND_RLS);
@@ -190,6 +189,8 @@ public class ContentServerComponent extends CorbaComponent implements HasJdbcCli
 
     @Override
     public void requestRequiredResources() {
+        if (getComponentSpec().getKind().equals(KIND_RLS) && rls == 0)
+            return;
         super.requestRequiredResources();
         if (rls == 0) {
             getJdbcClientSecretRef();

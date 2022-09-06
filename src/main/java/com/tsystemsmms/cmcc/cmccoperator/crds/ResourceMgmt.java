@@ -54,7 +54,7 @@ public class ResourceMgmt {
             limits.putAll(specific.limits);
         HashMap<String, String> requests = new HashMap<>(defaults.requests);
         if (specific != null)
-            limits.putAll(specific.requests);
+            requests.putAll(specific.requests);
         return new ResourceMgmt(limits, requests);
     }
 }
