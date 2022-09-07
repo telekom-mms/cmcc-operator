@@ -67,7 +67,7 @@ public class ContentServerComponent extends CorbaComponent implements HasJdbcCli
                 break;
             case KIND_RLS:
                 rls = getInt(getCmcc().getSpec().getWith().getDelivery().getRls());
-                if (rls >= 1) {
+                if (rls > 0) {
                     licenseSecretName = getSpec().getLicenseSecrets().getRLSLicense();
                     setDefaultSchemas(Map.of(
                             UAPI_CLIENT_SECRET_REF_KIND, "publisher"
@@ -83,19 +83,23 @@ public class ContentServerComponent extends CorbaComponent implements HasJdbcCli
     public List<HasMetadata> buildResources() {
         List<HasMetadata> resources = new LinkedList<>();
 
-        if (rls == 0) {
-            // CMS and MLS
-            resources.add(buildStatefulSet());
-            resources.add(buildService());
-        } else {
-            // RLS
-            resources.add(buildServiceRls());
-            // volumes etc
-            for (int i = 1; i <= rls; i++) {
-                resources.add(buildStatefulSetRls(i));
-                resources.add(getPersistentVolumeClaim(getTargetState().getResourceNameFor(this, getRlsName(i), PVC_TRANSFORMED_BLOBCACHE)));
-                resources.add(getPersistentVolumeClaim(getTargetState().getResourceNameFor(this, getRlsName(i), PVC_UAPI_BLOBCACHE)));
-            }
+        switch (getComponentSpec().getKind()) {
+            case KIND_CMS:
+            case KIND_MLS:
+                resources.add(buildStatefulSet());
+                resources.add(buildService());
+                break;
+            case KIND_RLS:
+                if (rls > 0) {
+                    resources.add(buildServiceRls());
+                    // volumes etc
+                    for (int i = 1; i <= rls; i++) {
+                        resources.add(buildStatefulSetRls(i));
+                        resources.add(getPersistentVolumeClaim(getTargetState().getResourceNameFor(this, getRlsName(i), PVC_TRANSFORMED_BLOBCACHE)));
+                        resources.add(getPersistentVolumeClaim(getTargetState().getResourceNameFor(this, getRlsName(i), PVC_UAPI_BLOBCACHE)));
+                    }
+                }
+                break;
         }
         return resources;
     }
@@ -189,15 +193,20 @@ public class ContentServerComponent extends CorbaComponent implements HasJdbcCli
 
     @Override
     public void requestRequiredResources() {
-        if (getComponentSpec().getKind().equals(KIND_RLS) && rls == 0)
-            return;
-        super.requestRequiredResources();
-        if (rls == 0) {
-            getJdbcClientSecretRef();
-        } else {
-            for (int i = 1; i <= rls; i++) {
-                getJdbcClientSecretRef(jdbcSecretName(i));
-            }
+        switch (getComponentSpec().getKind()) {
+            case KIND_CMS:
+            case KIND_MLS:
+                super.requestRequiredResources();
+                getJdbcClientSecretRef();
+                break;
+            case KIND_RLS:
+                if (rls > 0) {
+                    super.requestRequiredResources();
+                    for (int i = 1; i <= rls; i++) {
+                        getJdbcClientSecretRef(jdbcSecretName(i));
+                    }
+                }
+                break;
         }
     }
 
