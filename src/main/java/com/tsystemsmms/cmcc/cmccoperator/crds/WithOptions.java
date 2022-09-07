@@ -37,6 +37,9 @@ public class WithOptions {
     @JsonPropertyDescription("Create default components for the management stage")
     Boolean management = true;
 
+    @JsonPropertyDescription("Enable setting resource limits and requests on all components")
+    Boolean resources = true;
+
     @Data
     public static class WithDelivery {
         @JsonPropertyDescription("Number of RLS to create")

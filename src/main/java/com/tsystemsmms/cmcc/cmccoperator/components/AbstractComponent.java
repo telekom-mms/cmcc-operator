@@ -257,6 +257,7 @@ public abstract class AbstractComponent implements Component {
 
     public List<Container> buildContainers() {
         LinkedList<Container> containers = new LinkedList<>();
+        ResourceRequirements resourceRequirements = getSpec().getWith().getResources() ? ResourceMgmt.withDefaults(getDefaults().getResources(), getResourceManagement()).getResources() : new ResourceRequirements();
         EnvVarSet env = getEnvVars();
         env.addAll(getComponentSpec().getEnv());
 
@@ -264,7 +265,7 @@ public abstract class AbstractComponent implements Component {
                 .withName(specName)
                 .withImage(getImage())
                 .withImagePullPolicy(getImagePullPolicy())
-                .withResources(ResourceMgmt.withDefaults(getDefaults().getResources(), getResourceManagement()).getResources())
+                .withResources(resourceRequirements)
                 .withSecurityContext(getSecurityContext())
                 .withPorts(getContainerPorts())
                 .withArgs(getComponentSpec().getArgs())
@@ -280,12 +281,13 @@ public abstract class AbstractComponent implements Component {
 
     public List<Container> buildContainersWithEnv(EnvVarSet env) {
         LinkedList<Container> containers = new LinkedList<>();
+        ResourceRequirements resourceRequirements = getSpec().getWith().getResources() ? ResourceMgmt.withDefaults(getDefaults().getResources(), getResourceManagement()).getResources() : new ResourceRequirements();
 
         containers.add(new ContainerBuilder()
                 .withName(specName)
                 .withImage(getImage())
                 .withImagePullPolicy(getImagePullPolicy())
-                .withResources(ResourceMgmt.withDefaults(getDefaults().getResources(), getResourceManagement()).getResources())
+                .withResources(resourceRequirements)
                 .withSecurityContext(getSecurityContext())
                 .withPorts(getContainerPorts())
                 .withArgs(getComponentSpec().getArgs())

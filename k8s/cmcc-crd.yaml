@@ -362,6 +362,10 @@ spec:
                   management:
                     description: Create default components for the management stage
                     type: boolean
+                  resources:
+                    description: Enable setting resource limits and requests on all
+                      components
+                    type: boolean
                 type: object
               job:
                 description: Run this job component once from Ready

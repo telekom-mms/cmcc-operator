@@ -116,6 +116,7 @@ properties have suitable defaults.
 | `with.delivery.maxCae`              | int                  | 0                              | Maximum number of CAEs                                                                                                                       |
 | `with.ingressAnnotations`           | map                  | –                              | Additional annotation to add to all Ingress resources                                                                                        |
 | `with.management`                   | boolean              | true                           | Create all components required for a CoreMedia management stage                                                                              |
+| `with.resources`                    | boolean              | true                           | Apply resource limits and requests to all components. Also see `defaults.resources` and  [Components](#components)                           |
 
 ## Enabling Convenience Options `with`
 
@@ -542,6 +543,9 @@ according to the cluster Kubernetes version. Typically, you will want to set `cp
 
 You can use `defaults.resources` to define resource limits and requests for all pods, and you can specify individual
 values for each component. If a component has more than one pod, all pods receive the same resources.
+
+You can disable applying resource requirements by setting `with.resources` to `false`; in this case, all resource
+specifications are ignored.
 
 Example:
 ```yaml
