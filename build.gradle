@@ -27,7 +27,7 @@ compileJava {
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'io.javaoperatorsdk:operator-framework-spring-boot-starter:2.3.0'
+    implementation 'io.javaoperatorsdk:operator-framework-spring-boot-starter:3.2.0'
     implementation 'org.bouncycastle:bcpkix-jdk15on:1.70'
     // required for the fabric8 k8s client to grok k3d certificates
     implementation 'org.springframework.boot:spring-boot-starter'
