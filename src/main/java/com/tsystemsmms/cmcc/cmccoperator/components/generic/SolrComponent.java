@@ -220,7 +220,7 @@ public class SolrComponent extends AbstractComponent implements HasService {
         env.add(EnvVarSimple("SPRING_BOOT_EXPLODED_APP", "true"));
         env.add(EnvVarSimple("GC_TUNE", "-XX:+UseG1GC -XX:+PerfDisableSharedMem -XX:+ParallelRefProcEnabled -XX:MaxGCPauseMillis=250 -XX:+AlwaysPreTouch"));
         env.add(EnvVarSimple("SOLR_HEAP", ""));
-        env.add(EnvVarSimple("SOLR_JAVA_MEM", "-XX:MinRAMPercentage=80 -XX:MaxRAMPercentage=95"));
+        env.add(EnvVarSimple("SOLR_JAVA_MEM", getCmcc().getSpec().getDefaults().getJavaOpts()));
         return env;
     }
 

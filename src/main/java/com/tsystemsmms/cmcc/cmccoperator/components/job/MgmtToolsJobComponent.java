@@ -60,7 +60,7 @@ public class MgmtToolsJobComponent extends JobComponent implements HasUapiClient
         EnvVarSet env = super.getEnvVars();
 
         env.add(EnvVarSimple("JAVA_HEAP", ""));
-        env.add(EnvVarSimple("JAVA_OPTS", "-XX:MinRAMPercentage=80 -XX:MaxRAMPercentage=95"));
+        env.add(EnvVarSimple("JAVA_OPTS", getCmcc().getSpec().getDefaults().getJavaOpts()));
 
         env.add(EnvVarSimple("CAP_CLIENT_SERVER_IOR_URL", getTargetState().getServiceUrlFor("content-server", "cms")));
         env.add(EnvVarSimple("DEV_MASTER_CAP_CLIENT_SERVER_IOR_URL", getTargetState().getServiceUrlFor("content-server", "mls")));

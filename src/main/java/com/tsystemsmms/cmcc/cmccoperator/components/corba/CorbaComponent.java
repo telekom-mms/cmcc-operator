@@ -62,7 +62,7 @@ public abstract class CorbaComponent extends SpringBootComponent implements HasS
         env.add(EnvVarSimple("SPRING_APPLICATION_NAME", getSpecName()));
         env.add(EnvVarSimple("SPRING_BOOT_EXPLODED_APP", "true"));
         env.add(EnvVarSimple("JAVA_HEAP", ""));
-        env.add(EnvVarSimple("JAVA_OPTS", "-XX:MinRAMPercentage=75 -XX:MaxRAMPercentage=90"));
+        env.add(EnvVarSimple("JAVA_OPTS", getCmcc().getSpec().getDefaults().getJavaOpts()));
         env.addAll(getUapiClientEnvVars("REPOSITORY"));
 
         return env;

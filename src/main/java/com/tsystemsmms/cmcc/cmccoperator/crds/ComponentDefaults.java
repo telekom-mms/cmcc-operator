@@ -33,6 +33,9 @@ public class ComponentDefaults {
     @JsonPropertyDescription("Use this password for all database accounts, instead of a random one.")
     private String insecureDatabasePassword = "";
 
+    @JsonPropertyDescription("For Java components, use these JAVA_OPTS.")
+    private String javaOpts = "-XX:MinRAMPercentage=75 -XX:MaxRAMPercentage=90";
+
     @JsonPropertyDescription("Default resource management (limits, requests)")
     private ResourceMgmt resources;
 
