@@ -229,6 +229,9 @@ spec:
                     description: "Use this password for all database accounts, instead\
                       \ of a random one."
                     type: string
+                  javaOpts:
+                    description: "For Java components, use these JAVA_OPTS."
+                    type: string
                   resources:
                     description: "Default resource management (limits, requests)"
                     properties:
