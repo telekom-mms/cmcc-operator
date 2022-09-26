@@ -16,11 +16,15 @@ import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import lombok.Data;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 @Data
 public class ComponentDefaults {
+    @JsonPropertyDescription("Additional annotations for all component pods")
+    private Map<String, String> annotations = new HashMap<>();
+
     @JsonPropertyDescription("Docker image with curl available")
     private String curlImage = "docker.io/alpine/curl:latest";
 

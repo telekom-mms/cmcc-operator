@@ -117,6 +117,7 @@ public class ContentServerComponent extends CorbaComponent implements HasJdbcCli
                                 .build())
                         .withTemplate(new PodTemplateSpecBuilder()
                                 .withMetadata(new ObjectMetaBuilder()
+                                        .withAnnotations(getAnnotations())
                                         .withLabels(getSelectorLabels())
                                         .build())
                                 .withSpec(new PodSpecBuilder()

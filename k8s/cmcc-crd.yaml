@@ -45,6 +45,11 @@ spec:
                     name:
                       description: Name to be used for k8s objects
                       type: string
+                    annotations:
+                      additionalProperties:
+                        type: string
+                      description: Additional annotations
+                      type: object
                     args:
                       description: Args for the main pod container
                       items:
@@ -202,6 +207,11 @@ spec:
               defaults:
                 description: Default values for components
                 properties:
+                  annotations:
+                    additionalProperties:
+                      type: string
+                    description: Additional annotations for all component pods
+                    type: object
                   curlImage:
                     description: Docker image with curl available
                     type: string

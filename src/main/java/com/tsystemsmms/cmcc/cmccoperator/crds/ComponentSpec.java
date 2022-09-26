@@ -30,6 +30,9 @@ public class ComponentSpec {
     @JsonPropertyDescription("Name to be used for k8s objects")
     private String name = "";
 
+    @JsonPropertyDescription("Additional annotations")
+    private Map<String, String> annotations = new HashMap<>();
+
     @JsonPropertyDescription("Args for the main pod container")
     private List<String> args = new LinkedList<>();
 
@@ -63,6 +66,7 @@ public class ComponentSpec {
     }
 
     public void update(ComponentSpec that) {
+        this.setAnnotations(that.getAnnotations());
         this.setArgs(that.getArgs());
         this.getEnv().addAll(that.getEnv());
         this.getExtra().putAll(that.getExtra());

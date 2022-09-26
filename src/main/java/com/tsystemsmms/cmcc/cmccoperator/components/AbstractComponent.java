@@ -149,6 +149,12 @@ public abstract class AbstractComponent implements Component {
         return spec.getRegistry() + "/" + spec.getRepository() + ":" + spec.getTag();
     }
 
+    public Map<String, String> getAnnotations() {
+        HashMap<String, String> annotations = new HashMap<>(getSpec().getDefaults().getAnnotations());
+        annotations.putAll(getComponentSpec().getAnnotations());
+        return annotations;
+    }
+
     @Override
     public ResourceMgmt getResourceManagement() {
         return getComponentSpec().getResources();
@@ -236,6 +242,7 @@ public abstract class AbstractComponent implements Component {
                                 .build())
                         .withTemplate(new PodTemplateSpecBuilder()
                                 .withMetadata(new ObjectMetaBuilder()
+                                        .withAnnotations(getAnnotations())
                                         .withLabels(getSelectorLabels())
                                         .build())
                                 .withSpec(new PodSpecBuilder()
