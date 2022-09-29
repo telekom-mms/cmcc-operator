@@ -179,7 +179,7 @@ public class SolrComponent extends AbstractComponent implements HasService {
     @Override
     public Service buildService() {
         return new ServiceBuilder()
-                .withMetadata(getTargetState().getResourceMetadataFor(this))
+                .withMetadata(getTargetState().getResourceMetadataFor(this, SOLR_CLIENT_SERVER_FOLLOWER))
                 .withSpec(new ServiceSpecBuilder()
                         .withSelector(getSelectorLabelsForService())
                         .withPorts(getServicePorts())
