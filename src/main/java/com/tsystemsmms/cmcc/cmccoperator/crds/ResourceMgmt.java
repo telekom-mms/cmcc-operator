@@ -49,10 +49,10 @@ public class ResourceMgmt {
     }
 
     public static ResourceMgmt withDefaults(ResourceMgmt defaults, ResourceMgmt specific) {
-        HashMap<String, String> limits = new HashMap<>(defaults.limits);
+        HashMap<String, String> limits = defaults == null ? new HashMap<>() : new HashMap<>(defaults.limits);
         if (specific != null)
             limits.putAll(specific.limits);
-        HashMap<String, String> requests = new HashMap<>(defaults.requests);
+        HashMap<String, String> requests = defaults == null ? new HashMap<>() : new HashMap<>(defaults.requests);
         if (specific != null)
             requests.putAll(specific.requests);
         return new ResourceMgmt(limits, requests);
