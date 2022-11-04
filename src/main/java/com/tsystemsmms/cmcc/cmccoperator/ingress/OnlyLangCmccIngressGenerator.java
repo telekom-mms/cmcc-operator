@@ -83,6 +83,8 @@ public class OnlyLangCmccIngressGenerator extends AbstractCmccIngressGenerator {
                         .pathPattern("/(.*)", serviceName).rewrite("/blueprint/servlet/$1").build());
                 ingresses.addAll(ingressBuilderFactory.builder(targetState, liveName(site, "language", suffix), fqdn, tls)
                         .pathPattern("/(" + languagePattern + ")(.*)", serviceName).rewrite("/blueprint/servlet/" + getReplacement(siteMapping.getPrimarySegment()) + "$2").build());
+                ingresses.addAll(ingressBuilderFactory.builder(targetState, liveName(site, "seo", suffix), fqdn, tls)
+                        .pathPattern("/(robots\\.txt|sitemap.*\\.xml)", serviceName).rewrite(getTargetState().getCmcc().getSpec().getWith().getIngressSeoHandler() + "/" + siteMapping.getPrimarySegment() + "/$1").build());
             }
         }
 

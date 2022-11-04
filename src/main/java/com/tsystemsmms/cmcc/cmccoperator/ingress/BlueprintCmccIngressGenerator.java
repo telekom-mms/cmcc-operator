@@ -62,6 +62,8 @@ public class BlueprintCmccIngressGenerator extends AbstractCmccIngressGenerator 
                         .pathPrefix("/blueprint", serviceName).build());
                 ingresses.addAll(ingressBuilderFactory.builder(targetState, liveName(site, "all"), fqdn, tls)
                         .pathPattern("/(.*)", serviceName).rewrite("/blueprint/servlet/$1").build());
+                ingresses.addAll(ingressBuilderFactory.builder(targetState, liveName(site, "seo"), fqdn, tls)
+                        .pathPattern("/(robots\\.txt|sitemap.*\\.xml)", serviceName).rewrite(getTargetState().getCmcc().getSpec().getWith().getIngressSeoHandler() + "/" + siteMapping.getPrimarySegment() + "/$1").build());
             }
         }
 

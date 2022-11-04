@@ -34,6 +34,9 @@ public class WithOptions {
     @JsonPropertyDescription("Add these annotations to the managed Ingress resources")
     Map<String, String> ingressAnnotations = new HashMap<>();
 
+    @JsonPropertyDescription("Path to handler for robots.txt and sitemap.xml")
+    String ingressSeoHandler = "/blueprint/servlet/service/robots";
+
     @JsonPropertyDescription("Create default components for the management stage")
     Boolean management = true;
 

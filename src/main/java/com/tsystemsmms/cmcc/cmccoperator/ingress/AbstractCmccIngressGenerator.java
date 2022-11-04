@@ -80,6 +80,8 @@ public abstract class AbstractCmccIngressGenerator implements CmccIngressGenerat
                 .pathPattern("/(.*)", serviceName).rewrite("/blueprint/servlet/$1").build());
         ingresses.addAll(ingressBuilderFactory.builder(targetState, previewName("static"), fqdn, tls)
                 .pathPattern("/(public|resources|static)(.*)", serviceName).rewrite("/blueprint/$1$2").build());
+        ingresses.addAll(ingressBuilderFactory.builder(targetState, previewName("seo"), fqdn, tls)
+                .pathPattern("/(robots\\.txt|sitemap.*\\.xml)", serviceName).rewrite(getTargetState().getCmcc().getSpec().getWith().getIngressSeoHandler() + "/preview/$1").build());
         return ingresses;
     }
 

@@ -120,6 +120,7 @@ properties have suitable defaults.
 | `with.delivery.minCae`              | int                  | 0                                                 | Minimum number of CAEs                                                                                                                       |
 | `with.delivery.maxCae`              | int                  | 0                                                 | Maximum number of CAEs                                                                                                                       |
 | `with.ingressAnnotations`           | map                  | –                                                 | Additional annotation to add to all Ingress resources                                                                                        |
+| `with.ingressSeoHandler`            | String               | `/blueprint/servlet/service/robots`               | Path to handler that will receive requests for `robots.txt` and `sitemap.xml`.                                                               |
 | `with.management`                   | boolean              | true                                              | Create all components required for a CoreMedia management stage                                                                              |
 | `with.resources`                    | boolean              | true                                              | Apply resource limits and requests to all components. Also see `defaults.resources` and  [Components](#components)                           |
 
@@ -510,6 +511,18 @@ with:
   ingressAnnotations:
      "nginx.ingress.kubernetes.io/affinity": "cookie"
 ```
+
+### `robots.txt` and `sitemap.xml`
+
+In order for search engines to properly index a site, a 
+[`robots.txt`](https://en.wikipedia.org/wiki/Robots_exclusion_standard) and one or more 
+[XML Sitemaps](https://en.wikipedia.org/wiki/Sitemaps) should be made available at specific URLs. The operator generates
+ingress rules for the preview and all live sites, mapping requests for `robots.txt` and `sitemap.*\.xml` to the
+value of `with.ingressSeoHandler` plus the site segment (or `preview` in case of the preview), plus the file name
+requested. You will need to supply a compatible handler in your CAE to handle requests for it.
+
+For example, the request `https://corporate.example.de/sitemap-0.xml` will be mapped to 
+`/blueprint/servlet/service/robots/corporate-de-de/sitemap-0.xml`.
 
 ## Components
 
