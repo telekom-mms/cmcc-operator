@@ -137,6 +137,7 @@ spec:
                       - ManagementReady
                       - Ready
                       - RunJob
+                      - Healing
                       - Never
                       - next
                       type: string
@@ -411,6 +412,7 @@ spec:
                 - ManagementReady
                 - Ready
                 - RunJob
+                - Healing
                 - Never
                 - next
                 type: string

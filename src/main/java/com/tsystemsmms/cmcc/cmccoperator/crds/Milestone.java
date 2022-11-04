@@ -22,6 +22,7 @@ public enum Milestone {
     ManagementReady,
     Ready,
     RunJob,
+    Healing,
     Never;
 
     @JsonIgnore
@@ -30,8 +31,8 @@ public enum Milestone {
     static {
         Milestone[] values = Milestone.values();
         /*
-         * Every milestone advances to the following until we reach Ready. Ready advances to itself;
-         * Never to itself, and everything between Ready and Never advances to Ready.
+         * Every milestone advances to the following until we reach Ready. All states advance to the following state,
+         * except all states starting with Ready advance to themself.
          */
         for (int i = 0; i < values.length - 1; i++) {
             values[i].next = values[i].compareTo(Ready) >= 0 ? Ready : values[i + 1];

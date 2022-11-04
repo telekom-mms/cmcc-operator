@@ -74,7 +74,10 @@ The `milestone` status column shows the creation status of the installation:
 5. `ManagementReady`: The core management components are running. All remaining component are being started, including
    the content import.
 6. `Ready`: The content import has completed, all components are up and running.
-7. `Never`: Special state that will never be reached, can be used on components to define them, but have the operator
+7. `Healing`: The milestone was `Ready`, but at least one of the components became unhealthy. Once all components are
+   running again, the milestone will become `Ready` again.
+8. `RunJob`: a job is currently executing. The milestone will reach `Ready` again after it has finished.
+9. `Never`: Special state that will never be reached, can be used on components to define them, but have the operator
    never create the resources for them. See below [Running Additional Jobs](#running-additional-jobs).
 
 ## Custom Resource Properties Specification
