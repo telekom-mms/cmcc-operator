@@ -72,10 +72,7 @@ public class ComponentCollection {
   }
 
   public void removeOfTypeAndKind(String type, String kind) {
-    for (Map.Entry<ComponentReference, Component> e : components.entrySet()) {
-      if (e.getValue().getComponentSpec().getType().equals(type) && e.getValue().getComponentSpec().getKind().equals(kind))
-        components.remove(e.getKey());
-    }
+    components.entrySet().removeIf(e -> e.getValue().getComponentSpec().getType().equals(type) && e.getValue().getComponentSpec().getKind().equals(kind));
   }
 
   /**
