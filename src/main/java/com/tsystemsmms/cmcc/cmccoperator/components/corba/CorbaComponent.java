@@ -100,15 +100,6 @@ public abstract class CorbaComponent extends SpringBootComponent implements HasS
 
 
     @Override
-    public List<Container> getInitContainers() {
-        List<Container> containers = super.getInitContainers();
-
-        // by default, wait on the CMS
-        containers.add(getContainerWaitForIor(getTargetState().getServiceNameFor("content-server", "cms"), getTargetState().getServiceUrlFor("content-server", "cms")));
-        return containers;
-    }
-
-    @Override
     public List<ContainerPort> getContainerPorts() {
         return List.of(
                 new ContainerPortBuilder()

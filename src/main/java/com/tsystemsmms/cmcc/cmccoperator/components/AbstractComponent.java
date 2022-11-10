@@ -386,22 +386,6 @@ public abstract class AbstractComponent implements Component {
     }
 
     /**
-     * Wait for a service to become available. We can tell that the service is available by having at least one
-     * endpoints resource with that name. kubectl will exit with a non-zero status if no resources were found. Requires
-     * that the service account for the pod has list rights on endpoints.
-     *
-     * @param service name of the service to wait for.
-     * @return a container spec suitable to add to InitContainers.
-     */
-    public Container getContainerWaitForIor(String service, String url) {
-        return new ContainerBuilder()
-                .withName("wait-for-" + service)
-                .withImage(getDefaults().getCurlImage())
-                .withCommand("sh", "-c", "until curl -fsSo/dev/null " + url + "; do echo waiting for " + service + "; sleep 10; done;")
-                .build();
-    }
-
-    /**
      * Returns the security context for a container.
      *
      * @return security context
