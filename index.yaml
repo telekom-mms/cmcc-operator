@@ -2,6 +2,16 @@ apiVersion: v1
 entries:
   cmcc:
   - apiVersion: v2
+    appVersion: v1.7.3
+    created: "2022-11-10T07:43:48.446337022Z"
+    description: CoreMedia Content Cloud through cmcc-operator
+    digest: 9073a4e94e8f93775f1902a4fe1b51b9ba53da785210bcfcb5f22b09698f8a30
+    name: cmcc
+    type: application
+    urls:
+    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-v1.7.3/cmcc-v1.7.3.tgz
+    version: v1.7.3
+  - apiVersion: v2
     appVersion: v1.7.2
     created: "2022-11-09T07:54:28.518956675Z"
     description: CoreMedia Content Cloud through cmcc-operator
@@ -412,6 +422,16 @@ entries:
     - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-0.9.8-beta.11/cmcc-0.9.8-beta.11.tgz
     version: 0.9.8-beta.11
   cmcc-operator:
+  - apiVersion: v2
+    appVersion: v1.7.3
+    created: "2022-11-10T07:43:48.323719538Z"
+    description: Kubernetes Operator to bring up a CoreMedia Content Cloud installation
+    digest: 7d5ad6a7539a77d8cf1f2ba6ed40b9d1418aafe17ecb5a34ef4ccd85c1084fc9
+    name: cmcc-operator
+    type: application
+    urls:
+    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-v1.7.3/cmcc-operator-v1.7.3.tgz
+    version: v1.7.3
   - apiVersion: v2
     appVersion: v1.7.2
     created: "2022-11-09T07:54:28.293565723Z"
@@ -842,4 +862,4 @@ entries:
     urls:
     - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-0.9.8-beta.11/cmcc-operator-0.9.8-beta.11.tgz
     version: 0.9.8-beta.11
-generated: "2022-11-09T07:54:28.519959945Z"
+generated: "2022-11-10T07:43:48.44706771Z"
