@@ -358,7 +358,7 @@ public abstract class AbstractComponent implements Component {
     }
 
     /**
-     * Returns the list of persistent volume clains. This can either be used to build resources directly, or as a
+     * Returns the list of persistent volume claims. This can either be used to build resources directly, or as a
      * template in a StatefulSet.
      *
      * @return List of PersistentVolumeClaims

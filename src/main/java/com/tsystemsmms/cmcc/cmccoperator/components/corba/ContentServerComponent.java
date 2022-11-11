@@ -33,315 +33,297 @@ import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.EnvVarSimple;
 
 @Slf4j
 public class ContentServerComponent extends CorbaComponent implements HasJdbcClient, HasService {
-    public static final String KIND_CMS = "cms";
-    public static final String KIND_MLS = "mls";
-    public static final String KIND_RLS = "rls";
+  public static final String KIND_CMS = "cms";
+  public static final String KIND_MLS = "mls";
+  public static final String KIND_RLS = "rls";
 
-    public static final String MANAGEMENT_SCHEMA = "management";
-    public static final String MASTER_SCHEMA = "master";
+  public static final String MANAGEMENT_SCHEMA = "management";
+  public static final String MASTER_SCHEMA = "master";
 
-    public static final String LICENSE_VOLUME_NAME = "license";
+  public static final String LICENSE_VOLUME_NAME = "license";
 
-    String licenseSecretName;
+  String licenseSecretName;
 
-    int rls = 0;
+  int rls = 0;
 
-    public ContentServerComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec componentSpec) {
-        super(kubernetesClient, targetState, componentSpec, "content-server");
-        if (getComponentSpec().getKind() == null)
-            throw new CustomResourceConfigError("kind must be set to either " + KIND_CMS + ", " + KIND_MLS + ", or " + KIND_RLS);
-        switch (componentSpec.getKind()) {
-            case KIND_CMS:
-                licenseSecretName = getSpec().getLicenseSecrets().getCMSLicense();
-                setDefaultSchemas(Map.of(
-                        JDBC_CLIENT_SECRET_REF_KIND, MANAGEMENT_SCHEMA,
-                        UAPI_CLIENT_SECRET_REF_KIND, "publisher"
-                ));
-                break;
-            case KIND_MLS:
-                licenseSecretName = getSpec().getLicenseSecrets().getMLSLicense();
-                setDefaultSchemas(Map.of(
-                        JDBC_CLIENT_SECRET_REF_KIND, MASTER_SCHEMA,
-                        UAPI_CLIENT_SECRET_REF_KIND, "publisher"
-                ));
-                break;
-            case KIND_RLS:
-                rls = getInt(getCmcc().getSpec().getWith().getDelivery().getRls());
-                if (rls > 0) {
-                    licenseSecretName = getSpec().getLicenseSecrets().getRLSLicense();
-                    setDefaultSchemas(Map.of(
-                            UAPI_CLIENT_SECRET_REF_KIND, "publisher"
-                    ));
-                }
-                break;
-            default:
-                throw new CustomResourceConfigError("kind \"" + getComponentSpec().getKind() + "\" is illegal, must be either " + KIND_CMS + ", " + KIND_MLS + ", or " + KIND_RLS);
-        }
-    }
-
-    @Override
-    public List<HasMetadata> buildResources() {
-        List<HasMetadata> resources = new LinkedList<>();
-
-        switch (getComponentSpec().getKind()) {
-            case KIND_CMS:
-            case KIND_MLS:
-                resources.add(buildStatefulSet());
-                resources.add(buildService());
-                break;
-            case KIND_RLS:
-                if (rls > 0) {
-                    resources.add(buildServiceRls());
-                    // volumes etc
-                    for (int i = 1; i <= rls; i++) {
-                        resources.add(buildStatefulSetRls(i));
-                        resources.add(getPersistentVolumeClaim(getTargetState().getResourceNameFor(this, getRlsName(i), PVC_TRANSFORMED_BLOBCACHE)));
-                        resources.add(getPersistentVolumeClaim(getTargetState().getResourceNameFor(this, getRlsName(i), PVC_UAPI_BLOBCACHE)));
-                    }
-                }
-                break;
-        }
-        return resources;
-    }
-
-    public StatefulSet buildStatefulSetRls(int i) {
-        EnvVarSet env = getEnvVarsForRls(i);
-        env.addAll(getComponentSpec().getEnv());
-
-        return new StatefulSetBuilder()
-                .withMetadata(getResourceMetadataForName(getTargetState().getResourceNameFor(this, getRlsName(i))))
-                .withSpec(new StatefulSetSpecBuilder()
-                        .withServiceName(getTargetState().getServiceNameFor(this))
-                        .withSelector(new LabelSelectorBuilder()
-                                .withMatchLabels(getSelectorLabels())
-                                .build())
-                        .withTemplate(new PodTemplateSpecBuilder()
-                                .withMetadata(new ObjectMetaBuilder()
-                                        .withAnnotations(getAnnotations())
-                                        .withLabels(getSelectorLabels())
-                                        .build())
-                                .withSpec(new PodSpecBuilder()
-                                        .withContainers(buildContainersWithEnv(env))
-                                        .withInitContainers(getInitContainers())
-                                        .withSecurityContext(getPodSecurityContext())
-                                        .withTerminationGracePeriodSeconds(getTerminationGracePeriodSeconds())
-                                        .withVolumes(getVolumes(getRlsName(i)))
-                                        .build())
-                                .build())
-                        .build())
-                .build();
-    }
-
-    private String getRlsName(int i) {
-        return "" + i;
-    }
-
-    public Service buildServiceRls() {
-        return new ServiceBuilder()
-                .withMetadata(getTargetState().getResourceMetadataFor(this))
-                .withSpec(new ServiceSpecBuilder()
-                        .withSelector(getSelectorLabelsForRls())
-                        .withPorts(getServicePorts())
-                        .build())
-                .build();
-    }
-
-    @Override
-    public HashMap<String, String> getSelectorLabels() {
-        HashMap<String, String> labels = super.getSelectorLabels();
-        labels.put("cmcc.tsystemsmms.com/kind", getComponentSpec().getKind());
-        return labels;
-    }
-
-    public HashMap<String, String> getSelectorLabelsForRls() {
-        HashMap<String, String> labels = getTargetState().getSelectorLabels();
-        labels.put("cmcc.tsystemsmms.com/type", getComponentSpec().getType());
-        labels.put("cmcc.tsystemsmms.com/kind", "rls");
-        return labels;
-    }
-
-    /**
-     * PVCs for RLSes.
-     *
-     * @param name per-RLS name
-     * @return list of Volume resources
-     */
-    public List<Volume> getVolumes(String name) {
-        LinkedList<Volume> volumes = new LinkedList<>(super.getVolumes());
-
-        volumes.add(new VolumeBuilder()
-                .withName(LICENSE_VOLUME_NAME)
-                .withSecret(new SecretVolumeSourceBuilder()
-                        .withSecretName(licenseSecretName)
-                        .build())
-                .build());
-        volumes.add(new VolumeBuilder()
-                .withName(PVC_TRANSFORMED_BLOBCACHE)
-                .withPersistentVolumeClaim(new PersistentVolumeClaimVolumeSourceBuilder()
-                        .withClaimName(getTargetState().getResourceNameFor(this, name, PVC_TRANSFORMED_BLOBCACHE))
-                        .build())
-                .build());
-        volumes.add(new VolumeBuilder()
-                .withName(PVC_UAPI_BLOBCACHE)
-                .withPersistentVolumeClaim(new PersistentVolumeClaimVolumeSourceBuilder()
-                        .withClaimName(getTargetState().getResourceNameFor(this, name, PVC_UAPI_BLOBCACHE))
-                        .build())
-                .build());
-
-        return volumes;
-    }
-
-
-    @Override
-    public void requestRequiredResources() {
-        switch (getComponentSpec().getKind()) {
-            case KIND_CMS:
-            case KIND_MLS:
-                super.requestRequiredResources();
-                getJdbcClientSecretRef();
-                break;
-            case KIND_RLS:
-                if (rls > 0) {
-                    super.requestRequiredResources();
-                    for (int i = 1; i <= rls; i++) {
-                        getJdbcClientSecretRef(jdbcSecretName(i));
-                    }
-                }
-                break;
-        }
-    }
-
-    private String jdbcSecretName(int i) {
-        return "rls" + i;
-    }
-
-    @Override
-    public String getBaseResourceName() {
-        switch (getComponentSpec().getKind()) {
-            case KIND_CMS:
-                return "content-management-server";
-            case KIND_MLS:
-                return "master-live-server";
-            case KIND_RLS:
-                return "replication-live-server";
-            default:
-                throw new CustomResourceConfigError("kind \"" + getComponentSpec().getKind() + "\" is illegal, must be either " + KIND_CMS + ", " + KIND_MLS + ", or " + KIND_RLS);
-        }
-    }
-
-    @Override
-    public long getTerminationGracePeriodSeconds() {
-        return 30L;
-    }
-
-    @Override
-    public List<Container> getInitContainers() {
-        return Collections.emptyList();
-    }
-
-    @Override
-    public EnvVarSet getEnvVars() {
-        EnvVarSet env = super.getEnvVars();
-
-        switch (getComponentSpec().getKind()) {
-            case KIND_CMS:
-                env.addAll(getJdbcClientEnvVars("SQL_STORE"));
-                env.addAll(getUapiClientEnvVars("PUBLISHER_LOCAL"));
-                env.addAll(getUapiClientEnvVars("PUBLISHER_TARGET_0"));
-                break;
-            case KIND_MLS:
-                env.addAll(getJdbcClientEnvVars("SQL_STORE"));
-                break;
-            case KIND_RLS:
-                env.addAll(getUapiClientEnvVars("REPLICATOR_PUBLICATION"));
-                break;
-        }
-
-        for (ClientSecret cs : getTargetState().getClientSecrets(UAPI_CLIENT_SECRET_REF_KIND).values()) {
-            Secret secret = cs.getSecret().orElseThrow(() -> new CustomResourceConfigError("Unable to find secret for clientSecretRef \"" + cs.getRef().getSecretName() + "\""));
-            String username = secret.getStringData().get(cs.getRef().getUsernameKey());
-            if (cs.getRef().getUsernameKey() == null || username == null) {
-                throw new CustomResourceConfigError("Secret \"" + secret.getMetadata().getName()
-                        + "\" does not contain the field \"" + cs.getRef().getUsernameKey()
-                        + "\" for the username, or it is null");
-            }
-            env.add(EnvVarSecret("CAP_SERVER_INITIALPASSWORD_" + username.toUpperCase(Locale.ROOT),
-                    cs.getRef().getSecretName(), cs.getRef().getPasswordKey()));
-        }
-
-        return env;
-    }
-
-    EnvVarSet getEnvVarsForRls(int i) {
-        EnvVarSet env = getEnvVars();
-        env.addAll(getJdbcClientEnvVars("SQL_STORE", getJdbcClientSecretRef(jdbcSecretName(i))));
-        return env;
-    }
-
-    public Map<String, String> getSpringBootProperties() {
-        Map<String, String> properties = super.getSpringBootProperties();
-
-        properties.putAll(Map.of(
-                "cap.server.license", "/coremedia/licenses/license.zip",
-                "com.coremedia.corba.server.host", getTargetState().getResourceNameFor(this),
-                "cap.server.cache.resource-cache-size", "5000"
+  public ContentServerComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec componentSpec) {
+    super(kubernetesClient, targetState, componentSpec, "content-server");
+    if (getComponentSpec().getKind() == null)
+      throw new CustomResourceConfigError("kind must be set to either " + KIND_CMS + ", " + KIND_MLS + ", or " + KIND_RLS);
+    switch (componentSpec.getKind()) {
+      case KIND_CMS:
+        licenseSecretName = getSpec().getLicenseSecrets().getCMSLicense();
+        setDefaultSchemas(Map.of(
+                JDBC_CLIENT_SECRET_REF_KIND, MANAGEMENT_SCHEMA,
+                UAPI_CLIENT_SECRET_REF_KIND, "publisher"
         ));
-        if (getComponentSpec().getKind().equals(KIND_CMS)) {
-            properties.put("publisher.target[0].iorUrl", getTargetState().getServiceUrlFor("content-server", "mls"));
-            properties.put("publisher.target[0].ior-url", getTargetState().getServiceUrlFor("content-server", "mls"));
-            properties.put("publisher.target[0].name", "mls");
+        break;
+      case KIND_MLS:
+        licenseSecretName = getSpec().getLicenseSecrets().getMLSLicense();
+        setDefaultSchemas(Map.of(
+                JDBC_CLIENT_SECRET_REF_KIND, MASTER_SCHEMA,
+                UAPI_CLIENT_SECRET_REF_KIND, "publisher"
+        ));
+        break;
+      case KIND_RLS:
+        rls = getInt(getCmcc().getSpec().getWith().getDelivery().getRls());
+        if (rls > 0) {
+          licenseSecretName = getSpec().getLicenseSecrets().getRLSLicense();
+          setDefaultSchemas(Map.of(
+                  UAPI_CLIENT_SECRET_REF_KIND, "publisher"
+          ));
         }
-        if (getComponentSpec().getKind().equals(KIND_RLS)) {
-            properties.put("replicator.publication-ior-url", getTargetState().getServiceUrlFor("content-server", "mls"));
+        break;
+      default:
+        throw new CustomResourceConfigError("kind \"" + getComponentSpec().getKind() + "\" is illegal, must be either " + KIND_CMS + ", " + KIND_MLS + ", or " + KIND_RLS);
+    }
+  }
+
+  @Override
+  public List<HasMetadata> buildResources() {
+    List<HasMetadata> resources = new LinkedList<>();
+
+    resources.add(buildStatefulSet(getComponentSpec().getKind().equals(KIND_RLS) ? rls : 1));
+    resources.add(buildService());
+
+    if (getComponentSpec().getKind().equals(KIND_RLS) && rls > 0) {
+      resources.add(buildServiceRls());
+    }
+
+    return resources;
+  }
+//
+//  public StatefulSet buildStatefulSetRls(int i) {
+//    EnvVarSet env = getEnvVarsForRls(i);
+//    env.addAll(getComponentSpec().getEnv());
+//
+//    return new StatefulSetBuilder()
+//            .withMetadata(getResourceMetadataForName(getTargetState().getResourceNameFor(this, getRlsName(i))))
+//            .withSpec(new StatefulSetSpecBuilder()
+//                    .withServiceName(getTargetState().getServiceNameFor(this))
+//                    .withSelector(new LabelSelectorBuilder()
+//                            .withMatchLabels(getSelectorLabels())
+//                            .build())
+//                    .withTemplate(new PodTemplateSpecBuilder()
+//                            .withMetadata(new ObjectMetaBuilder()
+//                                    .withAnnotations(getAnnotations())
+//                                    .withLabels(getSelectorLabels())
+//                                    .build())
+//                            .withSpec(new PodSpecBuilder()
+//                                    .withContainers(buildContainersWithEnv(env))
+//                                    .withInitContainers(getInitContainers())
+//                                    .withSecurityContext(getPodSecurityContext())
+//                                    .withTerminationGracePeriodSeconds(getTerminationGracePeriodSeconds())
+//                                    .withVolumes(getVolumes(getRlsName(i)))
+//                                    .build())
+//                            .build())
+//                    .build())
+//            .build();
+//  }
+
+  private String getRlsName(int i) {
+    return "" + i;
+  }
+
+  public Service buildServiceRls() {
+    return new ServiceBuilder()
+            .withMetadata(getTargetState().getResourceMetadataFor(this))
+            .withSpec(new ServiceSpecBuilder()
+                    .withSelector(getSelectorLabelsForRls())
+                    .withPorts(getServicePorts())
+                    .build())
+            .build();
+  }
+
+  @Override
+  public HashMap<String, String> getSelectorLabels() {
+    HashMap<String, String> labels = super.getSelectorLabels();
+    labels.put("cmcc.tsystemsmms.com/kind", getComponentSpec().getKind());
+    return labels;
+  }
+
+  public HashMap<String, String> getSelectorLabelsForRls() {
+    HashMap<String, String> labels = getTargetState().getSelectorLabels();
+    labels.put("cmcc.tsystemsmms.com/type", getComponentSpec().getType());
+    labels.put("cmcc.tsystemsmms.com/kind", "rls");
+    return labels;
+  }
+
+//  /**
+//   * PVCs for RLSes.
+//   *
+//   * @param name per-RLS name
+//   * @return list of Volume resources
+//   */
+//  public List<Volume> getVolumes(String name) {
+//    LinkedList<Volume> volumes = new LinkedList<>(super.getVolumes());
+//
+//    volumes.add(new VolumeBuilder()
+//            .withName(LICENSE_VOLUME_NAME)
+//            .withSecret(new SecretVolumeSourceBuilder()
+//                    .withSecretName(licenseSecretName)
+//                    .build())
+//            .build());
+//    volumes.add(new VolumeBuilder()
+//            .withName(PVC_TRANSFORMED_BLOBCACHE)
+//            .withPersistentVolumeClaim(new PersistentVolumeClaimVolumeSourceBuilder()
+//                    .withClaimName(getTargetState().getResourceNameFor(this, name, PVC_TRANSFORMED_BLOBCACHE))
+//                    .build())
+//            .build());
+//    volumes.add(new VolumeBuilder()
+//            .withName(PVC_UAPI_BLOBCACHE)
+//            .withPersistentVolumeClaim(new PersistentVolumeClaimVolumeSourceBuilder()
+//                    .withClaimName(getTargetState().getResourceNameFor(this, name, PVC_UAPI_BLOBCACHE))
+//                    .build())
+//            .build());
+//
+//    return volumes;
+//  }
+
+
+  @Override
+  public void requestRequiredResources() {
+    switch (getComponentSpec().getKind()) {
+      case KIND_CMS:
+      case KIND_MLS:
+        super.requestRequiredResources();
+        getJdbcClientSecretRef();
+        break;
+      case KIND_RLS:
+        if (rls > 0) {
+          super.requestRequiredResources();
+          for (int i = 1; i <= rls; i++) {
+            getJdbcClientSecretRef(jdbcSecretName(i));
+          }
         }
-
-        properties.put("debug", "true");
-
-        return properties;
+        break;
     }
+  }
 
-    @Override
-    public List<Volume> getVolumes() {
-        LinkedList<Volume> volumes = new LinkedList<>(super.getVolumes());
+  private String jdbcSecretName(int i) {
+    return "rls" + i;
+  }
 
-        volumes.add(new VolumeBuilder()
-                .withName(LICENSE_VOLUME_NAME)
-                .withSecret(new SecretVolumeSourceBuilder()
-                        .withSecretName(licenseSecretName)
-                        .build())
-                .build());
-
-        return volumes;
+  @Override
+  public String getBaseResourceName() {
+    switch (getComponentSpec().getKind()) {
+      case KIND_CMS:
+        return "content-management-server";
+      case KIND_MLS:
+        return "master-live-server";
+      case KIND_RLS:
+        return "replication-live-server";
+      default:
+        throw new CustomResourceConfigError("kind \"" + getComponentSpec().getKind() + "\" is illegal, must be either " + KIND_CMS + ", " + KIND_MLS + ", or " + KIND_RLS);
     }
+  }
 
-    @Override
-    public List<VolumeMount> getVolumeMounts() {
-        LinkedList<VolumeMount> volumes = new LinkedList<>(super.getVolumeMounts());
+  @Override
+  public long getTerminationGracePeriodSeconds() {
+    return 30L;
+  }
 
-        VolumeMount licenseVolumeMount = new VolumeMountBuilder()
-                .withName(LICENSE_VOLUME_NAME)
-                .withMountPath("/coremedia/licenses")
-                .build();
-        volumes.add(licenseVolumeMount);
-        volumes.add(new VolumeMountBuilder()
-                .withName("coremedia-var-tmp")
-                .withMountPath("/coremedia/var/tmp")
-                .build());
+  @Override
+  public List<Container> getInitContainers() {
+    return Collections.emptyList();
+  }
 
-        return volumes;
-    }
+  @Override
+  public EnvVarSet getEnvVars() {
+    EnvVarSet env = super.getEnvVars();
 
-    @Override
-    public Optional<Boolean> isReady() {
-        if (rls == 0)
-            return super.isReady();
-        if (Milestone.compareTo(getCmcc().getStatus().getMilestone(), getComponentSpec().getMilestone()) < 0)
-            return Optional.empty();
-        boolean ready = true;
+    switch (getComponentSpec().getKind()) {
+      case KIND_CMS:
+        env.addAll(getJdbcClientEnvVars("SQL_STORE"));
+        env.addAll(getUapiClientEnvVars("PUBLISHER_LOCAL"));
+        env.addAll(getUapiClientEnvVars("PUBLISHER_TARGET_0"));
+        break;
+      case KIND_MLS:
+        env.addAll(getJdbcClientEnvVars("SQL_STORE"));
+        break;
+      case KIND_RLS:
+        env.add(EnvVarSimple("CMCC_REDIRECT_DATABASE_PROPERTIES", "true"));
         for (int i = 1; i <= rls; i++) {
-            if (!getTargetState().isStatefulSetReady(getTargetState().getResourceNameFor(this, getRlsName(i))))
-                ready = false;
+          env.addAll(getJdbcClientEnvVars("MAPPED_" + i + "_SQL_STORE", getJdbcClientSecretRef(jdbcSecretName(i))));
+          if (env.get("MYSQL_HOST").isPresent())
+            env.add(EnvVarRenamed("MAPPED_" + i + "_MYSQL_HOST", env.get("MYSQL_HOST").get()));
         }
-        return Optional.of(ready);
+        env.addAll(getUapiClientEnvVars("REPLICATOR_PUBLICATION"));
+        break;
     }
+
+    for (ClientSecret cs : getTargetState().getClientSecrets(UAPI_CLIENT_SECRET_REF_KIND).values()) {
+      Secret secret = cs.getSecret().orElseThrow(() -> new CustomResourceConfigError("Unable to find secret for clientSecretRef \"" + cs.getRef().getSecretName() + "\""));
+      String username = secret.getStringData().get(cs.getRef().getUsernameKey());
+      if (cs.getRef().getUsernameKey() == null || username == null) {
+        throw new CustomResourceConfigError("Secret \"" + secret.getMetadata().getName()
+                + "\" does not contain the field \"" + cs.getRef().getUsernameKey()
+                + "\" for the username, or it is null");
+      }
+      env.add(EnvVarSecret("CAP_SERVER_INITIALPASSWORD_" + username.toUpperCase(Locale.ROOT),
+              cs.getRef().getSecretName(), cs.getRef().getPasswordKey()));
+    }
+
+    return env;
+  }
+
+//  EnvVarSet getEnvVarsForRls(int i) {
+//    EnvVarSet env = getEnvVars();
+//    env.addAll(getJdbcClientEnvVars("SQL_STORE", getJdbcClientSecretRef(jdbcSecretName(i))));
+//    return env;
+//  }
+
+  public Map<String, String> getSpringBootProperties() {
+    Map<String, String> properties = super.getSpringBootProperties();
+
+    properties.putAll(Map.of(
+            "cap.server.license", "/coremedia/licenses/license.zip",
+            "com.coremedia.corba.server.host", getTargetState().getResourceNameFor(this),
+            "cap.server.cache.resource-cache-size", "5000"
+    ));
+    if (getComponentSpec().getKind().equals(KIND_CMS)) {
+      properties.put("publisher.target[0].iorUrl", getTargetState().getServiceUrlFor("content-server", "mls"));
+      properties.put("publisher.target[0].ior-url", getTargetState().getServiceUrlFor("content-server", "mls"));
+      properties.put("publisher.target[0].name", "mls");
+    }
+    if (getComponentSpec().getKind().equals(KIND_RLS)) {
+      properties.put("replicator.publication-ior-url", getTargetState().getServiceUrlFor("content-server", "mls"));
+    }
+
+    properties.put("debug", "true");
+
+    return properties;
+  }
+
+  @Override
+  public List<Volume> getVolumes() {
+    LinkedList<Volume> volumes = new LinkedList<>(super.getVolumes());
+
+    volumes.add(new VolumeBuilder()
+            .withName(LICENSE_VOLUME_NAME)
+            .withSecret(new SecretVolumeSourceBuilder()
+                    .withSecretName(licenseSecretName)
+                    .build())
+            .build());
+
+    return volumes;
+  }
+
+  @Override
+  public List<VolumeMount> getVolumeMounts() {
+    LinkedList<VolumeMount> volumes = new LinkedList<>(super.getVolumeMounts());
+
+    VolumeMount licenseVolumeMount = new VolumeMountBuilder()
+            .withName(LICENSE_VOLUME_NAME)
+            .withMountPath("/coremedia/licenses")
+            .build();
+    volumes.add(licenseVolumeMount);
+    volumes.add(new VolumeMountBuilder()
+            .withName("coremedia-var-tmp")
+            .withMountPath("/coremedia/var/tmp")
+            .build());
+
+    return volumes;
+  }
+
 }

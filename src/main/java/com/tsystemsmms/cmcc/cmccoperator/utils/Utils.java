@@ -39,6 +39,10 @@ public class Utils {
         return new EnvVar(name, null, s);
     }
 
+    public static EnvVar EnvVarRenamed(String name, EnvVar var) {
+        return new EnvVar(name, var.getValue(), var.getValueFrom());
+    }
+
     public static String defaultString(String... values) {
         return Stream.of(values).filter(s -> s != null && !s.isBlank()).findFirst().orElseThrow();
     }

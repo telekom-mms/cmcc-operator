@@ -159,6 +159,10 @@ operator currently cannot create additional database schemas for any new RLS, an
 the Master Live Server to any new RLS. If you want to increase the number of RLS after initial setup, you would need to
 take care of that manually.
 
+**Note**: to enable this functionality, code will need to be added to the apps/content-server component in your
+Blueprint workspace that pick the correct database properties from the list of all properties based on the stateful set
+index. An example will be provided in a separate repository.
+
 **Future functionality**: When `with.delivery.minCae` is set to a value smaller than `with.delivery.maxCae`, a
 horizontal pod autoscaler will be configured that will scale the number of CAEs from the minimum to the maximum amount
 based on the CPU load of the CAEs.
