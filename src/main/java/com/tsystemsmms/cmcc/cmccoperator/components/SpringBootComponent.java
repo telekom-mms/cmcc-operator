@@ -22,76 +22,95 @@ import java.util.Map;
 
 public abstract class SpringBootComponent extends AbstractComponent {
 
-    public SpringBootComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec componentSpec, String imageRepository) {
-        super(kubernetesClient, targetState, componentSpec, imageRepository);
-    }
+  public SpringBootComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec componentSpec, String imageRepository) {
+    super(kubernetesClient, targetState, componentSpec, imageRepository);
+  }
 
-    @Override
-    public EnvVarSet getEnvVars() {
-        EnvVarSet env = super.getEnvVars();
-        env.addAll(SpringProperties.builder().properties(getSpringBootProperties()).toEnvVars());
-        return env;
-    }
+  @Override
+  public EnvVarSet getEnvVars() {
+    EnvVarSet env = super.getEnvVars();
+    env.addAll(SpringProperties.builder().properties(getSpringBootProperties()).toEnvVars());
+    return env;
+  }
 
-    /**
-     * Returns Spring Boot properties as a map.
-     *
-     * @return properties
-     */
-    public Map<String, String> getSpringBootProperties() {
-        return new HashMap<>(Map.of(
-                "management.health.probes.enabled", "true" // enable support for k8s compatible probe endpoints
-        ));
-    }
+  /**
+   * Returns Spring Boot properties as a map.
+   *
+   * @return properties
+   */
+  public Map<String, String> getSpringBootProperties() {
+    return new HashMap<>(Map.of(
+            "management.health.probes.enabled", "true" // enable support for k8s compatible probe endpoints
+    ));
+  }
 
-    /**
-     * Defines a probe suitable for the startup check.
-     *
-     * @return probe definition
-     */
-    public Probe getStartupProbe() {
-        return new ProbeBuilder()
-                .withPeriodSeconds(10)
-                .withFailureThreshold(60)
-                .withTimeoutSeconds(10)
-                .withHttpGet(new HTTPGetActionBuilder()
-                        .withPath("/actuator/health/readiness")
-                        .withPort(new IntOrString("management"))
-                        .build())
-                .build();
+  /**
+   * If uploadSize is larger than 0, add the appropriate properties to configure the upload size.
+   *
+   * @param properties spring boot properties to set
+   * @param uploadSize in megabyte
+   */
+  public static void addUploadSizeProperties(Map<String, String> properties, int uploadSize) {
+    if (uploadSize > 0) {
+      String mb = uploadSize + "MB";
+      String b = String.valueOf(((long) uploadSize) * 1024 * 1024);
+      properties.putAll(Map.of(
+              "spring.servlet.multipart.max-file-size", mb,
+              "spring.servlet.multipart.max-request-size", mb,
+              "server.tomcat.max-http-form-post-size", b,
+              "server.tomcat.max-swallow-size", b
+      ));
     }
+  }
 
-    /**
-     * Defines a probe suitable for the liveness check.
-     *
-     * @return probe definition
-     */
-    public Probe getLivenessProbe() {
-        return new ProbeBuilder()
-                .withPeriodSeconds(10)
-                .withFailureThreshold(20)
-                .withTimeoutSeconds(10)
-                .withHttpGet(new HTTPGetActionBuilder()
-                        .withPath("/actuator/health/liveness")
-                        .withPort(new IntOrString("management"))
-                        .build())
-                .build();
-    }
+  /**
+   * Defines a probe suitable for the startup check.
+   *
+   * @return probe definition
+   */
+  public Probe getStartupProbe() {
+    return new ProbeBuilder()
+            .withPeriodSeconds(10)
+            .withFailureThreshold(60)
+            .withTimeoutSeconds(10)
+            .withHttpGet(new HTTPGetActionBuilder()
+                    .withPath("/actuator/health/readiness")
+                    .withPort(new IntOrString("management"))
+                    .build())
+            .build();
+  }
 
-    /**
-     * Defines a probe suitable for the readiness check.
-     *
-     * @return probe definition
-     */
-    public Probe getReadinessProbe() {
-        return new ProbeBuilder()
-                .withPeriodSeconds(10)
-                .withFailureThreshold(10)
-                .withTimeoutSeconds(10)
-                .withHttpGet(new HTTPGetActionBuilder()
-                        .withPath("/actuator/health/readiness")
-                        .withPort(new IntOrString("management"))
-                        .build())
-                .build();
-    }
+  /**
+   * Defines a probe suitable for the liveness check.
+   *
+   * @return probe definition
+   */
+  public Probe getLivenessProbe() {
+    return new ProbeBuilder()
+            .withPeriodSeconds(10)
+            .withFailureThreshold(20)
+            .withTimeoutSeconds(10)
+            .withHttpGet(new HTTPGetActionBuilder()
+                    .withPath("/actuator/health/liveness")
+                    .withPort(new IntOrString("management"))
+                    .build())
+            .build();
+  }
+
+  /**
+   * Defines a probe suitable for the readiness check.
+   *
+   * @return probe definition
+   */
+  public Probe getReadinessProbe() {
+    return new ProbeBuilder()
+            .withPeriodSeconds(10)
+            .withFailureThreshold(10)
+            .withTimeoutSeconds(10)
+            .withHttpGet(new HTTPGetActionBuilder()
+                    .withPath("/actuator/health/readiness")
+                    .withPort(new IntOrString("management"))
+                    .build())
+            .build();
+  }
 }

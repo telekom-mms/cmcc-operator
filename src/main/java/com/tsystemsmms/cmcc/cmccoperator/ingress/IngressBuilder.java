@@ -71,8 +71,8 @@ public interface IngressBuilder {
     /**
      * Set the maximum upload size.
      *
-     * @param size in bytes
+     * @param size in megabytes
      * @return the builder
      */
-    IngressBuilder uploadSize(String size);
+    IngressBuilder uploadSize(int size);
 }

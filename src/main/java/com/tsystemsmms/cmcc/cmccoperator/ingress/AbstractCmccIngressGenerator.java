@@ -27,79 +27,87 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.concatOptional;
+import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.getInt;
 
 @Slf4j
 public abstract class AbstractCmccIngressGenerator implements CmccIngressGenerator {
-    final IngressBuilderFactory ingressBuilderFactory;
-    @Getter
-    final TargetState targetState;
-    final String serviceName;
+  final IngressBuilderFactory ingressBuilderFactory;
+  @Getter
+  final TargetState targetState;
+  final String serviceName;
 
-    public AbstractCmccIngressGenerator(IngressBuilderFactory ingressBuilderFactory, TargetState targetState, String serviceName) {
-        this.ingressBuilderFactory = ingressBuilderFactory;
-        this.targetState = targetState;
-        this.serviceName = serviceName;
-    }
+  public AbstractCmccIngressGenerator(IngressBuilderFactory ingressBuilderFactory, TargetState targetState, String serviceName) {
+    this.ingressBuilderFactory = ingressBuilderFactory;
+    this.targetState = targetState;
+    this.serviceName = serviceName;
+  }
 
-    @Override
-    public IngressBuilder builder(String name, String hostname) {
-        IngressTls tls = targetState.getCmcc().getSpec().getDefaultIngressTls();
+  @Override
+  public IngressBuilder builder(String name, String hostname) {
+    IngressTls tls = targetState.getCmcc().getSpec().getDefaultIngressTls();
 
-        return ingressBuilderFactory.builder(targetState, name, targetState.getHostname(hostname), tls);
-    }
+    return ingressBuilderFactory.builder(targetState, name, targetState.getHostname(hostname), tls);
+  }
 
-    public ComponentDefaults getDefaults() {
-        return getTargetState().getCmcc().getSpec().getDefaults();
-    }
+  public ComponentDefaults getDefaults() {
+    return getTargetState().getCmcc().getSpec().getDefaults();
+  }
 
-    public CoreMediaContentCloudSpec getSpec() {
-        return getTargetState().getCmcc().getSpec();
-    }
+  public CoreMediaContentCloudSpec getSpec() {
+    return getTargetState().getCmcc().getSpec();
+  }
 
-    public String liveName(String site, String name, String... more) {
-        return concatOptional(Stream.concat(Stream.of(getDefaults().getNamePrefix(), "live", site, name), Arrays.stream(more)).collect(Collectors.toUnmodifiableList()));
-    }
+  public String liveName(String site, String name, String... more) {
+    return concatOptional(Stream.concat(Stream.of(getDefaults().getNamePrefix(), "live", site, name), Arrays.stream(more)).collect(Collectors.toUnmodifiableList()));
+  }
 
-    public String previewName(String name) {
-        return concatOptional(getDefaults().getNamePrefix(), "preview", name);
-    }
+  public String previewName(String name) {
+    return concatOptional(getDefaults().getNamePrefix(), "preview", name);
+  }
 
 
-    @Override
-    public Collection<? extends HasMetadata> buildPreviewResources() {
-        LinkedList<HasMetadata> ingresses = new LinkedList<>();
-        String fqdn = getTargetState().getPreviewHostname();
-        String segment = getSpec().getSiteMappings().stream().findAny().orElseThrow().getPrimarySegment();
-        IngressTls tls = targetState.getCmcc().getSpec().getDefaultIngressTls();
+  @Override
+  public Collection<? extends HasMetadata> buildPreviewResources() {
+    LinkedList<HasMetadata> ingresses = new LinkedList<>();
+    String fqdn = getTargetState().getPreviewHostname();
+    String segment = getSpec().getSiteMappings().stream().findAny().orElseThrow().getPrimarySegment();
+    IngressTls tls = targetState.getCmcc().getSpec().getDefaultIngressTls();
+    int uploadSize = getInt(getTargetState().getCmcc().getSpec().getWith().getUploadSize().getPreview());
 
-        ingresses.addAll(ingressBuilderFactory.builder(targetState, previewName("home"), fqdn, tls)
-                .pathExact("/", serviceName).redirect("/" + segment).build());
-        ingresses.addAll(ingressBuilderFactory.builder(targetState, previewName("blueprint"), fqdn, tls)
-                .pathPrefix("/blueprint", serviceName).build());
-        ingresses.addAll(ingressBuilderFactory.builder(targetState, previewName("all"), fqdn, tls)
-                .pathPattern("/(.*)", serviceName).rewrite("/blueprint/servlet/$1").build());
-        ingresses.addAll(ingressBuilderFactory.builder(targetState, previewName("static"), fqdn, tls)
-                .pathPattern("/(public|resources|static)(.*)", serviceName).rewrite("/blueprint/$1$2").build());
-        ingresses.addAll(ingressBuilderFactory.builder(targetState, previewName("seo"), fqdn, tls)
-                .pathPattern("/(robots\\.txt|sitemap.*\\.xml)", serviceName).rewrite(getTargetState().getCmcc().getSpec().getWith().getIngressSeoHandler() + "/preview/$1").build());
-        return ingresses;
-    }
+    ingresses.addAll(ingressBuilderFactory.builder(targetState, previewName("home"), fqdn, tls)
+            .uploadSize(uploadSize)
+            .pathExact("/", serviceName).redirect("/" + segment).build());
+    ingresses.addAll(ingressBuilderFactory.builder(targetState, previewName("blueprint"), fqdn, tls)
+            .uploadSize(uploadSize)
+            .pathPrefix("/blueprint", serviceName).build());
+    ingresses.addAll(ingressBuilderFactory.builder(targetState, previewName("all"), fqdn, tls)
+            .uploadSize(uploadSize)
+            .pathPattern("/(.*)", serviceName).rewrite("/blueprint/servlet/$1").build());
+    ingresses.addAll(ingressBuilderFactory.builder(targetState, previewName("static"), fqdn, tls)
+            .uploadSize(uploadSize)
+            .pathPattern("/(public|resources|static)(.*)", serviceName).rewrite("/blueprint/$1$2").build());
+    ingresses.addAll(ingressBuilderFactory.builder(targetState, previewName("seo"), fqdn, tls)
+            .uploadSize(uploadSize)
+            .pathPattern("/(robots\\.txt|sitemap.*\\.xml)", serviceName).rewrite(getTargetState().getCmcc().getSpec().getWith().getIngressSeoHandler() + "/preview/$1").build());
+    return ingresses;
+  }
 
-    @Override
-    public String buildPreviewUrl(SiteMapping siteMapping, String segment) {
-        return "https://" + getTargetState().getPreviewHostname() + "/" + segment;
-    }
+  @Override
+  public String buildPreviewUrl(SiteMapping siteMapping, String segment) {
+    return "https://" + getTargetState().getPreviewHostname() + "/" + segment;
+  }
 
-    @Override
-    public Collection<? extends HasMetadata> buildStudioResources() {
-        IngressTls tls = targetState.getCmcc().getSpec().getDefaultIngressTls();
-        return ingressBuilderFactory.builder(targetState, concatOptional(getDefaults().getNamePrefix(), "studio"), getTargetState().getStudioHostname(), tls)
-                .pathPrefix("/", getTargetState().getServiceNameFor("studio-client"))
-                .pathPrefix("/api", serviceName)
-                .pathPrefix("/login", serviceName)
-                .pathPrefix("/logout", serviceName)
-                .pathPrefix("/cspInfo.html", serviceName)
-                .uploadSize("500m")
-                .build();
-    }
+  @Override
+  public Collection<? extends HasMetadata> buildStudioResources() {
+    IngressTls tls = targetState.getCmcc().getSpec().getDefaultIngressTls();
+    int uploadSize = getInt(getTargetState().getCmcc().getSpec().getWith().getUploadSize().getStudio());
+    return ingressBuilderFactory.builder(targetState, concatOptional(getDefaults().getNamePrefix(), "studio"), getTargetState().getStudioHostname(), tls)
+            .pathPrefix("/", getTargetState().getServiceNameFor("studio-client"))
+            .pathPrefix("/api", serviceName)
+            .pathPrefix("/login", serviceName)
+            .pathPrefix("/logout", serviceName)
+            .pathPrefix("/cspInfo.html", serviceName)
+            .uploadSize(uploadSize)
+            .build();
+  }
 }

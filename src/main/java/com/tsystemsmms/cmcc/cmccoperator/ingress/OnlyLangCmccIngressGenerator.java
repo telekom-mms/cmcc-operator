@@ -21,6 +21,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.concatOptional;
+import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.getInt;
 
 /**
  * Implements the URL rewriting for a customized link scheme, where the URL starts with the language, and the site
@@ -59,6 +60,7 @@ public class OnlyLangCmccIngressGenerator extends AbstractCmccIngressGenerator {
     @Override
     public Collection<? extends HasMetadata> buildLiveResources() {
         LinkedList<HasMetadata> ingresses = new LinkedList<>();
+        int uploadSize = getInt(getTargetState().getCmcc().getSpec().getWith().getUploadSize().getLive());
 
         for (SiteMapping siteMapping : targetState.getCmcc().getSpec().getSiteMappings()) {
             String site = siteMapping.getHostname();
@@ -76,14 +78,19 @@ public class OnlyLangCmccIngressGenerator extends AbstractCmccIngressGenerator {
                 if (fqdn.isBlank())
                     fqdn = concatOptional(getDefaults().getNamePrefix(), site) + "." + getDefaults().getIngressDomain();
                 ingresses.addAll(ingressBuilderFactory.builder(targetState, liveName(site, "home", suffix), fqdn, tls)
+                        .uploadSize(uploadSize)
                         .pathExact("/", serviceName).redirect("/" + getLanguage(siteMapping.getPrimarySegment())).build());
                 ingresses.addAll(ingressBuilderFactory.builder(targetState, liveName(site, "blueprint", suffix), fqdn, tls)
+                        .uploadSize(uploadSize)
                         .pathPrefix("/blueprint", serviceName).build());
                 ingresses.addAll(ingressBuilderFactory.builder(targetState, liveName(site, "all", suffix), fqdn, tls)
+                        .uploadSize(uploadSize)
                         .pathPattern("/(.*)", serviceName).rewrite("/blueprint/servlet/$1").build());
                 ingresses.addAll(ingressBuilderFactory.builder(targetState, liveName(site, "language", suffix), fqdn, tls)
+                        .uploadSize(uploadSize)
                         .pathPattern("/(" + languagePattern + ")(.*)", serviceName).rewrite("/blueprint/servlet/" + getReplacement(siteMapping.getPrimarySegment()) + "$2").build());
                 ingresses.addAll(ingressBuilderFactory.builder(targetState, liveName(site, "seo", suffix), fqdn, tls)
+                        .uploadSize(uploadSize)
                         .pathPattern("/(robots\\.txt|sitemap.*\\.xml)", serviceName).rewrite(getTargetState().getCmcc().getSpec().getWith().getIngressSeoHandler() + "/" + siteMapping.getPrimarySegment() + "/$1").build());
             }
         }

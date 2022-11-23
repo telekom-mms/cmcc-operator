@@ -43,6 +43,9 @@ public class WithOptions {
     @JsonPropertyDescription("Enable setting resource limits and requests on all components")
     Boolean resources = true;
 
+    @JsonPropertyDescription("Size of POST/PUT body in MB")
+    UploadSize uploadSize = new UploadSize();
+
     @Data
     public static class WithDelivery {
         @JsonPropertyDescription("Number of RLS to create")
@@ -51,6 +54,16 @@ public class WithOptions {
         IntOrString minCae = new IntOrString(0);
         @JsonPropertyDescription("Maximum number of CAEs per RLS")
         IntOrString maxCae = new IntOrString(0);
+    }
+
+    @Data
+    public static class UploadSize {
+        @JsonPropertyDescription("Size of POST/PUT body in MB for the live CAEs")
+        IntOrString live = new IntOrString(0);
+        @JsonPropertyDescription("Size of POST/PUT body in MB for the preview CAE")
+        IntOrString preview = new IntOrString(0);
+        @JsonPropertyDescription("Size of POST/PUT body in MB for the Studio")
+        IntOrString studio = new IntOrString(0);
     }
 
     /**

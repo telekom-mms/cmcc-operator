@@ -123,6 +123,9 @@ properties have suitable defaults.
 | `with.ingressSeoHandler`            | String               | `/blueprint/servlet/service/robots`               | Path to handler that will receive requests for `robots.txt` and `sitemap.xml`.                                                               |
 | `with.management`                   | boolean              | true                                              | Create all components required for a CoreMedia management stage                                                                              |
 | `with.resources`                    | boolean              | true                                              | Apply resource limits and requests to all components. Also see `defaults.resources` and  [Components](#components)                           |
+| `with.uploadSize.live`              | integer              | 0                                                 | Maximum size of POST/PUT uploads the ingress and live CAE will allow. 0 means do not configure.                                              |
+| `with.uploadSize.preview`           | integer              | 0                                                 | Maximum size of POST/PUT uploads the ingress and preview CAE will allow. 0 means do not configure.                                           |
+| `with.uploadSize.studio`            | integer              | 0                                                 | Maximum size of POST/PUT uploads the ingress and Studio will allow. 0 means do not configure.                                                |
 
 ## Enabling Convenience Options `with`
 
@@ -585,6 +588,10 @@ defaults:
 ```
 
 CPU time is limited to 2 cores by default; the preview CAE will only be allowed half a core.
+
+#### Upload Size
+
+Spring, Tomcat, and the ingress controller have default values for the size of uploads (POST and PUT requests). By configuring `with.uploadSize` for live CAEs, the preview CAE, and the Studio server, these can be adjusted. The value is given in MB, so a value of `10` will result in a limit of 10485760 bytes. The operator will configure the ingress resources as well as setting the appropriate properties for Spring Boot. For both the CAE and the Studio, it might be necessary to configure additional properties or settings documents. Please see the CoreMedia documentation.
 
 ### Component `blob-server`
 

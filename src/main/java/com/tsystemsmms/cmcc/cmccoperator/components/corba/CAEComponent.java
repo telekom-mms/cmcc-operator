@@ -125,6 +125,9 @@ public class CAEComponent extends CorbaComponent implements HasMongoDBClient, Ha
                 "com.coremedia.transform.blobCache.basePath", MOUNT_TRANSFORMED_BLOBCACHE,
                 "cae.preview.pbe.studio-url-whitelist[0]", "https://" + getTargetState().getStudioHostname()
         ));
+        addUploadSizeProperties(properties, getInt(getComponentSpec().getKind().equals(KIND_LIVE)
+                ? getSpec().getWith().getUploadSize().getLive()
+                : getSpec().getWith().getUploadSize().getPreview()));
 
         if (getComponentSpec().getKind().equals(KIND_LIVE)) {
             if (getInt(getCmcc().getSpec().getWith().getDelivery().getRls()) == 0)

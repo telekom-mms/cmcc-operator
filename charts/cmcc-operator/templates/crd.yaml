@@ -384,6 +384,28 @@ spec:
                     description: Enable setting resource limits and requests on all
                       components
                     type: boolean
+                  uploadSize:
+                    description: Size of POST/PUT body in MB
+                    properties:
+                      live:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        description: Size of POST/PUT body in MB for the live CAEs
+                        x-kubernetes-int-or-string: true
+                      preview:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        description: Size of POST/PUT body in MB for the preview CAE
+                        x-kubernetes-int-or-string: true
+                      studio:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        description: Size of POST/PUT body in MB for the Studio
+                        x-kubernetes-int-or-string: true
+                    type: object
                 type: object
               job:
                 description: Run this job component once from Ready
