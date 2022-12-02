@@ -16,6 +16,7 @@ import com.tsystemsmms.cmcc.cmccoperator.components.Component;
 import com.tsystemsmms.cmcc.cmccoperator.components.HasService;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
 import com.tsystemsmms.cmcc.cmccoperator.crds.Milestone;
+import com.tsystemsmms.cmcc.cmccoperator.crds.WithOptions;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.ClientSecret;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.CustomResourceConfigError;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
@@ -85,10 +86,12 @@ public class SolrComponent extends AbstractComponent implements HasService {
         resources.add(buildService());
         resources.add(buildServiceLeader());
         resources.add(buildStatefulSetLeader());
-        resources.add(getPersistentVolumeClaim(getTargetState().getResourceNameFor(this, SOLR_LEADER_COMPONENT)));
+        resources.add(getPersistentVolumeClaim(getTargetState().getResourceNameFor(this, SOLR_LEADER_COMPONENT),
+                getVolumeSize(WithOptions.VolumeSize::getSolrData)));
         for (int i = 1; i < replicas; i++) {
             resources.add(buildStatefulSetFollower(i));
-            resources.add(getPersistentVolumeClaim(getTargetState().getResourceNameFor(this, getFollowerName(i))));
+            resources.add(getPersistentVolumeClaim(getTargetState().getResourceNameFor(this, getFollowerName(i)),
+                    getVolumeSize(WithOptions.VolumeSize::getSolrData)));
         }
         for (Map.Entry<String, ClientSecret> e : getTargetState().getClientSecrets(SOLR_CLIENT_SECRET_REF_KIND).entrySet()) {
             String[] parts = e.getKey().split("-");

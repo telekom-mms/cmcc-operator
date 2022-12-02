@@ -14,6 +14,7 @@ import com.tsystemsmms.cmcc.cmccoperator.components.AbstractComponent;
 import com.tsystemsmms.cmcc.cmccoperator.components.HasService;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ClientSecretRef;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
+import com.tsystemsmms.cmcc.cmccoperator.crds.WithOptions;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.ClientSecret;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.CustomResourceConfigError;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
@@ -55,7 +56,8 @@ public class MySQLComponent extends AbstractComponent implements HasService {
     @Override
     public List<HasMetadata> buildResources() {
         List<HasMetadata> resources = new LinkedList<>();
-        resources.add(getPersistentVolumeClaim(getTargetState().getResourceNameFor(this)));
+        resources.add(getPersistentVolumeClaim(getTargetState().getResourceNameFor(this),
+                getVolumeSize(WithOptions.VolumeSize::getMysqlData)));
         resources.add(buildStatefulSet());
         resources.add(buildService());
         resources.addAll(buildExtraConfigMaps());

@@ -379,6 +379,25 @@ spec:
                   management:
                     description: Create default components for the management stage
                     type: boolean
+                  volumeSize:
+                    description: Size of persistent caches
+                    properties:
+                      mongoDbData:
+                        description: "Size of MongoDb data volume, in k8s quantity"
+                        type: string
+                      mysqlData:
+                        description: "Size of MySQL data volume, in k8s quantity"
+                        type: string
+                      solrData:
+                        description: "Size of Solr data volume, in k8s quantity"
+                        type: string
+                      transformedBlobCache:
+                        description: "Size of transformed BLOB cache, in k8s quantity"
+                        type: string
+                      uapiBlobCache:
+                        description: "Size of UAPI BLOB cache, in k8s quantity"
+                        type: string
+                    type: object
                   resources:
                     description: Enable setting resource limits and requests on all
                       components
