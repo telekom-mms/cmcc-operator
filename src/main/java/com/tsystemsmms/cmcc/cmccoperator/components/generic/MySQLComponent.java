@@ -57,7 +57,7 @@ public class MySQLComponent extends AbstractComponent implements HasService {
     public List<HasMetadata> buildResources() {
         List<HasMetadata> resources = new LinkedList<>();
         resources.add(getPersistentVolumeClaim(getTargetState().getResourceNameFor(this),
-                getVolumeSize(WithOptions.VolumeSize::getMysqlData)));
+                getVolumeSize(ComponentSpec.VolumeSize::getData)));
         resources.add(buildStatefulSet());
         resources.add(buildService());
         resources.addAll(buildExtraConfigMaps());

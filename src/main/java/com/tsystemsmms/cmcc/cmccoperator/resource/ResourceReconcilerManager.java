@@ -73,8 +73,12 @@ public class ResourceReconcilerManager {
             try {
                 Reconciler reconciler = (Reconciler) Class.forName(beanDef.getBeanClassName()).getDeclaredConstructor().newInstance();
                 ResourceReconciler annotation = reconciler.getClass().getAnnotation(ResourceReconciler.class);
-                Class<? extends HasMetadata> hasMetadata = annotation.value();
+                if (annotation != null) {
+                    Class<? extends HasMetadata> hasMetadata = annotation.value();
                 reconcilers.put(hasMetadata, reconciler);
+            } else {
+                    log.warn("bean {} is missing the ResourceReconciler annotation, ignoring", beanDef.getResourceDescription());
+                }
             } catch (NoSuchMethodException | InvocationTargetException | ClassNotFoundException | InstantiationException | IllegalAccessException e) {
                 log.error("Unable to register {}", beanDef.getBeanClassName(), e);
             }

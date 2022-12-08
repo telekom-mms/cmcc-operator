@@ -40,14 +40,14 @@ public class WithOptions {
     @JsonPropertyDescription("Create default components for the management stage")
     Boolean management = true;
 
-    @JsonPropertyDescription("Size of persistent caches")
-    VolumeSize volumeSize = new VolumeSize();
-
     @JsonPropertyDescription("Enable setting resource limits and requests on all components")
     Boolean resources = true;
 
     @JsonPropertyDescription("Size of POST/PUT body in MB")
     UploadSize uploadSize = new UploadSize();
+
+    @JsonPropertyDescription("DEPRECATED: Size of persistent data/cache volumes")
+    ComponentSpec.VolumeSize volumeSize = new ComponentSpec.VolumeSize();
 
     @Data
     public static class WithDelivery {
@@ -67,20 +67,6 @@ public class WithOptions {
         IntOrString preview = new IntOrString(0);
         @JsonPropertyDescription("Size of POST/PUT body in MB for the Studio")
         IntOrString studio = new IntOrString(0);
-    }
-
-    @Data
-    public static class VolumeSize {
-        @JsonPropertyDescription("Size of MongoDb data volume, in k8s quantity")
-        String mongoDbData = "8Gi";
-        @JsonPropertyDescription("Size of MySQL data volume, in k8s quantity")
-        String mysqlData = "8Gi";
-        @JsonPropertyDescription("Size of Solr data volume, in k8s quantity")
-        String solrData = "8Gi";
-        @JsonPropertyDescription("Size of transformed BLOB cache, in k8s quantity")
-        String transformedBlobCache = "8Gi";
-        @JsonPropertyDescription("Size of UAPI BLOB cache, in k8s quantity")
-        String uapiBlobCache = "8Gi";
     }
 
     /**

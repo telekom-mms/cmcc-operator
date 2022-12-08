@@ -15,7 +15,6 @@ import com.tsystemsmms.cmcc.cmccoperator.components.HasUapiClient;
 import com.tsystemsmms.cmcc.cmccoperator.components.SpringBootComponent;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
 import com.tsystemsmms.cmcc.cmccoperator.crds.SiteMapping;
-import com.tsystemsmms.cmcc.cmccoperator.crds.WithOptions;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 import com.tsystemsmms.cmcc.cmccoperator.utils.EnvVarSet;
 import io.fabric8.kubernetes.api.model.*;
@@ -76,9 +75,9 @@ public abstract class CorbaComponent extends SpringBootComponent implements HasS
     properties.putAll(Map.of(
             // needed in many applications
             "com.coremedia.transform.blobCache.basePath", MOUNT_TRANSFORMED_BLOBCACHE,
-            "com.coremedia.transform.blobCache.size", String.valueOf(getVolumeSizeLimit(WithOptions.VolumeSize::getTransformedBlobCache)),
+            "com.coremedia.transform.blobCache.size", String.valueOf(getVolumeSizeLimit(ComponentSpec.VolumeSize::getTransformedBlobCache)),
             "repository.blob-cache-path", MOUNT_UAPI_BLOBCACHE,
-            "repository.blob-cache-size", String.valueOf(getVolumeSizeLimit(WithOptions.VolumeSize::getUapiBlobCache)),
+            "repository.blob-cache-size", String.valueOf(getVolumeSizeLimit(ComponentSpec.VolumeSize::getUapiBlobCache)),
             "repository.heap-cache-size", Integer.toString(128 * 1024 * 1024),
             "repository.url", getTargetState().getServiceUrlFor("content-server", "cms"),
             "management.health.diskspace.path", MOUNT_UAPI_BLOBCACHE
@@ -144,8 +143,8 @@ public abstract class CorbaComponent extends SpringBootComponent implements HasS
   public List<PersistentVolumeClaim> getVolumeClaims() {
     List<PersistentVolumeClaim> claims = super.getVolumeClaims();
 
-    claims.add(getPersistentVolumeClaim(PVC_TRANSFORMED_BLOBCACHE, getVolumeSize(WithOptions.VolumeSize::getTransformedBlobCache)));
-    claims.add(getPersistentVolumeClaim(PVC_UAPI_BLOBCACHE, getVolumeSize(WithOptions.VolumeSize::getUapiBlobCache)));
+    claims.add(getPersistentVolumeClaim(PVC_TRANSFORMED_BLOBCACHE, getVolumeSize(ComponentSpec.VolumeSize::getTransformedBlobCache)));
+    claims.add(getPersistentVolumeClaim(PVC_UAPI_BLOBCACHE, getVolumeSize(ComponentSpec.VolumeSize::getUapiBlobCache)));
 
     return claims;
   }

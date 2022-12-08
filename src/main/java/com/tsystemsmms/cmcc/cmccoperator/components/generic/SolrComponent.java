@@ -87,11 +87,11 @@ public class SolrComponent extends AbstractComponent implements HasService {
         resources.add(buildServiceLeader());
         resources.add(buildStatefulSetLeader());
         resources.add(getPersistentVolumeClaim(getTargetState().getResourceNameFor(this, SOLR_LEADER_COMPONENT),
-                getVolumeSize(WithOptions.VolumeSize::getSolrData)));
+                getVolumeSize(ComponentSpec.VolumeSize::getData)));
         for (int i = 1; i < replicas; i++) {
             resources.add(buildStatefulSetFollower(i));
             resources.add(getPersistentVolumeClaim(getTargetState().getResourceNameFor(this, getFollowerName(i)),
-                    getVolumeSize(WithOptions.VolumeSize::getSolrData)));
+                    getVolumeSize(ComponentSpec.VolumeSize::getData)));
         }
         for (Map.Entry<String, ClientSecret> e : getTargetState().getClientSecrets(SOLR_CLIENT_SECRET_REF_KIND).entrySet()) {
             String[] parts = e.getKey().split("-");

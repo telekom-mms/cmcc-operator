@@ -161,6 +161,31 @@ spec:
                         type: string
                       description: "Schema names for JDBC, MongoDB, and/or UAPI"
                       type: object
+                    volumeSize:
+                      description: Size of persistent data/cache volumes
+                      properties:
+                        data:
+                          description: "Size of data volume, in k8s quantity"
+                          type: string
+                        mongoDbData:
+                          description: "DEPRECATED. Size of MongoDb data volume, in\
+                            \ k8s quantity"
+                          type: string
+                        mysqlData:
+                          description: "DEPRECATED. Size of MySQL data volume, in\
+                            \ k8s quantity"
+                          type: string
+                        solrData:
+                          description: "DEPRECATED. Size of Solr data volume, in k8s\
+                            \ quantity"
+                          type: string
+                        transformedBlobCache:
+                          description: "Size of transformed BLOB cache, in k8s quantity"
+                          type: string
+                        uapiBlobCache:
+                          description: "Size of UAPI BLOB cache, in k8s quantity"
+                          type: string
+                      type: object
                   type: object
                 type: array
               clientSecretRefs:
@@ -277,6 +302,31 @@ spec:
                     items:
                       type: string
                     type: array
+                  volumeSize:
+                    description: Size of persistent data/cache volumes
+                    properties:
+                      data:
+                        description: "Size of data volume, in k8s quantity"
+                        type: string
+                      mongoDbData:
+                        description: "DEPRECATED. Size of MongoDb data volume, in\
+                          \ k8s quantity"
+                        type: string
+                      mysqlData:
+                        description: "DEPRECATED. Size of MySQL data volume, in k8s\
+                          \ quantity"
+                        type: string
+                      solrData:
+                        description: "DEPRECATED. Size of Solr data volume, in k8s\
+                          \ quantity"
+                        type: string
+                      transformedBlobCache:
+                        description: "Size of transformed BLOB cache, in k8s quantity"
+                        type: string
+                      uapiBlobCache:
+                        description: "Size of UAPI BLOB cache, in k8s quantity"
+                        type: string
+                    type: object
                 type: object
               licenseSecrets:
                 description: Names of the secrets containing the license
@@ -380,25 +430,6 @@ spec:
                   management:
                     description: Create default components for the management stage
                     type: boolean
-                  volumeSize:
-                    description: Size of persistent caches
-                    properties:
-                      mongoDbData:
-                        description: "Size of MongoDb data volume, in k8s quantity"
-                        type: string
-                      mysqlData:
-                        description: "Size of MySQL data volume, in k8s quantity"
-                        type: string
-                      solrData:
-                        description: "Size of Solr data volume, in k8s quantity"
-                        type: string
-                      transformedBlobCache:
-                        description: "Size of transformed BLOB cache, in k8s quantity"
-                        type: string
-                      uapiBlobCache:
-                        description: "Size of UAPI BLOB cache, in k8s quantity"
-                        type: string
-                    type: object
                   resources:
                     description: Enable setting resource limits and requests on all
                       components
@@ -424,6 +455,31 @@ spec:
                         - type: string
                         description: Size of POST/PUT body in MB for the Studio
                         x-kubernetes-int-or-string: true
+                    type: object
+                  volumeSize:
+                    description: "DEPRECATED: Size of persistent data/cache volumes"
+                    properties:
+                      data:
+                        description: "Size of data volume, in k8s quantity"
+                        type: string
+                      mongoDbData:
+                        description: "DEPRECATED. Size of MongoDb data volume, in\
+                          \ k8s quantity"
+                        type: string
+                      mysqlData:
+                        description: "DEPRECATED. Size of MySQL data volume, in k8s\
+                          \ quantity"
+                        type: string
+                      solrData:
+                        description: "DEPRECATED. Size of Solr data volume, in k8s\
+                          \ quantity"
+                        type: string
+                      transformedBlobCache:
+                        description: "Size of transformed BLOB cache, in k8s quantity"
+                        type: string
+                      uapiBlobCache:
+                        description: "Size of UAPI BLOB cache, in k8s quantity"
+                        type: string
                     type: object
                 type: object
               job:

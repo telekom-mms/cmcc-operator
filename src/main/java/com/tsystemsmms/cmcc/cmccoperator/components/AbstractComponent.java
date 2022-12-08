@@ -392,8 +392,19 @@ public abstract class AbstractComponent implements Component {
    * @param getter lambda returning one of the volume sizes
    * @return volume size string converted to a Quantity
    */
-  public Quantity getVolumeSize(Function<WithOptions.VolumeSize, String> getter) {
-    return new Quantity(getter.apply(getSpec().getWith().getVolumeSize()));
+  public Quantity getVolumeSize(Function<ComponentSpec.VolumeSize, String> getter) {
+    return getVolumeSizeOrDefault(getter);
+  }
+
+  /**
+   * Returns a Quantity as selected by the lambda, either from the component spec, or if that isn't set, from
+   * the component defaults, or if that isn't set, a hardcoded 8Gi.
+   *
+   * @param getter lambda returning one of the volume sizes
+   * @return volume size string converted to a Quantity
+   */
+  public Quantity getVolumeSizeOrDefault(Function<ComponentSpec.VolumeSize, String> getter) {
+    return new Quantity(Objects.requireNonNullElse(getter.apply(getComponentSpec().getVolumeSize()), Objects.requireNonNullElse(getter.apply(getDefaults().getVolumeSize()), "8Gi")));
   }
 
   /**
@@ -403,9 +414,8 @@ public abstract class AbstractComponent implements Component {
    * @param getter lambda returning one of the volume sizes
    * @return limit in bytes
    */
-  public long getVolumeSizeLimit(Function<WithOptions.VolumeSize, String> getter) {
-    Quantity q = new Quantity(getter.apply(getSpec().getWith().getVolumeSize()));
-    return (long) (Quantity.getAmountInBytes(q).longValue() * 0.9);
+  public long getVolumeSizeLimit(Function<ComponentSpec.VolumeSize, String> getter) {
+    return (long) (Quantity.getAmountInBytes(getVolumeSize(getter)).longValue() * 0.9);
   }
 
   /**

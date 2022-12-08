@@ -57,4 +57,7 @@ public class ComponentDefaults {
 
     @JsonPropertyDescription("List of servlets the CAE serves")
     private List<String> servletNames = List.of("action", "assets", "blob", "dynamic", "preview", "resource", "service", "static");
+
+    @JsonPropertyDescription("Size of persistent data/cache volumes")
+    ComponentSpec.VolumeSize volumeSize = new ComponentSpec.VolumeSize("8Gi");
 }
