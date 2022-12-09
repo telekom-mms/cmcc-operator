@@ -290,8 +290,6 @@ public class ContentServerComponent extends CorbaComponent implements HasJdbcCli
       properties.put("replicator.publication-ior-url", getTargetState().getServiceUrlFor("content-server", "mls"));
     }
 
-    properties.put("debug", "true");
-
     return properties;
   }
 
