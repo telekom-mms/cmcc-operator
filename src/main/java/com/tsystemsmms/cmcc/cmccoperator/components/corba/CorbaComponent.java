@@ -17,6 +17,7 @@ import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
 import com.tsystemsmms.cmcc.cmccoperator.crds.SiteMapping;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 import com.tsystemsmms.cmcc.cmccoperator.utils.EnvVarSet;
+import com.tsystemsmms.cmcc.cmccoperator.utils.Utils;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import lombok.extern.slf4j.Slf4j;
@@ -88,7 +89,7 @@ public abstract class CorbaComponent extends SpringBootComponent implements HasS
 
   public Map<String, String> getSiteMappingProperties() {
     HashMap<String, String> properties = new HashMap<>();
-    String preview = "https://" + getTargetState().getPreviewHostname();
+    String preview = Utils.defaultString(getDefaults().getSiteMappingProtocol(), "https://") + getTargetState().getPreviewHostname();
 
     for (SiteMapping siteMapping : getSpec().getSiteMappings()) {
       properties.put("blueprint.site.mapping." + siteMapping.getPrimarySegment(), preview);

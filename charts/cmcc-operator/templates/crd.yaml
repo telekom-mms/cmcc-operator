@@ -290,6 +290,9 @@ spec:
                     description: "Hostname of the preview CAE. If short, will be prefixed\
                       \ with the prefix and the ingressDomain appended"
                     type: string
+                  siteMappingProtocol:
+                    description: Default protocol for all site mapping entries
+                    type: string
                   storageClass:
                     description: Name of StorageClass to be used for PersistentVolumeClaims
                     type: string
@@ -370,6 +373,9 @@ spec:
                       type: string
                     primarySegment:
                       description: The site segment the root maps to
+                      type: string
+                    protocol:
+                      description: Protocol for this entry
                       type: string
                     tls:
                       description: TLS settings for this mapping

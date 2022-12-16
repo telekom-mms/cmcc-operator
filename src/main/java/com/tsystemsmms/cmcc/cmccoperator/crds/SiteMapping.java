@@ -34,6 +34,9 @@ public class SiteMapping {
     @JsonPropertyDescription("The site segment the root maps to")
     private String primarySegment;
 
+    @JsonPropertyDescription("Protocol for this entry")
+    private String protocol;
+
     @JsonPropertyDescription("TLS settings for this mapping")
     private IngressTls tls;
 }

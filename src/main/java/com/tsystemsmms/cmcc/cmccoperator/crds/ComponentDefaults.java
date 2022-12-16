@@ -49,6 +49,9 @@ public class ComponentDefaults {
     @JsonPropertyDescription("Hostname of the preview CAE. If short, will be prefixed with the prefix and the ingressDomain appended")
     private String previewHostname = "preview";
 
+    @JsonPropertyDescription("Default protocol for all site mapping entries")
+    private String siteMappingProtocol = "https://";
+
     @JsonPropertyDescription("Name of StorageClass to be used for PersistentVolumeClaims")
     private String storageClass = "";
 
