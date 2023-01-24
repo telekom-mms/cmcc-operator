@@ -23,38 +23,59 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.mergeMapReplace;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 public class ResourceMgmt {
-    @JsonPropertyDescription("Limits to resources for this components pods")
-    private Map<String, String> limits = new HashMap<>();
-    @JsonPropertyDescription("Requests for resources for this components pods")
-    private Map<String, String> requests = new HashMap<>();
+  @JsonPropertyDescription("Limits to resources for this components pods")
+  private Map<String, String> limits = new HashMap<>();
+  @JsonPropertyDescription("Requests for resources for this components pods")
+  private Map<String, String> requests = new HashMap<>();
 
-    /**
-     * Returns a ResourceRequirements object based on the limits and requests. The quantities specified as String
-     * are converted to an Operator Framework Quantity.
-     *
-     * @return the resources requirements
-     */
-    @JsonIgnore
-    public ResourceRequirements getResources() {
-        return new ResourceRequirementsBuilder()
-                .withRequests(requests.entrySet().stream()
-                        .collect(Collectors.toMap(Map.Entry::getKey, e -> new Quantity(e.getValue()))))
-                .withLimits(limits.entrySet().stream()
-                        .collect(Collectors.toMap(Map.Entry::getKey, e -> new Quantity(e.getValue()))))
-                .build();
-    }
+  /**
+   * Returns a ResourceRequirements object based on the limits and requests. The quantities specified as String
+   * are converted to an Operator Framework Quantity.
+   *
+   * @return the resources requirements
+   */
+  @JsonIgnore
+  public ResourceRequirements getResources() {
+    return new ResourceRequirementsBuilder()
+            .withRequests(requests.entrySet().stream()
+                    .collect(Collectors.toMap(Map.Entry::getKey, e -> new Quantity(e.getValue()))))
+            .withLimits(limits.entrySet().stream()
+                    .collect(Collectors.toMap(Map.Entry::getKey, e -> new Quantity(e.getValue()))))
+            .build();
+  }
 
-    public static ResourceMgmt withDefaults(ResourceMgmt defaults, ResourceMgmt specific) {
-        HashMap<String, String> limits = defaults == null ? new HashMap<>() : new HashMap<>(defaults.limits);
-        if (specific != null)
-            limits.putAll(specific.limits);
-        HashMap<String, String> requests = defaults == null ? new HashMap<>() : new HashMap<>(defaults.requests);
-        if (specific != null)
-            requests.putAll(specific.requests);
-        return new ResourceMgmt(limits, requests);
-    }
+  /**
+   * Update from additional settings.
+   *
+   * @param override additional entries
+   */
+  public void merge(ResourceMgmt override) {
+    if (override == null)
+      return;
+    mergeMapReplace(this.limits, override.limits);
+    mergeMapReplace(this.requests, override.requests);
+  }
+
+
+  /**
+   * Return a new ResourceManagement with the default overridden by the specific entries.
+   *
+   * @param defaults to use when there are no specific entries
+   * @param specific overrides of the defaults
+   * @return a new object with the settings
+   */
+  public static ResourceMgmt withDefaults(ResourceMgmt defaults, ResourceMgmt specific) {
+    ResourceMgmt r = new ResourceMgmt();
+
+    r.merge(defaults);
+    r.merge(specific);
+
+    return r;
+  }
 }

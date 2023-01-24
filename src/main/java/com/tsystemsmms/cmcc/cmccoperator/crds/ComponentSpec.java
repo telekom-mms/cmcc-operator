@@ -77,7 +77,10 @@ public class ComponentSpec {
     this.getImage().update(that.getImage());
     if (that.getMilestone() != null)
       this.setMilestone(that.getMilestone());
-    this.resources = that.getResources();
+    if (this.resources == null)
+      this.resources = that.getResources();
+    else
+      this.resources.merge(that.getResources());
     if (that.getVolumeSize().getData() != null)
       this.volumeSize.setData(that.getVolumeSize().getData());
     if (that.getVolumeSize().getTransformedBlobCache() != null)
