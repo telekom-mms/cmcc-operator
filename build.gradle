@@ -99,5 +99,6 @@ jib {
                 "org.opencontainers.image.url"          : "https://github.com/T-Systems-MMS/cmcc-operator",
                 "org.opencontainers.image.vendor"       : "T-Systems Multimedia Solutions GmbH"
         ]
+        user = 1000
     }
 }
