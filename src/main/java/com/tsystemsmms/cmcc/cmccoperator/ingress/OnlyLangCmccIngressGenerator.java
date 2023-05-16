@@ -68,6 +68,7 @@ public class OnlyLangCmccIngressGenerator extends AbstractCmccIngressGenerator {
             Set<String> segments = new TreeSet<>(siteMapping.getAdditionalSegments());
             segments.add(siteMapping.getPrimarySegment());
             String languagePattern = segments.stream().map(this::getLanguage).collect(Collectors.joining("|"));
+            String handlerPattern = String.join("|", getTargetState().getCmcc().getSpec().getWith().getHandlerPrefixes());
 
             List<String> fqdns = new LinkedList<>(List.of(siteMapping.getFqdn()));
             fqdns.addAll(siteMapping.getFqdnAliases());
@@ -85,10 +86,13 @@ public class OnlyLangCmccIngressGenerator extends AbstractCmccIngressGenerator {
                         .pathPrefix("/blueprint", serviceName).build());
                 ingresses.addAll(ingressBuilderFactory.builder(targetState, liveName(site, "all", suffix), fqdn, tls)
                         .uploadSize(uploadSize)
-                        .pathPattern("/(.*)", serviceName).rewrite("/blueprint/servlet/$1").build());
+                        .pathPattern("/(" + handlerPattern + ")(.*)", serviceName).rewrite("/blueprint/servlet/$1$2").build());
                 ingresses.addAll(ingressBuilderFactory.builder(targetState, liveName(site, "language", suffix), fqdn, tls)
                         .uploadSize(uploadSize)
                         .pathPattern("/(" + languagePattern + ")(.*)", serviceName).rewrite("/blueprint/servlet/" + getReplacement(siteMapping.getPrimarySegment()) + "$2").build());
+                ingresses.addAll(ingressBuilderFactory.builder(targetState, liveName(site, "default", suffix), fqdn, tls)
+                        .uploadSize(uploadSize)
+                        .pathPattern("/(.*)", serviceName).rewrite("/blueprint/servlet/" + siteMapping.getPrimarySegment() + "/$1").build());
                 ingresses.addAll(ingressBuilderFactory.builder(targetState, liveName(site, "seo", suffix), fqdn, tls)
                         .uploadSize(uploadSize)
                         .pathPattern("/(robots\\.txt|sitemap.*\\.xml)", serviceName).rewrite(getTargetState().getCmcc().getSpec().getWith().getIngressSeoHandler() + "/" + siteMapping.getPrimarySegment() + "/$1").build());
@@ -119,5 +123,9 @@ public class OnlyLangCmccIngressGenerator extends AbstractCmccIngressGenerator {
             throw new CustomResourceConfigError("Segment \"" + segment + "\" in site mapping is too short, needs to have at least three parts separated by -");
         parts[parts.length - 2] = "$1";
         return String.join("-", parts);
+    }
+
+    private String getPrimaryReplacement() {
+        return "";
     }
 }

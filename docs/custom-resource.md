@@ -28,6 +28,7 @@ installation to be deployed. This document explains all properties and their use
   * [Site Mappings](#site-mappings)
   * [FQDN Aliases](#fqdn-aliases)
   * [Configuring the Ingress Builder](#configuring-the-ingress-builder)
+  * [Handler Prefixes](#handler-prefixes)
   * [Ingress Annotations](#ingress-annotations)
   * [`robots.txt` and `sitemap.xml`](#robotstxt-and-sitemapxml)
 - [Components](#components)
@@ -123,6 +124,7 @@ properties have suitable defaults.
 | `with.delivery.rls`                 | int                  | 0                                                 | Number of Replication Live Servers to create                                                                                                 |
 | `with.delivery.minCae`              | int                  | 0                                                 | Minimum number of CAEs                                                                                                                       |
 | `with.delivery.maxCae`              | int                  | 0                                                 | Maximum number of CAEs                                                                                                                       |
+| `with.handlerPrefixes`              | list of Strings      | resource, service-sitemap-.*, static              | URI prefixes that are not content paths but paths mapping to a handler.                                                                      |
 | `with.ingressAnnotations`           | map                  | –                                                 | Additional annotation to add to all Ingress resources                                                                                        |
 | `with.ingressSeoHandler`            | String               | `/blueprint/servlet/service/robots`               | Path to handler that will receive requests for `robots.txt` and `sitemap.xml`.                                                               |
 | `with.management`                   | boolean              | true                                              | Create all components required for a CoreMedia management stage                                                                              |
@@ -512,6 +514,23 @@ This will create ingresses for:
 * `https://corporate.example.ca/fr` maps to `corporate-en-fr`
 
 **Note** You will need to your own code in the CAE to have it generate links in this form.
+
+URIs that do not match either the language code or the handler prefixes (see below) are mapped to the primary segment.
+For example, `https://corporate.example.de/campaign` will map to `corporate-de-de/campaign`, i.e. the same mapping as
+`https://corporate.example.de/de/campaign` provides.
+
+### Handler Prefixes
+
+On a live CAE, most URI paths map to specific content, based on the site and navigation hierarchy. However, resources
+like images, CSS, JS, or downloads are provided by specialized handlers. When transforming the URI presented by the
+client to a form the CAE understands, these need to be mapped directly to `/blueprint/servlet/...` URIs, instead of
+a site segment being mapped from the beginning of the URI, as is done with the OnlyLang ingress generator.
+
+The default list of handler prefix regular expressions ("resource", "service-sitemap-.*", "static") handles the mappings
+required for standard Blueprint handlers. If you add your own handlers, you need to add their URI prefixes to the list.
+You can be as specific as necessary; for example, if you define a handler with `@Get("/foo/bar/baz")` in the CAE
+application, you can add "foo/bar/baz" for just this one handler, or you can handle multiple paths that share a common
+prefix by using "foo".
 
 ### Ingress Annotations
 

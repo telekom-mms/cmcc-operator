@@ -16,6 +16,7 @@ import lombok.Data;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 @Data
 public class WithOptions {
@@ -30,6 +31,9 @@ public class WithOptions {
 
     @JsonPropertyDescription("Create default components for the delivery stage")
     WithDelivery delivery = new WithDelivery();
+
+    @JsonPropertyDescription("Set of URI prefixes that should be passed through to /blueprint/servlet unchanged")
+    Set<String> handlerPrefixes = Set.of("resource", "service-sitemap-.*", "static");
 
     @JsonPropertyDescription("Add these annotations to the managed Ingress resources")
     Map<String, String> ingressAnnotations = new HashMap<>();
