@@ -424,6 +424,12 @@ spec:
                         description: Maximum number of CAEs per RLS
                         x-kubernetes-int-or-string: true
                     type: object
+                  handlerPrefixes:
+                    description: Set of URI prefixes that should be passed through
+                      to /blueprint/servlet unchanged
+                    items:
+                      type: string
+                    type: array
                   ingressAnnotations:
                     additionalProperties:
                       type: string

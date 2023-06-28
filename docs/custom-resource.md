@@ -244,7 +244,7 @@ properties that the components take for database configuration.
 
 ### Overview of Secrets for Components
 
-This tables shows the component types and the client secrets they use.
+This table shows the component types and the client secrets they use.
 
 | Component type/kind    | `jdbc`        | `mongodb`   | `solr`    | `uapi`      | Description |
 |------------------------|---------------|-------------|-----------|-------------|-------------|
@@ -296,7 +296,7 @@ clientSecretRef:
 ...
 ```
 
-This using all the default keys for the secret (see above).
+This is using all the default keys for the secret (see above).
 
 For example, you can create a suitable secret on the command line, entering the appropriate details for your database
 server as needed:
@@ -527,10 +527,12 @@ client to a form the CAE understands, these need to be mapped directly to `/blue
 a site segment being mapped from the beginning of the URI, as is done with the OnlyLang ingress generator.
 
 The default list of handler prefix regular expressions ("resource", "service-sitemap-.*", "static") handles the mappings
-required for standard Blueprint handlers. If you add your own handlers, you need to add their URI prefixes to the list.
-You can be as specific as necessary; for example, if you define a handler with `@Get("/foo/bar/baz")` in the CAE
-application, you can add "foo/bar/baz" for just this one handler, or you can handle multiple paths that share a common
-prefix by using "foo".
+required for standard Blueprint handlers. If you add your own handlers, you need to add their URI prefixes to the list
+`with.handlerPrefixes`. You can be as specific as necessary; for example, if you define a handler with 
+`@Get("/foo/bar/baz")` in the CAE  application, you can add "foo/bar/baz" for just this one handler, or you can handle 
+multiple paths that share a common prefix by using "foo".
+
+The value for `with.handlerPrefixes` replaces the default.
 
 ### Ingress Annotations
 
@@ -766,16 +768,37 @@ to run on port 80; the environment variable NGINX_PORT is set to enable that.
 
 ### Component `solr`
 
+#### Leaders and Followers
+
 The Solr component creates one or more Solr instances, controlled by the `extra.replicas` property.
 With `extra.replicas=1`, a single Solr leader instance is created. With `extra.replicas=2` or higher, one or more
 follower instances are created that replicate the leader automatically.
 
-The operator will automatically create the cores in the followers, by executing the core admin API request, as
+#### Cores in the Followers
+
+The operator will automatically create the `live` core in the followers, by executing the core admin API request, as
 documented in the Search Manual.
+
+If you add your own cores to the Solr config, you will need to tell the operator about them, using the 
+`extra.coresToReplicate` map. For example, if you're using a core for product data, that definition could like:
+
+```yaml
+components:
+  - type: solr
+    extra:
+      coresToReplicate: |
+        products: pimdata
+```
+
+This defines the core `products` to use the schema definition `pimdata`. Due to the way `extra` is parsed, you will 
+need to provide the map as a YAML string (note the pipe character after the key). Also note that you will need to provide the 
+appropriate Solr config in your Solr image. The operator has one default entry `live`/`cae` that is always present.
+
+#### Solr Services
 
 The operator creates two services for Solr:
 
-* `solr`, which maps to both the leader and any followers, suitable for any component that only wants to query the
+* `solr-follower`, which maps to the leader and all followers, suitable for any component that only wants to query the
   index, and
 * `solr-leader` that maps to just the leader, suitable for components that need to update an index.
 
