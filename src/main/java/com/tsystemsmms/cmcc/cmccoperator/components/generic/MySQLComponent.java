@@ -45,7 +45,11 @@ public class MySQLComponent extends AbstractComponent implements HasService {
 
     @Override
     public void requestRequiredResources() {
-        getTargetState().getClientSecretRef(getComponentSpec().getType(), MYSQL_ROOT_USERNAME,
+        getClientSecretRef();
+    }
+
+    ClientSecretRef getClientSecretRef() {
+        return getTargetState().getClientSecretRef(getComponentSpec().getType(), MYSQL_ROOT_USERNAME,
                 (clientSecret, password) -> getTargetState().loadOrBuildSecret(clientSecret, Map.of(
                         ClientSecretRef.DEFAULT_PASSWORD_KEY, password,
                         ClientSecretRef.DEFAULT_USERNAME_KEY, MYSQL_ROOT_USERNAME
@@ -71,8 +75,9 @@ public class MySQLComponent extends AbstractComponent implements HasService {
 
     @Override
     public EnvVarSet getEnvVars() {
+        ClientSecretRef csr = getClientSecretRef();
         EnvVarSet env = new EnvVarSet();
-        env.add(EnvVarSecret("MYSQL_ROOT_PASSWORD", getTargetState().getResourceNameFor(this, MYSQL_ROOT_USERNAME), "password"));
+        env.add(EnvVarSecret("MYSQL_ROOT_PASSWORD", csr.getSecretName(), csr.getPasswordKey()));
         return env;
     }
 

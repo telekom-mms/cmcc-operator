@@ -242,8 +242,13 @@ public abstract class AbstractTargetState implements TargetState {
       for (Map.Entry<String, Map<String, ClientSecret>> e : clientSecrets.entrySet()) {
         if (cmcc.getSpec().getWith().databaseCreateForKind(e.getKey())) {
           for (ClientSecret clientSecret : e.getValue().values()) {
-            Secret secret = clientSecret.getSecret()
-                    .orElseThrow(() -> new CustomResourceConfigError("Unable to find secret for clientSecretRef \"" + clientSecret.getRef().getSecretName() + "\""));
+            if (clientSecret.getSecret().isEmpty()) {
+              clientSecret.setSecret(getKubernetesClient().secrets().inNamespace(getCmcc().getMetadata().getNamespace()).withName(clientSecret.getRef().getSecretName()).get());
+              if (clientSecret.getSecret().isEmpty()) {
+                throw new CustomResourceConfigError("Unable to load secret \"" + clientSecret.getRef().getSecretName() + "\", required for database \"" + e.getKey() + "\"");
+              }
+            }
+            Secret secret = clientSecret.getSecret().get();
             if (isWeOwnThis(secret))
               resources.add(secret);
           }
