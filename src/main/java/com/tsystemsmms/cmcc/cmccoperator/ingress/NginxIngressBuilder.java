@@ -126,6 +126,12 @@ public class NginxIngressBuilder extends AbstractIngressBuilder {
   }
 
   @Override
+  public IngressBuilder responseTimeout(int seconds) {
+    annotations.put("nginx.ingress.kubernetes.io/proxy-read-timeout", String.valueOf(seconds));
+    return this;
+  }
+
+  @Override
   public IngressBuilder uploadSize(int size) {
     if (size > 0)
       annotations.put("nginx.ingress.kubernetes.io/proxy-body-size", size + "M");

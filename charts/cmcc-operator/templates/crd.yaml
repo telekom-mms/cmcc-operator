@@ -446,6 +446,31 @@ spec:
                     description: Enable setting resource limits and requests on all
                       components
                     type: boolean
+                  responseTimeout:
+                    description: Response timeouts for different Ingress objects
+                    properties:
+                      live:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        description: Response timeout in the ingress controller for
+                          the live CAEs
+                        x-kubernetes-int-or-string: true
+                      preview:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        description: Response timeout in the ingress controller for
+                          the preview CAE
+                        x-kubernetes-int-or-string: true
+                      studio:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        description: Response timeout in the ingress controller for
+                          the Studio
+                        x-kubernetes-int-or-string: true
+                    type: object
                   uploadSize:
                     description: Size of POST/PUT body in MB
                     properties:

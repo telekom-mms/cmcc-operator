@@ -46,6 +46,7 @@ public class BlueprintCmccIngressGenerator extends AbstractCmccIngressGenerator 
     @Override
     public Collection<? extends HasMetadata> buildLiveResources() {
         LinkedList<HasMetadata> ingresses = new LinkedList<>();
+        int responseTimeout = getInt(getTargetState().getCmcc().getSpec().getWith().getResponseTimeout().getLive());
         int uploadSize = getInt(getTargetState().getCmcc().getSpec().getWith().getUploadSize().getLive());
 
         for (SiteMapping siteMapping : targetState.getCmcc().getSpec().getSiteMappings()) {
@@ -59,15 +60,19 @@ public class BlueprintCmccIngressGenerator extends AbstractCmccIngressGenerator 
                 if (fqdn.isBlank())
                     fqdn = concatOptional(getDefaults().getNamePrefix(), site) + "." + getDefaults().getIngressDomain();
                 ingresses.addAll(ingressBuilderFactory.builder(targetState, liveName(site, "home"), fqdn, tls)
+                        .responseTimeout(responseTimeout)
                         .uploadSize(uploadSize)
                         .pathExact("/", serviceName).redirect("/" + siteMapping.getPrimarySegment()).build());
                 ingresses.addAll(ingressBuilderFactory.builder(targetState, liveName(site, "blueprint"), fqdn, tls)
+                        .responseTimeout(responseTimeout)
                         .uploadSize(uploadSize)
                         .pathPrefix("/blueprint", serviceName).build());
                 ingresses.addAll(ingressBuilderFactory.builder(targetState, liveName(site, "all"), fqdn, tls)
+                        .responseTimeout(responseTimeout)
                         .uploadSize(uploadSize)
                         .pathPattern("/(.*)", serviceName).rewrite("/blueprint/servlet/$1").build());
                 ingresses.addAll(ingressBuilderFactory.builder(targetState, liveName(site, "seo"), fqdn, tls)
+                        .responseTimeout(responseTimeout)
                         .uploadSize(uploadSize)
                         .pathPattern("/(robots\\.txt|sitemap.*\\.xml)", serviceName).rewrite(getTargetState().getCmcc().getSpec().getWith().getIngressSeoHandler() + "/" + siteMapping.getPrimarySegment() + "/$1").build());
             }

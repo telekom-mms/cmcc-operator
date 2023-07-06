@@ -129,6 +129,10 @@ properties have suitable defaults.
 | `with.ingressSeoHandler`            | String               | `/blueprint/servlet/service/robots`               | Path to handler that will receive requests for `robots.txt` and `sitemap.xml`.                                                               |
 | `with.management`                   | boolean              | true                                              | Create all components required for a CoreMedia management stage                                                                              |
 | `with.resources`                    | boolean              | true                                              | Apply resource limits and requests to all components. Also see `defaults.resources` and  [Components](#components)                           |
+| `with.responseTimeout`              | object               |                                                   | Time in seconds the Ingress controller waits for the response from the backend                                                               |
+| `with.responseTimeout.live`         | integer              | 60                                                | Time in seconds the Ingress controller waits for the response from the Live CAEs                                                             |
+| `with.responseTimeout.preview`      | integer              | 60                                                | Time in seconds the Ingress controller waits for the response from the Preview CAE                                                           |
+| `with.responseTimeout.studio`       | integer              | 60                                                | Time in seconds the Ingress controller waits for the response from the Studio Server                                                         |
 | `with.uploadSize`                   | object               |                                                   | Maximum size of POST/PUT uploads for components (both Ingress and Spring Boot/Tomcat).                                                       |
 | `with.uploadSize.live`              | integer              | 0                                                 | Maximum size of POST/PUT uploads the ingress and live CAE will allow. 0 means do not configure.                                              |
 | `with.uploadSize.preview`           | integer              | 0                                                 | Maximum size of POST/PUT uploads the ingress and preview CAE will allow. 0 means do not configure.                                           |
@@ -616,6 +620,10 @@ defaults:
 ```
 
 CPU time is limited to 2 cores by default; the preview CAE will only be allowed half a core.
+
+#### Response Timeout
+
+The Ingress controller typically waits a specific time for the backend service to start sending a response. Once this timeout is exceeded, an error message is returned. For some applications, it might be necessary to increase that timeout. `with.responseTimeout.live`, `with.responseTimeout.preview`, and `with.responseTimeout.studio` allow specifying the desired timeout in seconds for the respective Ingress resources.
 
 #### Upload Size
 

@@ -18,61 +18,69 @@ import java.util.Collection;
  * Build ingress resources with certain attributes.
  */
 public interface IngressBuilder {
-    /**
-     * Generates the Kubernetes resources based on the builder properties.
-     *
-     * @return Kubernetes resources
-     */
-    Collection<? extends HasMetadata> build();
+  /**
+   * Generates the Kubernetes resources based on the builder properties.
+   *
+   * @return Kubernetes resources
+   */
+  Collection<? extends HasMetadata> build();
 
-    /**
-     * Lets the ingress match this exact path.
-     *
-     * @param path the path
-     * @param service the name of the service requests should be routed to
-     * @return the builder
-     */
-    IngressBuilder pathExact(String path, String service);
+  /**
+   * Lets the ingress match this exact path.
+   *
+   * @param path    the path
+   * @param service the name of the service requests should be routed to
+   * @return the builder
+   */
+  IngressBuilder pathExact(String path, String service);
 
-    /**
-     * Lets the ingress match this regular expression.
-     *
-     * @param pattern the path
-     * @param service the name of the service requests should be routed to
-     * @return the builder
-     */
-    IngressBuilder pathPattern(String pattern, String service);
+  /**
+   * Lets the ingress match this regular expression.
+   *
+   * @param pattern the path
+   * @param service the name of the service requests should be routed to
+   * @return the builder
+   */
+  IngressBuilder pathPattern(String pattern, String service);
 
-    /**
-     * Lets the ingress match this path prefix.
-     *
-     * @param path the path
-     * @param service the name of the service requests should be routed to
-     * @return the builder
-     */
-    IngressBuilder pathPrefix(String path, String service);
+  /**
+   * Lets the ingress match this path prefix.
+   *
+   * @param path    the path
+   * @param service the name of the service requests should be routed to
+   * @return the builder
+   */
+  IngressBuilder pathPrefix(String path, String service);
 
-    /**
-     * Redirect the client to the new relative or absolute URL.
-     *
-     * @param uri the target URI
-     * @return the builder
-     */
-    IngressBuilder redirect(String uri);
+  /**
+   * Redirect the client to the new relative or absolute URL.
+   *
+   * @param uri the target URI
+   * @return the builder
+   */
+  IngressBuilder redirect(String uri);
 
-    /**
-     * Rewrite the request path using the given pattern.
-     *
-     * @param pattern to rewrite to
-     * @return the builder
-     */
-    IngressBuilder rewrite(String pattern);
+  /**
+   * Sets the response timeout for this ingress.
+   *
+   * @param seconds timeout
+   * @return the builder
+   */
+  IngressBuilder responseTimeout(int seconds);
 
-    /**
-     * Set the maximum upload size.
-     *
-     * @param size in megabytes
-     * @return the builder
-     */
-    IngressBuilder uploadSize(int size);
+  /**
+   * Rewrite the request path using the given pattern.
+   *
+   * @param pattern to rewrite to
+   * @return the builder
+   */
+  IngressBuilder rewrite(String pattern);
+
+  /**
+   * Set the maximum upload size.
+   *
+   * @param size in megabytes
+   * @return the builder
+   */
+  IngressBuilder uploadSize(int size);
 }

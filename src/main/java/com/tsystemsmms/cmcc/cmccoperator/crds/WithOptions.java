@@ -47,6 +47,9 @@ public class WithOptions {
     @JsonPropertyDescription("Enable setting resource limits and requests on all components")
     Boolean resources = true;
 
+    @JsonPropertyDescription("Response timeouts for different Ingress objects")
+    ResponseTimeout responseTimeout = new ResponseTimeout();
+
     @JsonPropertyDescription("Size of POST/PUT body in MB")
     UploadSize uploadSize = new UploadSize();
 
@@ -71,6 +74,16 @@ public class WithOptions {
         IntOrString preview = new IntOrString(0);
         @JsonPropertyDescription("Size of POST/PUT body in MB for the Studio")
         IntOrString studio = new IntOrString(0);
+    }
+
+    @Data
+    public static class ResponseTimeout {
+        @JsonPropertyDescription("Response timeout in the ingress controller for the live CAEs")
+        IntOrString live = new IntOrString(60);
+        @JsonPropertyDescription("Response timeout in the ingress controller for the preview CAE")
+        IntOrString preview = new IntOrString(60);
+        @JsonPropertyDescription("Response timeout in the ingress controller for the Studio")
+        IntOrString studio = new IntOrString(60);
     }
 
     /**

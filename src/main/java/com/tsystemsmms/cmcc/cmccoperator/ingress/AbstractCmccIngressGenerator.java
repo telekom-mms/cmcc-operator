@@ -73,20 +73,26 @@ public abstract class AbstractCmccIngressGenerator implements CmccIngressGenerat
     String segment = getSpec().getSiteMappings().stream().findAny().orElseThrow().getPrimarySegment();
     IngressTls tls = targetState.getCmcc().getSpec().getDefaultIngressTls();
     int uploadSize = getInt(getTargetState().getCmcc().getSpec().getWith().getUploadSize().getPreview());
+    int responseTimeout = getInt(getTargetState().getCmcc().getSpec().getWith().getResponseTimeout().getPreview());
 
     ingresses.addAll(ingressBuilderFactory.builder(targetState, previewName("home"), fqdn, tls)
+            .responseTimeout(responseTimeout)
             .uploadSize(uploadSize)
             .pathExact("/", serviceName).redirect("/" + segment).build());
     ingresses.addAll(ingressBuilderFactory.builder(targetState, previewName("blueprint"), fqdn, tls)
+            .responseTimeout(responseTimeout)
             .uploadSize(uploadSize)
             .pathPrefix("/blueprint", serviceName).build());
     ingresses.addAll(ingressBuilderFactory.builder(targetState, previewName("all"), fqdn, tls)
+            .responseTimeout(responseTimeout)
             .uploadSize(uploadSize)
             .pathPattern("/(.*)", serviceName).rewrite("/blueprint/servlet/$1").build());
     ingresses.addAll(ingressBuilderFactory.builder(targetState, previewName("static"), fqdn, tls)
+            .responseTimeout(responseTimeout)
             .uploadSize(uploadSize)
             .pathPattern("/(public|resources|static)(.*)", serviceName).rewrite("/blueprint/$1$2").build());
     ingresses.addAll(ingressBuilderFactory.builder(targetState, previewName("seo"), fqdn, tls)
+            .responseTimeout(responseTimeout)
             .uploadSize(uploadSize)
             .pathPattern("/(robots\\.txt|sitemap.*\\.xml)", serviceName).rewrite(getTargetState().getCmcc().getSpec().getWith().getIngressSeoHandler() + "/preview/$1").build());
     return ingresses;
@@ -100,13 +106,16 @@ public abstract class AbstractCmccIngressGenerator implements CmccIngressGenerat
   @Override
   public Collection<? extends HasMetadata> buildStudioResources() {
     IngressTls tls = targetState.getCmcc().getSpec().getDefaultIngressTls();
+    int responseTimeout = getInt(getTargetState().getCmcc().getSpec().getWith().getResponseTimeout().getPreview());
     int uploadSize = getInt(getTargetState().getCmcc().getSpec().getWith().getUploadSize().getStudio());
+
     return ingressBuilderFactory.builder(targetState, concatOptional(getDefaults().getNamePrefix(), "studio"), getTargetState().getStudioHostname(), tls)
             .pathPrefix("/", getTargetState().getServiceNameFor("studio-client"))
             .pathPrefix("/api", serviceName)
             .pathPrefix("/login", serviceName)
             .pathPrefix("/logout", serviceName)
             .pathPrefix("/cspInfo.html", serviceName)
+            .responseTimeout(responseTimeout)
             .uploadSize(uploadSize)
             .build();
   }
