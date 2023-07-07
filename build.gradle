@@ -1,10 +1,10 @@
 import java.nio.charset.StandardCharsets
 
 plugins {
-    id 'org.springframework.boot' version '2.7.1'
-    id 'io.spring.dependency-management' version '1.0.12.RELEASE'
+    id 'org.springframework.boot' version '2.7.13'
+    id 'io.spring.dependency-management' version '1.1.0'
     id 'java'
-    id 'com.google.cloud.tools.jib' version '3.2.1'
+    id 'com.google.cloud.tools.jib' version '3.3.2'
 }
 
 group = 'com.tsystemsmms'
@@ -36,7 +36,7 @@ dependencies {
     compileOnly 'org.projectlombok:lombok'
     testCompileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
-    annotationProcessor 'io.fabric8:crd-generator-apt:5.12.2'
+    annotationProcessor 'io.fabric8:crd-generator-apt:5.12.3'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'io.javaoperatorsdk:operator-framework-spring-boot-starter-test:3.0.2'
 }
@@ -99,5 +99,6 @@ jib {
                 "org.opencontainers.image.url"          : "https://github.com/T-Systems-MMS/cmcc-operator",
                 "org.opencontainers.image.vendor"       : "T-Systems Multimedia Solutions GmbH"
         ]
+        user = 1000
     }
 }

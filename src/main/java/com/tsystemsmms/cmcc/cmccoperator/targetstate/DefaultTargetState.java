@@ -56,14 +56,20 @@ public class DefaultTargetState extends AbstractTargetState {
     @Override
     public void convergeDefaultComponents() {
         if (cmcc.getSpec().getWith().getDatabases()) {
-            componentCollection.addAll(List.of(
-                    ComponentSpecBuilder.ofType("mongodb")
-                            .withMilestone(Milestone.Created)
-                            .build(),
-                    ComponentSpecBuilder.ofType("mysql")
-                            .withMilestone(Milestone.Created)
-                            .build()
-            ));
+            if (cmcc.getSpec().getWith().databaseCreateForKind("mongodb")) {
+                componentCollection.addAll(List.of(
+                        ComponentSpecBuilder.ofType("mongodb")
+                                .withMilestone(Milestone.Created)
+                                .build()
+                ));
+            }
+            if (cmcc.getSpec().getWith().databaseCreateForKind("mysql")) {
+                componentCollection.addAll(List.of(
+                        ComponentSpecBuilder.ofType("mysql")
+                                .withMilestone(Milestone.Created)
+                                .build()
+                ));
+            }
         }
 
         if (cmcc.getSpec().getWith().getManagement()) {
@@ -91,9 +97,16 @@ public class DefaultTargetState extends AbstractTargetState {
         }
 
         WithOptions.WithDelivery delivery = cmcc.getSpec().getWith().getDelivery();
-        if (getInt(delivery.getRls()) != 0
-                || getInt(delivery.getMaxCae()) > getInt(delivery.getMinCae())) {
-            throw new RuntimeException("Unable to configure RLS and HPA, not implemented yet");
+//        if (getInt(delivery.getRls()) > 0) {
+//            componentCollection.addAll(List.of(
+//                    ComponentSpecBuilder.ofType("content-server").withKind("rls").withMilestone(Milestone.ManagementReady).build()
+//            ));
+//        } else if (getInt(delivery.getRls()) == 0) {
+//            // make sure we don't have an RLS component even if the custom resource has it defined
+//            componentCollection.removeOfTypeAndKind("content-server", "rls");
+//        }
+        if (getInt(delivery.getMaxCae()) > getInt(delivery.getMinCae())) {
+            throw new RuntimeException("Unable to configure Live CAE Horizontal Pod Autoscaler: not implemented yet");
         }
         if (getInt(delivery.getMinCae()) > 0) {
             Map<String, String> liveCaeExtra = Map.of(
@@ -108,16 +121,32 @@ public class DefaultTargetState extends AbstractTargetState {
     @Override
     public void convergeOverrideResources() {
         if (cmcc.getSpec().getWith().getDatabases()) {
+            if (cmcc.getSpec().getWith().databaseCreateForKind("mongodb")) {
+                componentCollection.addAll(List.of(
+                        ComponentSpecBuilder.ofType("mongodb")
+                                .withMilestone(Milestone.Created)
+                                .withExtra(MongoDBComponent.createUsersFromClientSecrets(this))
+                                .build()
+                ));
+            }
+            if (cmcc.getSpec().getWith().databaseCreateForKind("mysql")) {
+                componentCollection.addAll(List.of(
+                        ComponentSpecBuilder.ofType("mysql")
+                                .withMilestone(Milestone.Created)
+                                .withExtra(MySQLComponent.createUsersFromClientSecrets(this))
+                                .build()
+                ));
+            }
+        }
+
+        WithOptions.WithDelivery delivery = cmcc.getSpec().getWith().getDelivery();
+        if (getInt(delivery.getRls()) > 0) {
             componentCollection.addAll(List.of(
-                    ComponentSpecBuilder.ofType("mongodb")
-                            .withMilestone(Milestone.Created)
-                            .withExtra(MongoDBComponent.createUsersFromClientSecrets(this))
-                            .build(),
-                    ComponentSpecBuilder.ofType("mysql")
-                            .withMilestone(Milestone.Created)
-                            .withExtra(MySQLComponent.createUsersFromClientSecrets(this))
-                            .build()
+                    ComponentSpecBuilder.ofType("content-server").withKind("rls").withMilestone(Milestone.ManagementReady).build()
             ));
+        } else if (getInt(delivery.getRls()) == 0) {
+            // make sure we don't have an RLS component even if the custom resource has it defined
+            componentCollection.removeOfTypeAndKind("content-server", "rls");
         }
 
         if (cmcc.getStatus().getMilestone() == Milestone.Ready && !getCmcc().getSpec().getJob().isBlank()) {

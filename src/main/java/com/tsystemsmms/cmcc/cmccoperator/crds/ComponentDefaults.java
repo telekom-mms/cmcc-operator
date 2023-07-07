@@ -16,11 +16,15 @@ import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import lombok.Data;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 @Data
 public class ComponentDefaults {
+    @JsonPropertyDescription("Additional annotations for all component pods")
+    private Map<String, String> annotations = new HashMap<>();
+
     @JsonPropertyDescription("Docker image with curl available")
     private String curlImage = "docker.io/alpine/curl:latest";
 
@@ -33,21 +37,20 @@ public class ComponentDefaults {
     @JsonPropertyDescription("Use this password for all database accounts, instead of a random one.")
     private String insecureDatabasePassword = "";
 
-    @JsonPropertyDescription("Default resource declarations")
-    private ResourceRequirements resources = new ResourceRequirementsBuilder()
-            .withRequests(Map.of(
-                    "cpu", new Quantity("100m"),
-                    "memory", new Quantity("0.5G")))
-            .withLimits(Map.of(
-                    "cpu", new Quantity("2"),
-                    "memory", new Quantity("2G")))
-            .build();
+    @JsonPropertyDescription("For Java components, use these JAVA_OPTS.")
+    private String javaOpts = "-XX:MinRAMPercentage=75 -XX:MaxRAMPercentage=90";
+
+    @JsonPropertyDescription("Default resource management (limits, requests)")
+    private ResourceMgmt resources;
 
     @JsonPropertyDescription("Prefix resources with this name plus '-'. Empty string means no prefix")
     String namePrefix = "";
 
     @JsonPropertyDescription("Hostname of the preview CAE. If short, will be prefixed with the prefix and the ingressDomain appended")
     private String previewHostname = "preview";
+
+    @JsonPropertyDescription("Default protocol for all site mapping entries")
+    private String siteMappingProtocol = "https://";
 
     @JsonPropertyDescription("Name of StorageClass to be used for PersistentVolumeClaims")
     private String storageClass = "";
@@ -57,4 +60,7 @@ public class ComponentDefaults {
 
     @JsonPropertyDescription("List of servlets the CAE serves")
     private List<String> servletNames = List.of("action", "assets", "blob", "dynamic", "preview", "resource", "service", "static");
+
+    @JsonPropertyDescription("Size of persistent data/cache volumes")
+    ComponentSpec.VolumeSize volumeSize = new ComponentSpec.VolumeSize("8Gi");
 }

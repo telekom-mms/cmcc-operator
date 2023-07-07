@@ -67,6 +67,7 @@ public abstract class JobComponent extends SpringBootComponent {
                         .withParallelism(1)
                         .withTemplate(new PodTemplateSpecBuilder()
                                 .withMetadata(new ObjectMetaBuilder()
+                                        .withAnnotations(getAnnotations())
                                         .withLabels(getSelectorLabels())
                                         .build())
                                 .withSpec(new PodSpecBuilder()

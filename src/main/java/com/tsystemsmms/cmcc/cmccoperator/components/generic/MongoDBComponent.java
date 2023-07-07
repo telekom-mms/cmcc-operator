@@ -12,7 +12,9 @@ package com.tsystemsmms.cmcc.cmccoperator.components.generic;
 
 import com.tsystemsmms.cmcc.cmccoperator.components.AbstractComponent;
 import com.tsystemsmms.cmcc.cmccoperator.components.HasService;
+import com.tsystemsmms.cmcc.cmccoperator.crds.ClientSecretRef;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
+import com.tsystemsmms.cmcc.cmccoperator.crds.WithOptions;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.ClientSecret;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.CustomResourceConfigError;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
@@ -45,7 +47,11 @@ public class MongoDBComponent extends AbstractComponent implements HasService {
 
     @Override
     public void requestRequiredResources() {
-        getTargetState().getClientSecretRef(MONGODB_CLIENT_SECRET_REF_KIND, MONGODB_ROOT_USERNAME,
+        getClientSecretRef();
+    }
+
+    ClientSecretRef getClientSecretRef() {
+        return getTargetState().getClientSecretRef(MONGODB_CLIENT_SECRET_REF_KIND, MONGODB_ROOT_USERNAME,
                 (clientSecret, password) -> getTargetState().loadOrBuildSecret(clientSecret, Map.of(
                         DEFAULT_PASSWORD_KEY, password,
                         DEFAULT_USERNAME_KEY, MONGODB_ROOT_USERNAME
@@ -56,7 +62,8 @@ public class MongoDBComponent extends AbstractComponent implements HasService {
     @Override
     public List<HasMetadata> buildResources() {
         List<HasMetadata> resources = new LinkedList<>();
-        resources.add(getPersistentVolumeClaim(getTargetState().getResourceNameFor(this)));
+        resources.add(getPersistentVolumeClaim(getTargetState().getResourceNameFor(this),
+                getVolumeSize(ComponentSpec.VolumeSize::getData)));
         resources.add(buildStatefulSet());
         resources.add(buildService());
         resources.addAll(buildExtraConfigMaps());
@@ -71,9 +78,10 @@ public class MongoDBComponent extends AbstractComponent implements HasService {
     @Override
     public EnvVarSet getEnvVars() {
         String name = getTargetState().getResourceNameFor(this, MONGODB_ROOT_USERNAME);
+        ClientSecretRef csr = getClientSecretRef();
         EnvVarSet env = new EnvVarSet();
-        env.add(EnvVarSecret("MONGO_INITDB_ROOT_USERNAME", name, TargetState.DATABASE_SECRET_USERNAME_KEY));
-        env.add(EnvVarSecret("MONGO_INITDB_ROOT_PASSWORD", name, TargetState.DATABASE_SECRET_PASSWORD_KEY));
+        env.add(EnvVarSecret("MONGO_INITDB_ROOT_USERNAME", csr.getSecretName(), csr.getUsernameKey()));
+        env.add(EnvVarSecret("MONGO_INITDB_ROOT_PASSWORD", csr.getSecretName(), csr.getPasswordKey()));
         return env;
     }
 

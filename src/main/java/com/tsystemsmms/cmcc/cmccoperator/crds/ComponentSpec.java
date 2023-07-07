@@ -12,6 +12,7 @@ package com.tsystemsmms.cmcc.cmccoperator.crds;
 
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import io.fabric8.kubernetes.api.model.EnvVar;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 
 import java.util.HashMap;
@@ -21,51 +22,100 @@ import java.util.Map;
 
 @Data
 public class ComponentSpec {
-    @JsonPropertyDescription("Type of the component")
-    private String type;
+  @JsonPropertyDescription("Type of the component")
+  private String type;
 
-    @JsonPropertyDescription("Sub-type ('cms' or 'mls', or 'master' and 'replica', or 'preview' and 'live')")
-    private String kind = "";
+  @JsonPropertyDescription("Sub-type ('cms' or 'mls', or 'master' and 'replica', or 'preview' and 'live')")
+  private String kind = "";
 
-    @JsonPropertyDescription("Name to be used for k8s objects")
-    private String name = "";
+  @JsonPropertyDescription("Name to be used for k8s objects")
+  private String name = "";
 
-    @JsonPropertyDescription("Args for the main pod container")
-    private List<String> args = new LinkedList<>();
+  @JsonPropertyDescription("Additional annotations")
+  private Map<String, String> annotations = new HashMap<>();
 
-    @JsonPropertyDescription("Additional environment variables")
-    private List<EnvVar> env = new LinkedList<>();
+  @JsonPropertyDescription("Args for the main pod container")
+  private List<String> args = new LinkedList<>();
 
-    @JsonPropertyDescription("Extra parameters (depends on component)")
-    private Map<String, String> extra = new HashMap<>();
+  @JsonPropertyDescription("Additional environment variables")
+  private List<EnvVar> env = new LinkedList<>();
 
-    @JsonPropertyDescription("Image for main pod' main container")
-    private ImageSpec image = new ImageSpec();
+  @JsonPropertyDescription("Extra parameters (depends on component)")
+  private Map<String, String> extra = new HashMap<>();
 
-    @JsonPropertyDescription("Make available with this milestone")
-    private Milestone milestone = null;
+  @JsonPropertyDescription("Image for main pod' main container")
+  private ImageSpec image = new ImageSpec();
 
-    @JsonPropertyDescription("Schema names for JDBC, MongoDB, and/or UAPI")
-    private Map<String, String> schemas = new HashMap<>();
+  @JsonPropertyDescription("Make available with this milestone")
+  private Milestone milestone = null;
 
-    public ComponentSpec() {
+  @JsonPropertyDescription("Resource management (limits, requests)")
+  private ResourceMgmt resources;
+
+  @JsonPropertyDescription("Schema names for JDBC, MongoDB, and/or UAPI")
+  private Map<String, String> schemas = new HashMap<>();
+
+  @JsonPropertyDescription("Size of persistent data/cache volumes")
+  ComponentSpec.VolumeSize volumeSize = new ComponentSpec.VolumeSize();
+
+  public ComponentSpec() {
+
+  }
+
+  public ComponentSpec(ComponentSpec that) {
+    this.type = that.type;
+    this.kind = that.kind;
+    this.name = that.name;
+    this.update(that);
+  }
+
+  public void update(ComponentSpec that) {
+    this.setAnnotations(that.getAnnotations());
+    this.setArgs(that.getArgs());
+    this.getEnv().addAll(that.getEnv());
+    this.getExtra().putAll(that.getExtra());
+    this.getImage().update(that.getImage());
+    if (that.getMilestone() != null)
+      this.setMilestone(that.getMilestone());
+    if (this.resources == null)
+      this.resources = that.getResources();
+    else
+      this.resources.merge(that.getResources());
+    if (that.getVolumeSize().getData() != null)
+      this.volumeSize.setData(that.getVolumeSize().getData());
+    if (that.getVolumeSize().getTransformedBlobCache() != null)
+      this.volumeSize.setTransformedBlobCache(that.getVolumeSize().getTransformedBlobCache());
+    if (that.getVolumeSize().getUapiBlobCache() != null)
+      this.volumeSize.setUapiBlobCache(that.getVolumeSize().getUapiBlobCache());
+  }
+
+  @Data
+  @AllArgsConstructor
+  public static class VolumeSize {
+    @JsonPropertyDescription("Size of data volume, in k8s quantity")
+    String data;
+    @JsonPropertyDescription("DEPRECATED. Size of MongoDb data volume, in k8s quantity")
+    String mongoDbData;
+    @JsonPropertyDescription("DEPRECATED. Size of MySQL data volume, in k8s quantity")
+    String mysqlData;
+    @JsonPropertyDescription("DEPRECATED. Size of Solr data volume, in k8s quantity")
+    String solrData;
+    @JsonPropertyDescription("Size of transformed BLOB cache, in k8s quantity")
+    String transformedBlobCache;
+    @JsonPropertyDescription("Size of UAPI BLOB cache, in k8s quantity")
+    String uapiBlobCache;
+
+    public VolumeSize() {
 
     }
 
-    public ComponentSpec(ComponentSpec that) {
-        this.type = that.type;
-        this.kind = that.kind;
-        this.name = that.name;
-        this.update(that);
+    public VolumeSize(String size) {
+      data = size;
+      mongoDbData = size;
+      mysqlData = size;
+      solrData = size;
+      transformedBlobCache = size;
+      uapiBlobCache = size;
     }
-
-    public void update(ComponentSpec that) {
-        this.setArgs(that.getArgs());
-        this.getEnv().addAll(that.getEnv());
-        this.getExtra().putAll(that.getExtra());
-        this.getImage().update(that.getImage());
-        if (that.getMilestone() != null)
-            this.setMilestone(that.getMilestone());
-
-    }
+  }
 }

@@ -45,3 +45,10 @@ It is necessary to rewrite URLs for the CAEs (for example, you need to rewrite `
 ### Resource Reconciler
 
 Finally, the package `com.tsystemsmms.cmcc.cmccoperator.resource` contains classes that help with updating existing resources. The Fabric8 client currently has some limitations when updating existing objects, which might try to modify or overwrite properties that are immutable after creation. These classes help work around that limitation.
+
+## Build and deploy the operator locally
+
+```shell
+./gradlew build jibDockerBuild -Djib.to.image=ghcr.io/t-systems-mms/cmcc-operator/cmcc-operator -Djib.to.tag=v1.11.1 -Djib.from.platforms=linux/arm64
+helm upgrade --install --create-namespace --namespace cmcc-operator cmcc-operator ./charts/cmcc-operator --set cmcc.ingressbuilder=onlylang --set image.tag=v1.11.1
+```

@@ -11,7 +11,7 @@ rules:
     resources:
       - configmaps
       - persistentvolumeclaims
-      - pods
+      - pods/exec
 {{- if .Values.cmcc.manageSecrets }}
       - secrets
 {{- end }}
@@ -20,18 +20,14 @@ rules:
       - '*'
   - apiGroups:
       - "apps"
-      - "extensions"
     resources:
-      - deployments
       - statefulsets
     verbs:
       - '*'
   - apiGroups:
       - "batch"
     resources:
-      - deployments
       - jobs
-      - statefulsets
     verbs:
       - '*'
   - apiGroups:

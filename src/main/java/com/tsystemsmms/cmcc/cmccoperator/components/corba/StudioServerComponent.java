@@ -27,6 +27,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.getInt;
+
 @Slf4j
 public class StudioServerComponent extends CorbaComponent implements HasMongoDBClient, HasJdbcClient, HasService, HasSolrClient {
 
@@ -92,11 +94,13 @@ public class StudioServerComponent extends CorbaComponent implements HasMongoDBC
 
         properties.putAll(getSiteMappingProperties());
         properties.put("studio.previewUrlPrefix", "https://" + getTargetState().getPreviewHostname());
-        // add the Studio URL twice time to work around CoreMedia bug CMS-21564. Normally, it should be sufficient
+        // add the Studio URL twice to work around CoreMedia bug CMS-21564. Normally, it should be sufficient
         // to only have previewUrlPrefix set.
         properties.put("studio.preview-url-whitelist[0]", "https://" + getTargetState().getPreviewHostname());
         properties.put("studio.preview-url-whitelist[1]", "https://" + getTargetState().getPreviewHostname());
         properties.put("themeImporter.apiKeyStore.basePath", "/var/tmp/themeimporter");
+
+        addUploadSizeProperties(properties, getInt(getSpec().getWith().getUploadSize().getStudio()));
 
         return properties;
     }

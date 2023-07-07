@@ -56,11 +56,4 @@ public class UserChangesComponent extends CorbaComponent implements HasMongoDBCl
         return env;
     }
 
-    @Override
-    public List<Container> getInitContainers() {
-        List<Container> containers = super.getInitContainers();
-
-        containers.add(getContainerWaitForIor(getTargetState().getServiceNameFor("workflow-server"), getTargetState().getServiceUrlFor("workflow-server")));
-        return containers;
-    }
 }

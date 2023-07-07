@@ -4,27 +4,7 @@
 
 ## Introduction
 
-[Kubernetes Operators](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) are specialized software packages that help manage applications and resources in a k8s cluster. This operator will create, initialize and run a CoreMedia Content Cloud application. A custom resource definition is used to define all relevant parameters.
-
-### Features
-
-The operator:
-* manages the creation and updating of all the Kubernetes resources required to run CoreMedia Content Cloud. Care has been taken to have sensible defaults for all parameters wherever possible.
-* can create a fresh installation from scratch, creating MariaDB and MongoDB database servers, and initialize the necessary database schemas and secrets, suitable for a development environment. For production, persistence should be provided, for example by using cloud services, or using other operators to provision databases.
-* can deploy against existing databases, using pre-existing secrets provided.
-* can use a custom resource definition or a config map to supply the values. This makes it possible to use the operator even on clusters where you cannot install cluster-wide resources.
-* deploys the CoreMedia Content Cloud components step by step. This ensures that components that require other components are only started when the dependencies have been initialized successfully.
-* imports test users and contents initially.
-* run additional jobs, for example to re-import content into a running installation.
-* configures the live CAE deployment with the desired number of replicas.
-* builds ingresses automatically from CAE site mappings.
-* creates random passwords for all components and configures the components to use them (MariaDB, MongoDB, and UAPI/Corba).
-* configures Solr clustering by specifying the number of replicas to create.
-
-Planned features include:
-* Creating a scalable delivery stage automatically by simply providing the number of Replication Live Servers.
-* Support for Traefik ingress controller and its resource types (in addition to the [kubernetes/ingress-nginx](https://github.com/kubernetes/ingress-nginx)).
-* Admission webhook that verifies consistency of the custom resource, and can migrate between CRD versions.
+[Kubernetes Operators](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) are specialized software packages that help manage applications and resources in a k8s cluster. This operator will create, initialize and run a [CoreMedia Content Cloud](https://www.coremedia.com) application. A custom resource definition is used to define all relevant parameters.
 
 ## Quick Links
 
@@ -35,6 +15,64 @@ Planned features include:
 * [Using the Operator to create a CoreMedia installation](#using-the-operator): quick start
 * [Customizing the CMCC Operator](docs/customizing-the-operator.md): information for developers
 * [ghcr.io/t-systems-mms/cmcc-operator/cmcc-operator](https://github.com/T-Systems-MMS/cmcc-operator/pkgs/container/cmcc-operator%2Fcmcc-operator) Docker Image
+* [Cluster Roles and Rights](docs/cluster-roles.md) that the operator requires.
+
+## Table of Contents
+<!-- npx markdown-toc --maxdepth 3 -i README.md -->
+
+<!-- toc -->
+
+- [Features](#features)
+- [Preparing Your Cluster and Installing the Operator](#preparing-your-cluster-and-installing-the-operator)
+  * [Preparing the Kubernetes Cluster](#preparing-the-kubernetes-cluster)
+  * [Required DNS Names](#required-dns-names)
+  * [Using Docker Desktop](#using-docker-desktop)
+  * [Using k3d](#using-k3d)
+- [Installing the Operator](#installing-the-operator)
+  * [Installing the Operator Using the Helm Chart](#installing-the-operator-using-the-helm-chart)
+  * [Installing the Operator Manually](#installing-the-operator-manually)
+  * [Using the Custom Resource Definition](#using-the-custom-resource-definition)
+  * [Using a Config Map](#using-a-config-map)
+- [Configuring the Operator](#configuring-the-operator)
+- [Using the Operator](#using-the-operator)
+  * [Pull Secret](#pull-secret)
+  * [License Files](#license-files)
+  * [Creating a CoreMedia Installation - Helm Chart](#creating-a-coremedia-installation---helm-chart)
+  * [Creating a CoreMedia Installation - Custom Resource](#creating-a-coremedia-installation---custom-resource)
+  * [Creating a CoreMedia Installation - ConfigMap](#creating-a-coremedia-installation---configmap)
+  * [Deleting the CoreMedia Installation](#deleting-the-coremedia-installation)
+- [Building The Operator](#building-the-operator)
+
+<!-- tocstop -->
+
+## Features
+
+The operator:
+
+* manages the creation and updating of all the Kubernetes resources required to run CoreMedia Content Cloud. Care has
+  been taken to have sensible defaults for all parameters wherever possible.
+* can create a fresh installation from scratch, creating MariaDB and MongoDB database servers, and initialize the
+  necessary database schemas and secrets, suitable for a development environment. For production, persistence should be
+  provided, for example by using cloud services, or using other operators to provision databases.
+* can deploy against existing databases, using pre-existing secrets provided.
+* can use a custom resource definition or a config map to supply the values. This makes it possible to use the operator
+  even on clusters where you cannot install cluster-wide resources.
+* deploys the CoreMedia Content Cloud components step by step. This ensures that components that require other
+  components are only started when the dependencies have been initialized successfully.
+* imports test users and contents initially.
+* run additional jobs, for example to re-import content into a running installation.
+* configures the live CAE deployment with the desired number of replicas.
+* builds ingresses automatically from CAE site mappings.
+* can create random passwords for all components and configures the components to use them (MariaDB, MongoDB, and
+  UAPI/Corba). You can override any or all secrets for these usernames and password.
+* configures Solr clustering by specifying the number of replicas to create.
+* configures zero or more Replication Live Servers to provide redundancy in the delivery/live stage.
+* supports CoreMedia Content Cloud 11.
+
+Planned features include:
+* Support for Traefik ingress controller and its resource types (in addition to the [kubernetes/ingress-nginx](https://github.com/kubernetes/ingress-nginx)).
+* Admission webhook that verifies consistency of the custom resource, and can migrate between CRD versions.
+* Configuring a horizontal pod autoscaler for the live CAEs.
 
 ## Preparing Your Cluster and Installing the Operator
 
@@ -140,7 +178,7 @@ kubectl create secret generic license-cms --from-file=license.zip=license/cms-li
 
 The license secrets need to be created in the same namespace you plan to install CoreMedia in. See `licenseSecrets`, below.
 
-### Creating a CoreMedia Installation – Helm Chart
+### Creating a CoreMedia Installation - Helm Chart
 
 The [Helm chart cmcc](charts/cmcc) can be used to create a deployment for CoreMedia Content Cloud. See the documentation there for information on how to supply the necessary values to Helm.
 
@@ -149,7 +187,7 @@ $ helm repo add cmcc-operator https://t-systems-mms.github.io/cmcc-operator/
 $ helm upgrade --install my-release cmcc-operator/cmcc --values my-values.yaml
 ````
 
-### Creating a CoreMedia Installation – Custom Resource
+### Creating a CoreMedia Installation - Custom Resource
 
 You can create a complete CoreMedia installation by creating the custom resource `CoreMediaContentClouds` with the desired properties. An example can be found in [`k8s/example.yaml`](k8s/example.yaml), and can be created in the cluster like this:
 
@@ -167,7 +205,7 @@ obiwan   Created
 ```
 See below for the different milestones and their meaning.
 
-### Creating a CoreMedia Installation – ConfigMap
+### Creating a CoreMedia Installation - ConfigMap
 
 If you have enabled using a ConfigMap instead (or in addition to) the custom resource, you need to create a ConfigMap that maps the custom resource properties `spec` and `status` to `data` entries, and has a label `"cmcc.tsystemsmms.com.customresource": "cmcc"`. See the [`example-config.yaml`](k8s/example-configmap.yaml).
 

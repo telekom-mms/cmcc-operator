@@ -14,6 +14,7 @@ import com.tsystemsmms.cmcc.cmccoperator.components.AbstractComponent;
 import com.tsystemsmms.cmcc.cmccoperator.components.HasService;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ClientSecretRef;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
+import com.tsystemsmms.cmcc.cmccoperator.crds.WithOptions;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.ClientSecret;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.CustomResourceConfigError;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
@@ -44,7 +45,11 @@ public class MySQLComponent extends AbstractComponent implements HasService {
 
     @Override
     public void requestRequiredResources() {
-        getTargetState().getClientSecretRef(getComponentSpec().getType(), MYSQL_ROOT_USERNAME,
+        getClientSecretRef();
+    }
+
+    ClientSecretRef getClientSecretRef() {
+        return getTargetState().getClientSecretRef(getComponentSpec().getType(), MYSQL_ROOT_USERNAME,
                 (clientSecret, password) -> getTargetState().loadOrBuildSecret(clientSecret, Map.of(
                         ClientSecretRef.DEFAULT_PASSWORD_KEY, password,
                         ClientSecretRef.DEFAULT_USERNAME_KEY, MYSQL_ROOT_USERNAME
@@ -55,7 +60,8 @@ public class MySQLComponent extends AbstractComponent implements HasService {
     @Override
     public List<HasMetadata> buildResources() {
         List<HasMetadata> resources = new LinkedList<>();
-        resources.add(getPersistentVolumeClaim(getTargetState().getResourceNameFor(this)));
+        resources.add(getPersistentVolumeClaim(getTargetState().getResourceNameFor(this),
+                getVolumeSize(ComponentSpec.VolumeSize::getData)));
         resources.add(buildStatefulSet());
         resources.add(buildService());
         resources.addAll(buildExtraConfigMaps());
@@ -69,8 +75,9 @@ public class MySQLComponent extends AbstractComponent implements HasService {
 
     @Override
     public EnvVarSet getEnvVars() {
+        ClientSecretRef csr = getClientSecretRef();
         EnvVarSet env = new EnvVarSet();
-        env.add(EnvVarSecret("MYSQL_ROOT_PASSWORD", getTargetState().getResourceNameFor(this, MYSQL_ROOT_USERNAME), "password"));
+        env.add(EnvVarSecret("MYSQL_ROOT_PASSWORD", csr.getSecretName(), csr.getPasswordKey()));
         return env;
     }
 

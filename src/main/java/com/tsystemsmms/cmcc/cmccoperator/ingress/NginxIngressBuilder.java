@@ -20,113 +20,121 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class NginxIngressBuilder extends AbstractIngressBuilder {
-    private final String hostname;
-    private final String name;
-    private final TargetState targetState;
-    private final HashMap<String, String> annotations = new HashMap<>();
-    private final HashSet<Path> paths = new HashSet<>();
-    private final IngressTls tls;
+  private final String hostname;
+  private final String name;
+  private final TargetState targetState;
+  private final HashMap<String, String> annotations = new HashMap<>();
+  private final HashSet<Path> paths = new HashSet<>();
+  private final IngressTls tls;
 
-    public NginxIngressBuilder(TargetState targetState, String name, String hostname, IngressTls tls) {
-        this.hostname = hostname;
-        this.name = name;
-        this.targetState = targetState;
-        this.tls = tls;
+  public NginxIngressBuilder(TargetState targetState, String name, String hostname, IngressTls tls) {
+    this.annotations.putAll(targetState.getCmcc().getSpec().getWith().getIngressAnnotations());
+    this.hostname = hostname;
+    this.name = name;
+    this.targetState = targetState;
+    this.tls = tls;
+  }
+
+  @Override
+  public Collection<? extends HasMetadata> build() {
+    IngressTLS ingressTls;
+    ObjectMeta metadata = targetState.getResourceMetadataFor(name);
+    metadata.getAnnotations().putAll(annotations);
+
+    List<HTTPIngressPath> httpPaths = paths.stream().map(path -> withPath(new HTTPIngressPathBuilder(), path)
+            .withBackend(new IngressBackendBuilder()
+                    .withService(new IngressServiceBackendBuilder()
+                            .withName(path.getService())
+                            .withPort(new ServiceBackendPort("http", null))
+                            .build())
+                    .build())
+            .build()).collect(Collectors.toList());
+
+    if (tls.isEnabled()) {
+      ingressTls = new IngressTLSBuilder()
+              .withHosts(hostname)
+              .withSecretName(tls.getSecretName())
+              .build();
+    } else {
+      ingressTls = new IngressTLS();
     }
 
-    @Override
-    public Collection<? extends HasMetadata> build() {
-        IngressTLS ingressTls;
-        ObjectMeta metadata = targetState.getResourceMetadataFor(name);
-        metadata.getAnnotations().putAll(annotations);
+    return Collections.singletonList(new io.fabric8.kubernetes.api.model.networking.v1.IngressBuilder()
+            .withMetadata(metadata)
+            .withSpec(new IngressSpecBuilder()
+                    .withIngressClassName("nginx")
+                    .withTls(ingressTls)
+                    .withRules(new IngressRuleBuilder()
+                            .withHost(hostname)
+                            .withHttp(new HTTPIngressRuleValueBuilder()
+                                    .withPaths(httpPaths)
+                                    .build())
+                            .build())
+                    .build())
+            .build());
+  }
 
-        List<HTTPIngressPath> httpPaths = paths.stream().map(path -> withPath(new HTTPIngressPathBuilder(), path)
-                .withBackend(new IngressBackendBuilder()
-                        .withService(new IngressServiceBackendBuilder()
-                                .withName(path.getService())
-                                .withPort(new ServiceBackendPort("http", null))
-                                .build())
-                        .build())
-                .build()).collect(Collectors.toList());
+  @Override
+  public IngressBuilder pathExact(String path, String service) {
+    paths.add(new Path(path, PathType.EXACT, service));
+    return this;
+  }
 
-        if (tls.isEnabled()) {
-            ingressTls = new IngressTLSBuilder()
-                    .withHosts(hostname)
-                    .withSecretName(tls.getSecretName())
-                    .build();
-        } else {
-            ingressTls = new IngressTLS();
-        }
+  @Override
+  public IngressBuilder pathPattern(String path, String service) {
+    paths.add(new Path(path, PathType.PATTERN, service));
+    return this;
+  }
 
-        return Collections.singletonList(new io.fabric8.kubernetes.api.model.networking.v1.IngressBuilder()
-                .withMetadata(metadata)
-                .withSpec(new IngressSpecBuilder()
-                        .withIngressClassName("nginx")
-                        .withTls(ingressTls)
-                        .withRules(new IngressRuleBuilder()
-                                .withHost(hostname)
-                                .withHttp(new HTTPIngressRuleValueBuilder()
-                                        .withPaths(httpPaths)
-                                        .build())
-                                .build())
-                        .build())
-                .build());
+  @Override
+  public IngressBuilder pathPrefix(String path, String service) {
+    paths.add(new Path(path, PathType.PREFIX, service));
+    return this;
+  }
+
+  @Override
+  public IngressBuilder redirect(String uri) {
+    annotations.put("nginx.ingress.kubernetes.io/app-root", uri);
+    return this;
+  }
+
+  @Override
+  public IngressBuilder rewrite(String pattern) {
+    annotations.put("nginx.ingress.kubernetes.io/rewrite-target", pattern);
+    return this;
+  }
+
+  static HTTPIngressPathBuilder withPath(HTTPIngressPathBuilder b, Path path) {
+    switch (path.getType()) {
+      case EXACT:
+        b.withPath(path.getPattern());
+        b.withPathType("Exact");
+        break;
+      case PREFIX:
+        b.withPath(path.getPattern());
+        b.withPathType("Prefix");
+        break;
+      case PATTERN:
+        b.withPath(path.getPattern() + "$");
+        b.withPathType("Prefix");
+        break;
+      default:
+        throw new IllegalArgumentException("Unknown path type " + path.getType());
     }
 
-    @Override
-    public IngressBuilder pathExact(String path, String service) {
-        paths.add(new Path(path, PathType.EXACT, service));
-        return this;
-    }
+    return b;
+  }
 
-    @Override
-    public IngressBuilder pathPattern(String path, String service) {
-        paths.add(new Path(path, PathType.PATTERN, service));
-        return this;
-    }
+  @Override
+  public IngressBuilder responseTimeout(int seconds) {
+    annotations.put("nginx.ingress.kubernetes.io/proxy-read-timeout", String.valueOf(seconds));
+    return this;
+  }
 
-    @Override
-    public IngressBuilder pathPrefix(String path, String service) {
-        paths.add(new Path(path, PathType.PREFIX, service));
-        return this;
-    }
-
-    @Override
-    public IngressBuilder redirect(String uri) {
-        annotations.put("nginx.ingress.kubernetes.io/app-root", uri);
-        return this;
-    }
-
-    @Override
-    public IngressBuilder rewrite(String pattern) {
-        annotations.put("nginx.ingress.kubernetes.io/rewrite-target", pattern);
-        return this;
-    }
-
-    static HTTPIngressPathBuilder withPath(HTTPIngressPathBuilder b, Path path) {
-        switch (path.getType()) {
-            case EXACT:
-                b.withPath(path.getPattern());
-                b.withPathType("Exact");
-                break;
-            case PREFIX:
-                b.withPath(path.getPattern());
-                b.withPathType("Prefix");
-                break;
-            case PATTERN:
-                b.withPath(path.getPattern() + "$");
-                b.withPathType("Prefix");
-                break;
-            default:
-                throw new IllegalArgumentException("Unknown path type " + path.getType());
-        }
-
-        return b;
-    }
-
-    @Override
-    public IngressBuilder uploadSize(String size) {
-        annotations.put("nginx.ingress.kubernetes.io/proxy-body-size", size);
-        return this;
-    }
+  @Override
+  public IngressBuilder uploadSize(int size) {
+    if (size > 0)
+      annotations.put("nginx.ingress.kubernetes.io/proxy-body-size", size + "M");
+    return this;
+  }
 }

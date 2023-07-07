@@ -46,6 +46,11 @@ spec:
                     name:
                       description: Name to be used for k8s objects
                       type: string
+                    annotations:
+                      additionalProperties:
+                        type: string
+                      description: Additional annotations
+                      type: object
                     args:
                       description: Args for the main pod container
                       items:
@@ -132,13 +137,54 @@ spec:
                       - ManagementReady
                       - Ready
                       - RunJob
+                      - Healing
                       - Never
                       - next
                       type: string
+                    resources:
+                      description: "Resource management (limits, requests)"
+                      properties:
+                        limits:
+                          additionalProperties:
+                            type: string
+                          description: Limits to resources for this components pods
+                          type: object
+                        requests:
+                          additionalProperties:
+                            type: string
+                          description: Requests for resources for this components
+                            pods
+                          type: object
+                      type: object
                     schemas:
                       additionalProperties:
                         type: string
                       description: "Schema names for JDBC, MongoDB, and/or UAPI"
+                      type: object
+                    volumeSize:
+                      description: Size of persistent data/cache volumes
+                      properties:
+                        data:
+                          description: "Size of data volume, in k8s quantity"
+                          type: string
+                        mongoDbData:
+                          description: "DEPRECATED. Size of MongoDb data volume, in\
+                            \ k8s quantity"
+                          type: string
+                        mysqlData:
+                          description: "DEPRECATED. Size of MySQL data volume, in\
+                            \ k8s quantity"
+                          type: string
+                        solrData:
+                          description: "DEPRECATED. Size of Solr data volume, in k8s\
+                            \ quantity"
+                          type: string
+                        transformedBlobCache:
+                          description: "Size of transformed BLOB cache, in k8s quantity"
+                          type: string
+                        uapiBlobCache:
+                          description: "Size of UAPI BLOB cache, in k8s quantity"
+                          type: string
                       type: object
                   type: object
                 type: array
@@ -188,6 +234,11 @@ spec:
               defaults:
                 description: Default values for components
                 properties:
+                  annotations:
+                    additionalProperties:
+                      type: string
+                    description: Additional annotations for all component pods
+                    type: object
                   curlImage:
                     description: Docker image with curl available
                     type: string
@@ -214,22 +265,21 @@ spec:
                     description: "Use this password for all database accounts, instead\
                       \ of a random one."
                     type: string
+                  javaOpts:
+                    description: "For Java components, use these JAVA_OPTS."
+                    type: string
                   resources:
-                    description: Default resource declarations
+                    description: "Default resource management (limits, requests)"
                     properties:
                       limits:
                         additionalProperties:
-                          anyOf:
-                          - type: integer
-                          - type: string
-                          x-kubernetes-int-or-string: true
+                          type: string
+                        description: Limits to resources for this components pods
                         type: object
                       requests:
                         additionalProperties:
-                          anyOf:
-                          - type: integer
-                          - type: string
-                          x-kubernetes-int-or-string: true
+                          type: string
+                        description: Requests for resources for this components pods
                         type: object
                     type: object
                   namePrefix:
@@ -239,6 +289,9 @@ spec:
                   previewHostname:
                     description: "Hostname of the preview CAE. If short, will be prefixed\
                       \ with the prefix and the ingressDomain appended"
+                    type: string
+                  siteMappingProtocol:
+                    description: Default protocol for all site mapping entries
                     type: string
                   storageClass:
                     description: Name of StorageClass to be used for PersistentVolumeClaims
@@ -252,6 +305,31 @@ spec:
                     items:
                       type: string
                     type: array
+                  volumeSize:
+                    description: Size of persistent data/cache volumes
+                    properties:
+                      data:
+                        description: "Size of data volume, in k8s quantity"
+                        type: string
+                      mongoDbData:
+                        description: "DEPRECATED. Size of MongoDb data volume, in\
+                          \ k8s quantity"
+                        type: string
+                      mysqlData:
+                        description: "DEPRECATED. Size of MySQL data volume, in k8s\
+                          \ quantity"
+                        type: string
+                      solrData:
+                        description: "DEPRECATED. Size of Solr data volume, in k8s\
+                          \ quantity"
+                        type: string
+                      transformedBlobCache:
+                        description: "Size of transformed BLOB cache, in k8s quantity"
+                        type: string
+                      uapiBlobCache:
+                        description: "Size of UAPI BLOB cache, in k8s quantity"
+                        type: string
+                    type: object
                 type: object
               licenseSecrets:
                 description: Names of the secrets containing the license
@@ -283,12 +361,21 @@ spec:
                       description: Fully-qualified hostname of the site; defaults
                         to the simple hostname
                       type: string
+                    fqdnAliases:
+                      description: Optional additional FQDNs to create ingress resources
+                        for
+                      items:
+                        type: string
+                      type: array
                     hostname:
                       description: Simple hostname of the site; used as the key for
                         site mappings
                       type: string
                     primarySegment:
                       description: The site segment the root maps to
+                      type: string
+                    protocol:
+                      description: Protocol for this entry
                       type: string
                     tls:
                       description: TLS settings for this mapping
@@ -309,8 +396,13 @@ spec:
                     description: "Import content, users, themes and workflows"
                     type: boolean
                   databases:
-                    description: Create databases for CoreMedia
+                    description: Create databases and secrets for CoreMedia
                     type: boolean
+                  databasesOverride:
+                    additionalProperties:
+                      type: boolean
+                    description: "Create databases and secrets, except for these"
+                    type: object
                   delivery:
                     description: Create default components for the delivery stage
                     properties:
@@ -333,9 +425,99 @@ spec:
                         description: Maximum number of CAEs per RLS
                         x-kubernetes-int-or-string: true
                     type: object
+                  handlerPrefixes:
+                    description: Set of URI prefixes that should be passed through
+                      to /blueprint/servlet unchanged
+                    items:
+                      type: string
+                    type: array
+                  ingressAnnotations:
+                    additionalProperties:
+                      type: string
+                    description: Add these annotations to the managed Ingress resources
+                    type: object
+                  ingressSeoHandler:
+                    description: Path to handler for robots.txt and sitemap.xml
+                    type: string
                   management:
                     description: Create default components for the management stage
                     type: boolean
+                  resources:
+                    description: Enable setting resource limits and requests on all
+                      components
+                    type: boolean
+                  responseTimeout:
+                    description: Response timeouts for different Ingress objects
+                    properties:
+                      live:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        description: Response timeout in the ingress controller for
+                          the live CAEs
+                        x-kubernetes-int-or-string: true
+                      preview:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        description: Response timeout in the ingress controller for
+                          the preview CAE
+                        x-kubernetes-int-or-string: true
+                      studio:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        description: Response timeout in the ingress controller for
+                          the Studio
+                        x-kubernetes-int-or-string: true
+                    type: object
+                  uploadSize:
+                    description: Size of POST/PUT body in MB
+                    properties:
+                      live:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        description: Size of POST/PUT body in MB for the live CAEs
+                        x-kubernetes-int-or-string: true
+                      preview:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        description: Size of POST/PUT body in MB for the preview CAE
+                        x-kubernetes-int-or-string: true
+                      studio:
+                        anyOf:
+                        - type: integer
+                        - type: string
+                        description: Size of POST/PUT body in MB for the Studio
+                        x-kubernetes-int-or-string: true
+                    type: object
+                  volumeSize:
+                    description: "DEPRECATED: Size of persistent data/cache volumes"
+                    properties:
+                      data:
+                        description: "Size of data volume, in k8s quantity"
+                        type: string
+                      mongoDbData:
+                        description: "DEPRECATED. Size of MongoDb data volume, in\
+                          \ k8s quantity"
+                        type: string
+                      mysqlData:
+                        description: "DEPRECATED. Size of MySQL data volume, in k8s\
+                          \ quantity"
+                        type: string
+                      solrData:
+                        description: "DEPRECATED. Size of Solr data volume, in k8s\
+                          \ quantity"
+                        type: string
+                      transformedBlobCache:
+                        description: "Size of transformed BLOB cache, in k8s quantity"
+                        type: string
+                      uapiBlobCache:
+                        description: "Size of UAPI BLOB cache, in k8s quantity"
+                        type: string
+                    type: object
                 type: object
               job:
                 description: Run this job component once from Ready
@@ -367,6 +549,7 @@ spec:
                 - ManagementReady
                 - Ready
                 - RunJob
+                - Healing
                 - Never
                 - next
                 type: string
