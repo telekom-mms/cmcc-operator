@@ -10,18 +10,12 @@
 
 package com.tsystemsmms.cmcc.cmccoperator.customresource;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tsystemsmms.cmcc.cmccoperator.crds.CoreMediaContentCloud;
 import com.tsystemsmms.cmcc.cmccoperator.crds.CoreMediaContentCloudSpec;
 import com.tsystemsmms.cmcc.cmccoperator.crds.CoreMediaContentCloudStatus;
-import com.tsystemsmms.cmcc.cmccoperator.targetstate.CustomResourceConfigError;
-import com.tsystemsmms.cmcc.cmccoperator.utils.YamlMapper;
-import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import lombok.Getter;
-import org.checkerframework.checker.units.qual.C;
-import org.yaml.snakeyaml.Yaml;
 
 import static org.springframework.beans.BeanUtils.copyProperties;
 

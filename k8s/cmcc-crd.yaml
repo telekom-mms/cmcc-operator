@@ -138,7 +138,6 @@ spec:
                       - RunJob
                       - Healing
                       - Never
-                      - next
                       type: string
                     resources:
                       description: "Resource management (limits, requests)"
@@ -550,7 +549,6 @@ spec:
                 - RunJob
                 - Healing
                 - Never
-                - next
                 type: string
               ownedResourceRefs:
                 description: Unused

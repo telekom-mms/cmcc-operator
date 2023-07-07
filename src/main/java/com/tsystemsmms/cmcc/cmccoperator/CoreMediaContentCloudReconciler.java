@@ -18,8 +18,10 @@ import com.tsystemsmms.cmcc.cmccoperator.customresource.CustomResource;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetStateFactory;
 import com.tsystemsmms.cmcc.cmccoperator.utils.Utils;
+import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
@@ -28,71 +30,70 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEven
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 @ControllerConfiguration
 @Slf4j
 public class CoreMediaContentCloudReconciler implements Reconciler<CoreMediaContentCloud>, ErrorStatusHandler<CoreMediaContentCloud>, EventSourceInitializer<CoreMediaContentCloud> {
 
-    public static final Map<String, String> OPERATOR_SELECTOR_LABELS = Map.of("cmcc.tsystemsmms.com/operator", "cmcc");
+  public static final Map<String, String> OPERATOR_SELECTOR_LABELS = Map.of("cmcc.tsystemsmms.com/operator", "cmcc");
 
-    private final KubernetesClient kubernetesClient;
-    private final TargetStateFactory targetStateFactory;
+  private final KubernetesClient kubernetesClient;
+  private final TargetStateFactory targetStateFactory;
 
-    public CoreMediaContentCloudReconciler(KubernetesClient kubernetesClient, TargetStateFactory targetStateFactory) {
-        this.kubernetesClient = kubernetesClient;
-        this.targetStateFactory = targetStateFactory;
-        log.info("Using custom resource {} for configuration", CoreMediaContentCloud.class.getSimpleName());
+  public CoreMediaContentCloudReconciler(KubernetesClient kubernetesClient, TargetStateFactory targetStateFactory) {
+    this.kubernetesClient = kubernetesClient;
+    this.targetStateFactory = targetStateFactory;
+    log.info("Using custom resource {} for configuration", CoreMediaContentCloud.class.getSimpleName());
+  }
+
+  @Override
+  public UpdateControl<CoreMediaContentCloud> reconcile(CoreMediaContentCloud cmcc, Context context) {
+    CustomResource deepCopy = new CrdCustomResource(Utils.deepClone(cmcc, CoreMediaContentCloud.class));
+    CoreMediaContentCloudStatus status = deepCopy.getStatus();
+
+    TargetState targetState = targetStateFactory.buildTargetState(deepCopy);
+    targetState.reconcile();
+
+    status.setError("");
+    status.setErrorMessage("");
+    if (!deepCopy.getStatus().getJob().isBlank()) {
+      cmcc.getSpec().setJob("");
+      cmcc.setStatus(status);
+      return UpdateControl.updateResourceAndStatus(cmcc);
+    } else {
+      cmcc.setStatus(status);
+      return UpdateControl.updateStatus(cmcc);
     }
+  }
+
+  @Override
+  public ErrorStatusUpdateControl<CoreMediaContentCloud> updateErrorStatus(CoreMediaContentCloud resource, Context<CoreMediaContentCloud> context, Exception e) {
+    CoreMediaContentCloudStatus status = resource.getStatus();
+    status.setErrorMessage(e.getMessage());
+    status.setError("error");
+    resource.setStatus(status);
+    return ErrorStatusUpdateControl.updateStatus(resource);
+  }
+
+  @Override
+  public Map<String, EventSource> prepareEventSources(EventSourceContext<CoreMediaContentCloud> context) {
+    return EventSourceInitializer.nameEventSources(
+            new InformerEventSource<>(InformerConfiguration.from(Job.class, context)
+                    .withLabelSelector(Utils.selectorFromLabels(MgmtToolsJobComponent.getJobLabels()))
+                    .withSecondaryToPrimaryMapper(Mappers.fromOwnerReference()).build(), kubernetesClient),
+            new InformerEventSource<>(InformerConfiguration.from(StatefulSet.class, context)
+                    .withLabelSelector(Utils.selectorFromLabels(OPERATOR_SELECTOR_LABELS))
+                    .withSecondaryToPrimaryMapper(Mappers.fromOwnerReference()).build(), kubernetesClient)
+    );
+  }
+
+  public static class LabelMapper implements SecondaryToPrimaryMapper<Job> {
 
     @Override
-    public UpdateControl<CoreMediaContentCloud> reconcile(CoreMediaContentCloud cmcc, Context context) {
-        CustomResource deepCopy = new CrdCustomResource(Utils.deepClone(cmcc, CoreMediaContentCloud.class));
-        CoreMediaContentCloudStatus status = deepCopy.getStatus();
-
-        TargetState targetState = targetStateFactory.buildTargetState(deepCopy);
-        targetState.reconcile();
-
-        status.setError("");
-        status.setErrorMessage("");
-        if (!deepCopy.getStatus().getJob().isBlank()) {
-            cmcc.getSpec().setJob("");
-            cmcc.setStatus(status);
-            return UpdateControl.updateResourceAndStatus(cmcc);
-        } else {
-            cmcc.setStatus(status);
-            return UpdateControl.updateStatus(cmcc);
-        }
+    public Set<ResourceID> toPrimaryResourceIDs(Job dependentResource) {
+      return null;
     }
-
-    @Override
-    public DeleteControl cleanup(CoreMediaContentCloud cmcc, Context context) {
-        return DeleteControl.defaultDelete();
-    }
-
-    @Override
-    public Optional<CoreMediaContentCloud> updateErrorStatus(CoreMediaContentCloud resource, RetryInfo retryInfo,
-                                                             RuntimeException e) {
-        CoreMediaContentCloudStatus status = resource.getStatus();
-        status.setErrorMessage(e.getMessage());
-        status.setError("error");
-        return Optional.of(resource);
-    }
-
-    @Override
-    public Map<String, EventSource> prepareEventSources(EventSourceContext<CoreMediaContentCloud> context) {
-        return EventSourceInitializer.nameEventSources(new InformerEventSource<>(kubernetesClient.batch().v1().jobs().inAnyNamespace().withLabels(MgmtToolsJobComponent.getJobLabels()).runnableInformer(1200), Mappers.fromOwnerReference()),
-                new InformerEventSource<>(kubernetesClient.apps().statefulSets().inAnyNamespace().withLabels(OPERATOR_SELECTOR_LABELS).runnableInformer(1200), Mappers.fromOwnerReference()));
-    }
-
-    public static class LabelMapper implements SecondaryToPrimaryMapper<Job> {
-
-        @Override
-        public Set<ResourceID> toPrimaryResourceIDs(Job dependentResource) {
-            return null;
-        }
-    }
+  }
 }

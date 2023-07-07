@@ -201,4 +201,16 @@ public class Utils {
       return;
     from.forEach((key, value) -> into.merge(key, value, (a, b) -> b));
   }
+
+  /**
+   * Given a map of labels, return a Kubernetes selector expression.
+   *
+   * @param labels map of labels to match
+   * @return selector expression
+   */
+  public static String selectorFromLabels(Map<String, String> labels) {
+    return labels.entrySet().stream()
+            .map((e) -> e.getKey() + "=" + e.getValue())
+            .collect(Collectors.joining(","));
+  }
 }

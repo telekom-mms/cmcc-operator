@@ -10,11 +10,11 @@
 
 package com.tsystemsmms.cmcc.cmccoperator.targetstate;
 
-import com.tsystemsmms.cmcc.cmccoperator.customresource.CustomResource;
 import com.tsystemsmms.cmcc.cmccoperator.components.Component;
 import com.tsystemsmms.cmcc.cmccoperator.components.ComponentCollection;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ClientSecretRef;
 import com.tsystemsmms.cmcc.cmccoperator.crds.Milestone;
+import com.tsystemsmms.cmcc.cmccoperator.customresource.CustomResource;
 import com.tsystemsmms.cmcc.cmccoperator.ingress.CmccIngressGeneratorFactory;
 import com.tsystemsmms.cmcc.cmccoperator.resource.ResourceReconcilerManager;
 import com.tsystemsmms.cmcc.cmccoperator.utils.RandomString;
@@ -444,7 +444,7 @@ public abstract class AbstractTargetState implements TargetState {
    */
   public Secret loadSecret(String name) {
     Secret secret = kubernetesClient.secrets().inNamespace(getCmcc().getMetadata().getNamespace()).withName(name).get();
-    if (secret != null && secret.getStringData() == null) {
+    if (secret != null && (secret.getStringData() == null || secret.getStringData().size() == 0)) {
       Map<String, String> stringData = new HashMap<>();
       secret.setStringData(stringData);
       if (secret.getData() != null) {

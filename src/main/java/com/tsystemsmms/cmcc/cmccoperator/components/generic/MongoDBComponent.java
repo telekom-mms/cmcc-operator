@@ -14,7 +14,6 @@ import com.tsystemsmms.cmcc.cmccoperator.components.AbstractComponent;
 import com.tsystemsmms.cmcc.cmccoperator.components.HasService;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ClientSecretRef;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
-import com.tsystemsmms.cmcc.cmccoperator.crds.WithOptions;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.ClientSecret;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.CustomResourceConfigError;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
@@ -207,7 +206,7 @@ public class MongoDBComponent extends AbstractComponent implements HasService {
 
         for (ClientSecret cs : secrets.values()) {
             Map<String, String> data = cs.getStringData();
-            if (data.get(DEFAULT_USERNAME_KEY).equals(MONGODB_ROOT_USERNAME))
+            if (MONGODB_ROOT_USERNAME.equals(data.get(DEFAULT_USERNAME_KEY)))
                 continue;
             // we would like to give client only rights to a specific database, but CM requires the right to create multiple databases (or somehow know which DBs will be created; the list is undocumented, however.
 //            createUsersJs.append(format("db = db.getSiblingDB('{}');\ndb.createUser({user: '{}', pwd: '{}', roles: ['readWrite', 'dbAdmin']});\n",
