@@ -14,7 +14,6 @@ import com.tsystemsmms.cmcc.cmccoperator.components.AbstractComponent;
 import com.tsystemsmms.cmcc.cmccoperator.components.HasService;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ClientSecretRef;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
-import com.tsystemsmms.cmcc.cmccoperator.crds.WithOptions;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.ClientSecret;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.CustomResourceConfigError;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
@@ -196,7 +195,7 @@ public class MySQLComponent extends AbstractComponent implements HasService {
         StringBuilder sql = new StringBuilder();
         for (ClientSecret cs : secrets.values()) {
             Map<String, String> data = cs.getStringData();
-            if (data.get(ClientSecretRef.DEFAULT_USERNAME_KEY).equals(MYSQL_ROOT_USERNAME))
+            if (MYSQL_ROOT_USERNAME.equals(data.get(ClientSecretRef.DEFAULT_USERNAME_KEY)))
                 continue;
             sql.append(format("CREATE SCHEMA IF NOT EXISTS {} CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;\n", data.get(ClientSecretRef.DEFAULT_SCHEMA_KEY)));
             sql.append(format("CREATE USER IF NOT EXISTS '{}'@'%' IDENTIFIED BY '{}';\n", data.get(ClientSecretRef.DEFAULT_USERNAME_KEY), data.get(ClientSecretRef.DEFAULT_PASSWORD_KEY)));

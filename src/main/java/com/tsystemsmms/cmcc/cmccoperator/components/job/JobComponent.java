@@ -24,81 +24,82 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public abstract class JobComponent extends SpringBootComponent {
-    long activeDeadlineSeconds = 120L;
+  long activeDeadlineSeconds = 120L;
 
-    public JobComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec componentSpec, String imageRepository) {
-        super(kubernetesClient, targetState, componentSpec, imageRepository);
-    }
+  public JobComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec componentSpec, String imageRepository) {
+    super(kubernetesClient, targetState, componentSpec, imageRepository);
+  }
 
-    @Override
-    public boolean isBuildResources() {
-        return Milestone.compareTo(getCmcc().getStatus().getMilestone(), getComponentSpec().getMilestone()) == 0;
-    }
+  @Override
+  public boolean isBuildResources() {
+    return Milestone.compareTo(getCmcc().getStatus().getMilestone(), getComponentSpec().getMilestone()) == 0;
+  }
 
-    @Override
-    public List<HasMetadata> buildResources() {
-        return List.of(buildJob());
-    }
+  @Override
+  public List<HasMetadata> buildResources() {
+    return List.of(buildJob());
+  }
 
-    @Override
-    public Probe getLivenessProbe() {
-        return null;
-    }
+  @Override
+  public Probe getLivenessProbe() {
+    return null;
+  }
 
-    @Override
-    public Probe getReadinessProbe() {
-        return null;
-    }
+  @Override
+  public Probe getReadinessProbe() {
+    return null;
+  }
 
-    @Override
-    public Probe getStartupProbe() {
-        return null;
-    }
+  @Override
+  public Probe getStartupProbe() {
+    return null;
+  }
 
-    Job buildJob() {
-        return new JobBuilder()
-                .withMetadata(getResourceMetadata())
-                .withSpec(new JobSpecBuilder()
-                        .withActiveDeadlineSeconds(activeDeadlineSeconds)
-                        .withBackoffLimit(3)
-                        .withCompletions(1)
-                        .withParallelism(1)
-                        .withTemplate(new PodTemplateSpecBuilder()
-                                .withMetadata(new ObjectMetaBuilder()
-                                        .withAnnotations(getAnnotations())
-                                        .withLabels(getSelectorLabels())
-                                        .build())
-                                .withSpec(new PodSpecBuilder()
-                                        .withRestartPolicy("Never")
-                                        .withContainers(buildContainers())
-                                        .withInitContainers(getInitContainers())
-                                        .withVolumes(getVolumes())
-                                        .build())
-                                .build())
-                        .build())
-                .build();
-    }
+  Job buildJob() {
+    return new JobBuilder()
+            .withMetadata(getResourceMetadata())
+            .withSpec(new JobSpecBuilder()
+                    .withActiveDeadlineSeconds(activeDeadlineSeconds)
+                    .withBackoffLimit(3)
+                    .withCompletions(1)
+                    .withParallelism(1)
+                    .withTemplate(new PodTemplateSpecBuilder()
+                            .withMetadata(new ObjectMetaBuilder()
+                                    .withAnnotations(getAnnotations())
+                                    .withLabels(getSelectorLabels())
+                                    .build())
+                            .withSpec(new PodSpecBuilder()
+                                    .withRestartPolicy("Never")
+                                    .withContainers(buildContainers())
+                                    .withInitContainers(getInitContainers())
+                                    .withVolumes(getVolumes())
+                                    .build())
+                            .build())
+                    .build())
+            .build();
+  }
 
-    @Override
-    public HashMap<String, String> getSelectorLabels() {
-        HashMap<String, String> labels = super.getSelectorLabels();
-        labels.putAll(getJobLabels());
-        return labels;
-    }
+  @Override
+  public HashMap<String, String> getSelectorLabels() {
+    HashMap<String, String> labels = super.getSelectorLabels();
+    labels.putAll(getJobLabels());
+    return labels;
+  }
 
-    public static Map<String, String> getJobLabels() {
-        return Map.of("cmcc.tsystemsmms.com/job", JobComponent.class.getSimpleName().replaceAll("Component$", ""));
-    }
+  public static Map<String, String> getJobLabels() {
+    return Map.of("cmcc.tsystemsmms.com/job", JobComponent.class.getSimpleName().replaceAll("Component$", ""));
+  }
 
-    @Override
-    public Optional<Boolean> isReady() {
-        // job is only active during one milestone
-        if (Milestone.compareTo(getCmcc().getStatus().getMilestone(), getComponentSpec().getMilestone()) != 0)
-            return Optional.empty();
-        return Optional.of(getTargetState().isJobReady(getTargetState().getResourceNameFor(this)));
-    }
+  @Override
+  public Optional<Boolean> isReady() {
+    // job is only active during one milestone
+    if (Milestone.compareTo(getCmcc().getStatus().getMilestone(), getComponentSpec().getMilestone()) != 0)
+      return Optional.empty();
+    return Optional.of(getTargetState().isJobReady(getTargetState().getResourceNameFor(this)));
+  }
 
 
 }

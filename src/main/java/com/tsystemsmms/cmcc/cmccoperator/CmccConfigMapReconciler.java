@@ -15,18 +15,20 @@ import com.tsystemsmms.cmcc.cmccoperator.crds.CoreMediaContentCloudStatus;
 import com.tsystemsmms.cmcc.cmccoperator.customresource.ConfigMapCustomResource;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetStateFactory;
+import com.tsystemsmms.cmcc.cmccoperator.utils.Utils;
 import com.tsystemsmms.cmcc.cmccoperator.utils.YamlMapper;
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.apps.StatefulSet;
+import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import static com.tsystemsmms.cmcc.cmccoperator.CoreMediaContentCloudReconciler.OPERATOR_SELECTOR_LABELS;
 
@@ -65,22 +67,26 @@ public class CmccConfigMapReconciler implements Reconciler<ConfigMap>, ErrorStat
     }
 
     @Override
-    public DeleteControl cleanup(ConfigMap cm, Context context) {
-        return DeleteControl.defaultDelete();
-    }
+    public ErrorStatusUpdateControl<ConfigMap> updateErrorStatus(ConfigMap cm, Context<ConfigMap> context, Exception e) {
+        ConfigMapCustomResource cmcc = new ConfigMapCustomResource(cm, yamlMapper);
+        CoreMediaContentCloudStatus status = cmcc.getStatus();
 
-    @Override
-    public Optional<ConfigMap> updateErrorStatus(ConfigMap cm, RetryInfo retryInfo,
-                                                             RuntimeException e) {
-        CoreMediaContentCloudStatus status = new ConfigMapCustomResource(cm, yamlMapper).getStatus();
         status.setErrorMessage(e.getMessage());
         status.setError("error");
-        return Optional.of(cm);
+        cmcc.setStatus(status);
+        cmcc.updateResource();
+        return ErrorStatusUpdateControl.updateStatus(cm);
     }
 
     @Override
     public Map<String, EventSource> prepareEventSources(EventSourceContext<ConfigMap> context) {
-        return EventSourceInitializer.nameEventSources(new InformerEventSource<>(kubernetesClient.batch().v1().jobs().inAnyNamespace().withLabels(MgmtToolsJobComponent.getJobLabels()).runnableInformer(1200), Mappers.fromOwnerReference()),
-                new InformerEventSource<>(kubernetesClient.apps().statefulSets().inAnyNamespace().withLabels(OPERATOR_SELECTOR_LABELS).runnableInformer(1200), Mappers.fromOwnerReference()));
+        return EventSourceInitializer.nameEventSources(
+                new InformerEventSource<>(InformerConfiguration.from(Job.class, context)
+                        .withLabelSelector(Utils.selectorFromLabels(MgmtToolsJobComponent.getJobLabels()))
+                        .withSecondaryToPrimaryMapper(Mappers.fromOwnerReference()).build(), kubernetesClient),
+                new InformerEventSource<>(InformerConfiguration.from(StatefulSet.class, context)
+                        .withLabelSelector(Utils.selectorFromLabels(OPERATOR_SELECTOR_LABELS))
+                        .withSecondaryToPrimaryMapper(Mappers.fromOwnerReference()).build(), kubernetesClient)
+        );
     }
 }

@@ -16,6 +16,12 @@ configurations {
     }
 }
 
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
 repositories {
     mavenCentral()
 }
@@ -25,20 +31,25 @@ compileJava {
 }
 
 dependencies {
-    implementation 'org.springframework.boot:spring-boot-starter-actuator'
-    implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'io.javaoperatorsdk:operator-framework-spring-boot-starter:3.0.2'
+    implementation 'org.springframework.boot:spring-boot-starter:3.1.1'
+//    developmentOnly 'org.springframework.boot:spring-boot-devtools:3.1.1'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator:3.1.1'
+    implementation 'org.springframework.boot:spring-boot-starter-web:3.1.1'
+    implementation 'io.javaoperatorsdk:operator-framework-spring-boot-starter:5.1.0'
+    constraints {
+        implementation('io.fabric8:kubernetes-httpclient-okhttp:6.7.1') {
+            because 'some internal dependencies seem to be for 6.6.2 which works differently'
+        }
+    }
     implementation 'org.bouncycastle:bcpkix-jdk15on:1.70'
     // required for the fabric8 k8s client to grok k3d certificates
-    implementation 'org.springframework.boot:spring-boot-starter'
-//    developmentOnly 'org.springframework.boot:spring-boot-devtools'
-    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor:3.1.1'
     compileOnly 'org.projectlombok:lombok'
     testCompileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
-    annotationProcessor 'io.fabric8:crd-generator-apt:5.12.3'
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testImplementation 'io.javaoperatorsdk:operator-framework-spring-boot-starter-test:3.0.2'
+    annotationProcessor 'io.fabric8:crd-generator-apt:6.5.0'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test:3.1.1'
+    testImplementation 'io.javaoperatorsdk:operator-framework-spring-boot-starter-test:5.1.0'
 }
 
 tasks.named('test') {
@@ -76,7 +87,7 @@ if (hasProperty('buildScan')) {
 
 jib {
     from {
-        image = "docker.io/library/openjdk:11-jre-slim"
+        image = "docker.io/library/openjdk:17-jre-slim"
         platforms {
             platform {
                 architecture = 'amd64'
