@@ -27,7 +27,7 @@ import java.util.function.Supplier;
 /**
  * Helm convert from Yaml to objects and vice versa.
  *
- * This class is using both SnakeYaml and Jackson. SnakeYaml has some excentric functionality that deos not work well
+ * This class is using both SnakeYaml and Jackson. SnakeYaml has some eccentric functionality that does not work well
  * with sets, for example, when converting from Yaml to a bean. We fix this by first having SnakeYaml parse into
  * generic Maps, Lists, etc., then using Jackson to convert from that to the target class.
  */

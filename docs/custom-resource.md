@@ -104,8 +104,10 @@ properties have suitable defaults.
 | `defaults.insecureDatabasePassword` | String               | ""                                                | **DO NOT SET**. See below for more information.                                                                                              |
 | `defaults.javaOpts`                 | String               | `-XX:MinRAMPercentage=75 -XX:MaxRAMPercentage=90` | For Java components, use these JVM options.                                                                                                  |
 | `defaults.namePrefix`               | String               | ""                                                | Prefix resources with this name plus '-'.                                                                                                    |
+| `defaults.podSecurityContext`       | object               | -                                                 | Default security context for a pod                                                                                                           |
 | `defaults.previewHostname`          | String               | `preview`                                         | Hostname of the preview CAE. Unless it is a fully-qualified domain name, the `namePrefix` and the `ingressDomain` will be pre- and appended. |
 | `defaults.resources`                | resources            | –                                                 | Default resource limits and requests for components. See below [Components](#components)                                                     |
+| `defaults.securityContext`          | object               | -                                                 | Default security context for containers in a pod                                                                                             |
 | `defaults.siteMappingProtocol`      | String               | `https://`                                        | Default for the protocol of site mapping. entries                                                                                            |
 | `defaults.studioHostname`           | String               | `studio`                                          | Hostname of the Studio. Unless it is a fully-qualified domain name, the `namePrefix` and the `ingressDomain` will be pre- and appended.      |
 | `defaults.volumeSize`               | object               |                                                   | Size of persistent volume claims for components. See [Components/Volume Size](#volume-size)                                                  |
@@ -567,23 +569,25 @@ For example, the request `https://corporate.example.de/sitemap-0.xml` will be ma
 `components` specifies a list of CoreMedia components and their parameters. The only required parameter is `type`, which
 specifies the type of component, and for some component types, `kind` as a sub-type.
 
-| Property           | Type           | Default         | Description                                                                                                                                  |
-|--------------------|----------------|-----------------|----------------------------------------------------------------------------------------------------------------------------------------------|
-| `type`             | String         | –               | Required type of the component                                                                                                               |
-| `kind`             | String         | –               | Sub-type, required for some component types                                                                                                  |
-| `name`             | String         | type            | The name of the component and the resources created for it. Defaults to a type-specific name, typically the type itself                      |
-| `annotations`      | object         | –               | Additional annotations to add to the pods of this component.                                                                                 |
-| `args`             | list of String | –               | Args for the main container of the main pod. Defaults to unset, using the default from the image.                                            |
-| `env`              | list of EnvVar | –               | Additional environment variables to be made available to the containers                                                                      |
-| `image`            | object         | –               | Specification of the Docker Image to use for the main container of the main pod of the component                                             |
-| `image.registry`   | String         | `coremedia`     | Docker Image Registry to pull images from                                                                                                    |
-| `image.repository` | String         | see description | Docker Image Repository to pull images from. Default is type-specific based on the standard blueprint image names.                           |
-| `image.tag`        | String         | latest          | Docker Image Tag to pull images from                                                                                                         |
-| `image.pullPolicy` | String         | `IfNotPresent`  | default imagePullPolicy                                                                                                                      |
-| `milestone`        | enum           | `DatabaseReady` | Milestone that has to be reached before this component gets created.                                                                         |
-| `resources`        | object         | -               | `limits` and `resources`                                                                                                                     | 
-| `schemas`          | map            | –               | The name of the JDBC, MongoDB, and/or UAPI schemas that should be used for this component. Overrides the built-in default for the component. |
-| `volumeSize`       | object         | –               | Sizes of PVCs for persistent data and caches.                                                                                                |
+| Property             | Type           | Default         | Description                                                                                                                                  |
+|----------------------|----------------|-----------------|----------------------------------------------------------------------------------------------------------------------------------------------|
+| `type`               | String         | –               | Required type of the component                                                                                                               |
+| `kind`               | String         | –               | Sub-type, required for some component types                                                                                                  |
+| `name`               | String         | type            | The name of the component and the resources created for it. Defaults to a type-specific name, typically the type itself                      |
+| `annotations`        | object         | –               | Additional annotations to add to the pods of this component.                                                                                 |
+| `args`               | list of String | –               | Args for the main container of the main pod. Defaults to unset, using the default from the image.                                            |
+| `env`                | list of EnvVar | –               | Additional environment variables to be made available to the containers                                                                      |
+| `image`              | object         | –               | Specification of the Docker Image to use for the main container of the main pod of the component                                             |
+| `image.registry`     | String         | `coremedia`     | Docker Image Registry to pull images from                                                                                                    |
+| `image.repository`   | String         | see description | Docker Image Repository to pull images from. Default is type-specific based on the standard blueprint image names.                           |
+| `image.tag`          | String         | latest          | Docker Image Tag to pull images from                                                                                                         |
+| `image.pullPolicy`   | String         | `IfNotPresent`  | default imagePullPolicy                                                                                                                      |
+| `milestone`          | enum           | `DatabaseReady` | Milestone that has to be reached before this component gets created.                                                                         |
+| `podSecurityContext` | object         | -               | Security context for a pod                                                                                                                   |
+| `resources`          | object         | -               | `limits` and `resources`                                                                                                                     | 
+| `securityContext`    | object         | -               | Security context for containers in a pod                                                                                                     |
+| `schemas`            | map            | –               | The name of the JDBC, MongoDB, and/or UAPI schemas that should be used for this component. Overrides the built-in default for the component. |
+| `volumeSize`         | object         | –               | Sizes of PVCs for persistent data and caches.                                                                                                |
 
 ### Specification
 
@@ -637,10 +641,29 @@ For the transformed BLOB and UAPI BLOB caches, the size is also used to configur
 
 | Property                          | Type     | Default | Description                                                  |
 |-----------------------------------|----------|---------|--------------------------------------------------------------|
-| `volumeSize.data`                 | quantity | 8Gi     | Size of the data directory. (Only, MongoDb, MySQL, Solrl.)   |
+| `volumeSize.data`                 | quantity | 8Gi     | Size of the data directory (Only MongoDb, MySQL, Solr).      |
 | `volumeSize.transformedBlobCache` | quantity | 8Gi     | Size of the transformed BLOB cache of a CoreMedia component. |
 | `volumeSize.uapiBlobCache`        | quantity | 8Gi     | Size of the UAPI BLOB cache cache of a CoreMedia component.  |
 
+#### Security Context
+
+The operator configures components with defaults for certain [Kubernetes Security Context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/) properties.
+
+You can override these defaults on a global level (`defaults.podSecurityContext` and `defaults.securityContext`, or on a per-component basis (`podSecurityContext` and `securityContext` in the component properties)). The operator will deep-merge entries, using first the built-in default, then the `defaults.` values, then the component-specific values.
+
+**Pod Security Context Defaults**
+
+| Property     | Default                                                  |
+|--------------|----------------------------------------------------------|
+| `runAsGroup` | the default user ID for that component, typically `1000` |
+| `runAsUser`  | the default user ID for that component, typically `1000` |
+| `fsGroup`    | the default user ID for that component, typically `1000` |
+
+**Container Security Context Defaults**
+
+| Property                 | Default |
+|--------------------------|---------|
+| `readOnlyRootFilesystem` | `true`  |
 
 ### Component `blob-server`
 
@@ -847,6 +870,10 @@ A Kubernetes Job running the `management-tools` image. You can configure these p
 
 The `milestone` property determines at which milestone a configured job will be started. After the job has completed,
 the milestone will be advanced.
+
+#### Security Context
+
+Due to the way the container image is built, this container needs to run with a read-write root file system, and the component sets that as a default.
 
 ### Component `user-changes`
 

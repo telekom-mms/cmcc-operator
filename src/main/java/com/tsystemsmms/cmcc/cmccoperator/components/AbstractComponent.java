@@ -14,6 +14,7 @@ import com.tsystemsmms.cmcc.cmccoperator.crds.*;
 import com.tsystemsmms.cmcc.cmccoperator.customresource.CustomResource;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 import com.tsystemsmms.cmcc.cmccoperator.utils.EnvVarSet;
+import com.tsystemsmms.cmcc.cmccoperator.utils.Utils;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
@@ -21,6 +22,7 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSetSpecBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;
@@ -423,10 +425,14 @@ public abstract class AbstractComponent implements Component {
    *
    * @return security context
    */
+  @SneakyThrows
   public SecurityContext getSecurityContext() {
-    return new SecurityContextBuilder()
-            .withReadOnlyRootFilesystem(true)
-            .build();
+    return Utils.mergeObjects(SecurityContext.class,
+            new SecurityContextBuilder()
+                    .withReadOnlyRootFilesystem(true)
+                    .build(),
+            getCmcc().getSpec().getDefaults().getSecurityContext(),
+            getComponentSpec().getSecurityContext());
   }
 
   /**
@@ -434,12 +440,16 @@ public abstract class AbstractComponent implements Component {
    *
    * @return security context
    */
+  @SneakyThrows
   public PodSecurityContext getPodSecurityContext() {
-    return new PodSecurityContextBuilder()
-            .withRunAsUser(getUserId())
-            .withRunAsGroup(getUserId())
-            .withFsGroup(getUserId())
-            .build();
+    return Utils.mergeObjects(PodSecurityContext.class,
+            new PodSecurityContextBuilder()
+                    .withRunAsUser(getUserId())
+                    .withRunAsGroup(getUserId())
+                    .withFsGroup(getUserId())
+                    .build(),
+            getCmcc().getSpec().getDefaults().getPodSecurityContext(),
+            getComponentSpec().getPodSecurityContext());
   }
 
   /**

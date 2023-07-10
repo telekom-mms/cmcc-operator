@@ -12,6 +12,8 @@ package com.tsystemsmms.cmcc.cmccoperator.crds;
 
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.PodSecurityContext;
+import io.fabric8.kubernetes.api.model.SecurityContext;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -49,11 +51,17 @@ public class ComponentSpec {
   @JsonPropertyDescription("Make available with this milestone")
   private Milestone milestone = null;
 
+  @JsonPropertyDescription("Security context for a pod")
+  PodSecurityContext podSecurityContext = new PodSecurityContext();
+
   @JsonPropertyDescription("Resource management (limits, requests)")
   private ResourceMgmt resources;
 
   @JsonPropertyDescription("Schema names for JDBC, MongoDB, and/or UAPI")
   private Map<String, String> schemas = new HashMap<>();
+
+  @JsonPropertyDescription("Security context for containers in a pod")
+  SecurityContext securityContext = new SecurityContext();
 
   @JsonPropertyDescription("Size of persistent data/cache volumes")
   ComponentSpec.VolumeSize volumeSize = new ComponentSpec.VolumeSize();
