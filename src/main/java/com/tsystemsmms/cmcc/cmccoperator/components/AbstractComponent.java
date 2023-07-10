@@ -425,7 +425,6 @@ public abstract class AbstractComponent implements Component {
    *
    * @return security context
    */
-  @SneakyThrows
   public SecurityContext getSecurityContext() {
     return Utils.mergeObjects(SecurityContext.class,
             new SecurityContextBuilder()

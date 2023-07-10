@@ -11,9 +11,13 @@
 package com.tsystemsmms.cmcc.cmccoperator.crds;
 
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class ImageSpec {
     @JsonPropertyDescription("Image registry (default 'coremedia')")
     String registry = "";

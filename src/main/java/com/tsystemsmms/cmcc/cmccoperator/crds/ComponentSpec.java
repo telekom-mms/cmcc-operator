@@ -11,6 +11,7 @@
 package com.tsystemsmms.cmcc.cmccoperator.crds;
 
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
+import com.tsystemsmms.cmcc.cmccoperator.utils.Utils;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.PodSecurityContext;
 import io.fabric8.kubernetes.api.model.SecurityContext;
@@ -67,9 +68,14 @@ public class ComponentSpec {
   ComponentSpec.VolumeSize volumeSize = new ComponentSpec.VolumeSize();
 
   public ComponentSpec() {
-
   }
 
+  /**
+   * Construct a ComponentSpec from another.
+   *
+   * @param that source for the new object
+   */
+  @SuppressWarnings("CopyConstructorMissesField")
   public ComponentSpec(ComponentSpec that) {
     this.type = that.type;
     this.kind = that.kind;
@@ -85,12 +91,30 @@ public class ComponentSpec {
     this.getImage().update(that.getImage());
     if (that.getMilestone() != null)
       this.setMilestone(that.getMilestone());
+    if (this.podSecurityContext == null)
+      this.podSecurityContext = that.getPodSecurityContext();
+    else
+      this.podSecurityContext = Utils.mergeObjects(PodSecurityContext.class, this.podSecurityContext, that.getPodSecurityContext());
     if (this.resources == null)
       this.resources = that.getResources();
     else
       this.resources.merge(that.getResources());
+    if (this.schemas == null)
+      this.schemas = that.getSchemas();
+    else
+      Utils.mergeMapReplace(this.schemas, that.getSchemas());
+    if (this.securityContext == null)
+      this.securityContext = that.getSecurityContext();
+    else
+      this.securityContext = Utils.mergeObjects(SecurityContext.class, this.securityContext, that.getSecurityContext());
     if (that.getVolumeSize().getData() != null)
       this.volumeSize.setData(that.getVolumeSize().getData());
+    if (that.getVolumeSize().getMongoDbData() != null)
+      this.volumeSize.setMongoDbData(that.getVolumeSize().getMongoDbData());
+    if (that.getVolumeSize().getMysqlData() != null)
+      this.volumeSize.setMysqlData(that.getVolumeSize().getMysqlData());
+    if (that.getVolumeSize().getSolrData() != null)
+      this.volumeSize.setSolrData(that.getVolumeSize().getSolrData());
     if (that.getVolumeSize().getTransformedBlobCache() != null)
       this.volumeSize.setTransformedBlobCache(that.getVolumeSize().getTransformedBlobCache());
     if (that.getVolumeSize().getUapiBlobCache() != null)
@@ -114,7 +138,6 @@ public class ComponentSpec {
     String uapiBlobCache;
 
     public VolumeSize() {
-
     }
 
     public VolumeSize(String size) {
