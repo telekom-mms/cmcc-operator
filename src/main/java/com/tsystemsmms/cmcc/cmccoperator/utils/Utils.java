@@ -205,7 +205,8 @@ public class Utils {
   }
 
   @SafeVarargs
-  public static <T> T mergeObjects(Class<T> clazz, T main, T... additional) throws JsonProcessingException {
+  @SneakyThrows
+  public static <T> T mergeObjects(Class<T> clazz, T main, T... additional) {
     ObjectMapper mapper = new ObjectMapper();
     JsonNode mainNode = mapper.valueToTree(main);
     for (T a : additional) {

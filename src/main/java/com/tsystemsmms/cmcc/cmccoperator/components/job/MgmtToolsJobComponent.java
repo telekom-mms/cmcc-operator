@@ -172,7 +172,6 @@ public class MgmtToolsJobComponent extends JobComponent implements HasUapiClient
         return volumeMounts;
     }
 
-    @SneakyThrows
     @Override
     public SecurityContext getSecurityContext() {
         return Utils.mergeObjects(SecurityContext.class,
