@@ -11,9 +11,7 @@
 package com.tsystemsmms.cmcc.cmccoperator.crds;
 
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
-import io.fabric8.kubernetes.api.model.Quantity;
-import io.fabric8.kubernetes.api.model.ResourceRequirements;
-import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
+import io.fabric8.kubernetes.api.model.*;
 import lombok.Data;
 
 import java.util.HashMap;
@@ -40,6 +38,9 @@ public class ComponentDefaults {
     @JsonPropertyDescription("For Java components, use these JAVA_OPTS.")
     private String javaOpts = "-XX:MinRAMPercentage=75 -XX:MaxRAMPercentage=90";
 
+    @JsonPropertyDescription("Default security context for a pod")
+    PodSecurityContext podSecurityContext = new PodSecurityContext();
+
     @JsonPropertyDescription("Default resource management (limits, requests)")
     private ResourceMgmt resources;
 
@@ -48,6 +49,9 @@ public class ComponentDefaults {
 
     @JsonPropertyDescription("Hostname of the preview CAE. If short, will be prefixed with the prefix and the ingressDomain appended")
     private String previewHostname = "preview";
+
+    @JsonPropertyDescription("Default security context for containers in a pod")
+    SecurityContext securityContext = new SecurityContext();
 
     @JsonPropertyDescription("Default protocol for all site mapping entries")
     private String siteMappingProtocol = "https://";

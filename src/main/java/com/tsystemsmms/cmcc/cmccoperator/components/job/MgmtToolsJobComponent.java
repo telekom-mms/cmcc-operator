@@ -17,8 +17,10 @@ import com.tsystemsmms.cmcc.cmccoperator.crds.ImportJob;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.CustomResourceConfigError;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 import com.tsystemsmms.cmcc.cmccoperator.utils.EnvVarSet;
+import com.tsystemsmms.cmcc.cmccoperator.utils.Utils;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.Constructor;
@@ -170,12 +172,15 @@ public class MgmtToolsJobComponent extends JobComponent implements HasUapiClient
         return volumeMounts;
     }
 
+    @SneakyThrows
     @Override
     public SecurityContext getSecurityContext() {
-        SecurityContext securityContext = super.getSecurityContext();
-
-        securityContext.setReadOnlyRootFilesystem(false); // properties location is a mix of dynamically created files and files from the image
-        return securityContext;
+        return Utils.mergeObjects(SecurityContext.class,
+                new SecurityContextBuilder()
+                        .withReadOnlyRootFilesystem(false) // properties location is a mix of dynamically created files and files from the image
+                        .build(),
+                getCmcc().getSpec().getDefaults().getSecurityContext(),
+                getComponentSpec().getSecurityContext());
     }
 
     private ImportJob getImportJobFromExtra() {

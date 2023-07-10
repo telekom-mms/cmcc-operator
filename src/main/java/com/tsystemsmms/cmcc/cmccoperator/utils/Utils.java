@@ -10,6 +10,8 @@
 
 package com.tsystemsmms.cmcc.cmccoperator.utils;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarSource;
@@ -200,6 +202,16 @@ public class Utils {
     if (from == null)
       return;
     from.forEach((key, value) -> into.merge(key, value, (a, b) -> b));
+  }
+
+  @SafeVarargs
+  public static <T> T mergeObjects(Class<T> clazz, T main, T... additional) throws JsonProcessingException {
+    ObjectMapper mapper = new ObjectMapper();
+    JsonNode mainNode = mapper.valueToTree(main);
+    for (T a : additional) {
+      mainNode = mapper.readerForUpdating(mainNode).readValue(mapper.writeValueAsString(a));
+    }
+    return mapper.treeToValue(mainNode, clazz);
   }
 
   /**
