@@ -15,6 +15,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tsystemsmms.cmcc.cmccoperator.components.AbstractComponent;
 import com.tsystemsmms.cmcc.cmccoperator.components.HasService;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
+import com.tsystemsmms.cmcc.cmccoperator.crds.ImageSpec;
 import com.tsystemsmms.cmcc.cmccoperator.crds.IngressTls;
 import com.tsystemsmms.cmcc.cmccoperator.crds.SiteMapping;
 import com.tsystemsmms.cmcc.cmccoperator.ingress.CmccIngressGenerator;
@@ -55,8 +56,8 @@ public class OverviewComponent extends AbstractComponent implements HasService {
     }
 
     @Override
-    public String getImage() {
-        return "docker.io/library/nginx:1.21";
+    public ImageSpec getDefaultImage() {
+        return new ImageSpec("docker.io/library/nginx:1.21");
     }
 
     @Override

@@ -14,6 +14,7 @@ import com.tsystemsmms.cmcc.cmccoperator.components.AbstractComponent;
 import com.tsystemsmms.cmcc.cmccoperator.components.HasService;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ClientSecretRef;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
+import com.tsystemsmms.cmcc.cmccoperator.crds.ImageSpec;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.ClientSecret;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.CustomResourceConfigError;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
@@ -109,8 +110,8 @@ public class MySQLComponent extends AbstractComponent implements HasService {
     }
 
     @Override
-    public String getImage() {
-        return "docker.io/mariadb:10.7";
+    public ImageSpec getDefaultImage() {
+        return new ImageSpec("docker.io/mariadb:10.7");
     }
 
 

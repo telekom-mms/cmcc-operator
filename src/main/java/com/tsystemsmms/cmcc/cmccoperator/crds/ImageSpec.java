@@ -11,14 +11,21 @@
 package com.tsystemsmms.cmcc.cmccoperator.crds;
 
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
+import com.tsystemsmms.cmcc.cmccoperator.targetstate.CustomResourceConfigError;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 public class ImageSpec {
+    static final Pattern IMAGE_NAME_PATTERN = Pattern.compile("(?<registry>([a-zA-Z0-9.-]+(:[0-9]+)/)?([a-zA-Z0-9_.-]+/)*)?(?<repository>[a-zA-Z0-9_.-]+)(:(?<tag>[a-zA-Z0-9._-]+))?");
+
     @JsonPropertyDescription("Image registry (default 'coremedia')")
     String registry = "";
     @JsonPropertyDescription("Image repository (default differs between components)")
@@ -27,6 +34,17 @@ public class ImageSpec {
     String tag = "";
     @JsonPropertyDescription("Image pull policy (default 'IfNotPresent')")
     String pullPolicy = "";
+
+    public ImageSpec(String spec) {
+        Matcher m = IMAGE_NAME_PATTERN.matcher(spec);
+        if (!m.matches()) {
+            throw new CustomResourceConfigError("Unable to parse image specification \"" + spec + "\"");
+        }
+        if (m.group("registry") != null && m.group("registry").length() > 0)
+            this.registry = m.group("registry").substring(0, m.group("registry").length()-1);
+        this.repository = m.group("repository");
+        this.tag = Objects.requireNonNullElse(m.group("tag"), "");
+    }
 
     public void update(ImageSpec that) {
         if (!that.registry.isBlank())

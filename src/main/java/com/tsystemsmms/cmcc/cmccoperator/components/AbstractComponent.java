@@ -129,21 +129,25 @@ public abstract class AbstractComponent implements Component {
    * @return the name of the image for the main container for the main pod
    */
   public String getImage() {
+    ImageSpec componentDefault = getDefaultImage();
     ImageSpec defaultImage = Objects.requireNonNullElse(getDefaults().getImage(), new ImageSpec());
     ImageSpec csImage = Objects.requireNonNullElse(componentSpec.getImage(), new ImageSpec());
     ImageSpec spec = new ImageSpec();
 
     spec.setRegistry(defaultString(
+            componentDefault.getRegistry(),
             csImage.getRegistry(),
             defaultImage.getRegistry(),
             "coremedia"
     ));
     spec.setRepository(defaultString(
+            componentDefault.getRepository(),
             csImage.getRepository(),
             defaultImage.getRepository(),
             imageRepository
     ));
     spec.setTag(defaultString(
+            componentDefault.getTag(),
             csImage.getTag(),
             defaultImage.getTag(),
             "latest"
