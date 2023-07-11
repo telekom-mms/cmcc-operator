@@ -12,6 +12,7 @@ package com.tsystemsmms.cmcc.cmccoperator.utils;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.tsystemsmms.cmcc.cmccoperator.targetstate.CustomResourceConfigError;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import org.junit.jupiter.api.Test;
 
@@ -20,23 +21,33 @@ import java.util.Map;
 
 import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.EnvVarSimple;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class EnvVarSetTest {
 
-    @Test
-    public void jacksonTest() throws JsonProcessingException {
-        ObjectMapper mapper = new ObjectMapper();
-        EnvVarSet dut = new EnvVarSet();
-        dut.add(EnvVarSimple("bar", "456"));
-        dut.add(EnvVarSimple("foo", "123"));
+  @Test
+  public void given_two_env_var__then_produces_equivalent_list() throws JsonProcessingException {
+    ObjectMapper mapper = new ObjectMapper();
+    EnvVarSet dut = new EnvVarSet();
+    dut.add(EnvVarSimple("bar", "456"));
+    dut.add(EnvVarSimple("foo", "123"));
 
-        assertEquals("[{\"name\":\"bar\",\"value\":\"456\"},{\"name\":\"foo\",\"value\":\"123\"}]", mapper.writeValueAsString(dut));
+    assertEquals("[{\"name\":\"bar\",\"value\":\"456\"},{\"name\":\"foo\",\"value\":\"123\"}]", mapper.writeValueAsString(dut));
 
-        List<Map<String, String>> asList = List.of(
-                Map.of("name", "bar",
-                        "value", "456"),
-                Map.of("name", "foo",
-                        "value", "123"));
-        assertEquals(asList, mapper.convertValue(dut, List.class));
-    }
+    List<Map<String, String>> asList = List.of(
+            Map.of("name", "bar",
+                    "value", "456"),
+            Map.of("name", "foo",
+                    "value", "123"));
+    assertEquals(asList, mapper.convertValue(dut, List.class));
+  }
+
+  @Test
+  public void when_adding_var_with_no_name__then_throws_exception() {
+    EnvVarSet dut = new EnvVarSet();
+
+    assertThrows(CustomResourceConfigError.class, () ->
+      dut.add(EnvVarSimple(null, "456"))
+    );
+  }
 }
