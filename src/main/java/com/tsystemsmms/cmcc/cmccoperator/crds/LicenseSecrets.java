@@ -10,15 +10,19 @@
 
 package com.tsystemsmms.cmcc.cmccoperator.crds;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import lombok.Data;
 
 @Data
 public class LicenseSecrets {
     @JsonPropertyDescription("Name of the secret that has the license.zip for the Content Management Server")
+    @JsonProperty("CMSLicense")
     private String CMSLicense = "license-cms";
     @JsonPropertyDescription("Name of the secret that has the license.zip for the Master Live Server")
+    @JsonProperty("MLSLicense")
     private String MLSLicense = "license-mls";
     @JsonPropertyDescription("Name of the secret that has the license.zip for the Replication Live Server")
+    @JsonProperty("RLSLicense")
     private String RLSLicense = "license-rls";
 }
