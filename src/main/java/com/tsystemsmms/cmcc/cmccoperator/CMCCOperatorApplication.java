@@ -21,80 +21,85 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
 @SpringBootApplication
 public class CMCCOperatorApplication {
 
-    @Bean
-    @ConditionalOnProperty(value="cmcc.useCrd", havingValue = "true", matchIfMissing = true)
-    public CoreMediaContentCloudReconciler coreMediaContentCloudReconciler(
-            KubernetesClient kubernetesClient,
-            TargetStateFactory targetStateFactory) {
-        return new CoreMediaContentCloudReconciler(
-                kubernetesClient,
-                targetStateFactory);
-    }
+  @Bean
+  @ConditionalOnProperty(value = "cmcc.useCrd", havingValue = "true", matchIfMissing = true)
+  public CoreMediaContentCloudReconciler coreMediaContentCloudReconciler(
+          @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection") KubernetesClient kubernetesClient,
+          TargetStateFactory targetStateFactory) {
+    return new CoreMediaContentCloudReconciler(
+            kubernetesClient,
+            targetStateFactory);
+  }
 
-    @Bean
-    @ConditionalOnProperty(value="cmcc.useConfigMap", havingValue = "true", matchIfMissing = false)
-    public CmccConfigMapReconciler cmccConfigMapReconciler(
-            KubernetesClient kubernetesClient,
-            TargetStateFactory targetStateFactory,
-            YamlMapper yamlMapper) {
-        return new CmccConfigMapReconciler(
-                kubernetesClient,
-                targetStateFactory,
-                yamlMapper);
-    }
+  @Bean
+  @ConditionalOnProperty(value = "cmcc.useConfigMap", havingValue = "true")
+  public CmccConfigMapReconciler cmccConfigMapReconciler(
+          KubernetesClient kubernetesClient,
+          TargetStateFactory targetStateFactory,
+          YamlMapper yamlMapper) {
+    return new CmccConfigMapReconciler(
+            kubernetesClient,
+            targetStateFactory,
+            yamlMapper);
+  }
 
-    @Bean
-    public ResourceNamingProviderFactory resourceNamingProviderFactory() {
-        return new DefaultResourceNamingProviderFactory();
-    }
+  @Bean
+  public ResourceNamingProviderFactory resourceNamingProviderFactory() {
+    return new DefaultResourceNamingProviderFactory();
+  }
 
-    @Bean
-    public ResourceReconcilerManager resourceReconciler(KubernetesClient kubernetesClient) {
-        return new ResourceReconcilerManager(kubernetesClient);
-    }
+  @Bean
+  public ResourceReconcilerManager resourceReconciler(@SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection") KubernetesClient kubernetesClient) {
+    return new ResourceReconcilerManager(kubernetesClient);
+  }
 
-    @Bean
-    @ConditionalOnProperty(value = "cmcc.ingressbuilder", havingValue = "blueprint")
-    public CmccIngressGeneratorFactory blueprintIngressGeneratorFactory(IngressBuilderFactory ingressBuilderFactory) {
-        return new BlueprintCmccIngressGeneratorFactory(ingressBuilderFactory);
-    }
+  @Bean
+  public UrlMappingBuilderFactory blueprintIngressGeneratorFactory(IngressBuilderFactory ingressBuilderFactory) {
+    return new BlueprintUrlMappingBuilderFactory(ingressBuilderFactory);
+  }
 
-    @Bean
-    @ConditionalOnProperty(value = "cmcc.ingressbuilder", havingValue = "onlylang")
-    public CmccIngressGeneratorFactory onlylangIngressGeneratorFactory(IngressBuilderFactory ingressBuilderFactory) {
-        return new OnlyLangCmccIngressGeneratorFactory(ingressBuilderFactory);
-    }
+  @Bean
+  public UrlMappingBuilderFactory onlylangIngressGeneratorFactory(IngressBuilderFactory ingressBuilderFactory) {
+    return new OnlyLangUrlMappingBuilderFactory(ingressBuilderFactory);
+  }
 
-    @Bean
-    public IngressBuilderFactory ingressBuilderFactory() {
-        return new NginxIngressBuilderFactory();
-    }
+  @Bean
+  public IngressBuilderFactory ingressBuilderFactory() {
+    return new NginxIngressBuilderFactory();
+  }
 
-    @Bean
-    public TargetStateFactory targetStateFactory(BeanFactory beanFactory,
-                                                 KubernetesClient kubernetesClient,
-                                                 CmccIngressGeneratorFactory cmccIngressGeneratorFactory,
-                                                 ResourceNamingProviderFactory resourceNamingProviderFactory,
-                                                 ResourceReconcilerManager resourceReconcilerManager,
-                                                 YamlMapper yamlMapper) {
-        return new DefaultTargetStateFactory(beanFactory,
-                kubernetesClient,
-                cmccIngressGeneratorFactory,
-                resourceNamingProviderFactory,
-                resourceReconcilerManager,
-                yamlMapper);
-    }
+  @Bean
+  public TargetStateFactory targetStateFactory(BeanFactory beanFactory,
+                                               @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection") KubernetesClient kubernetesClient,
+                                               ResourceNamingProviderFactory resourceNamingProviderFactory,
+                                               ResourceReconcilerManager resourceReconcilerManager,
+                                               List<UrlMappingBuilderFactory> urlMappingBuilderFactories,
+                                               YamlMapper yamlMapper) {
 
-    @Bean
-    public YamlMapper yamlMapper() {
-        return new YamlMapper();
-    }
+    return new DefaultTargetStateFactory(beanFactory,
+            kubernetesClient,
+            resourceNamingProviderFactory,
+            resourceReconcilerManager,
+            urlMappingBuilderFactories.stream().collect(Collectors.toMap(UrlMappingBuilderFactory::getName, Function.identity())),
+            yamlMapper);
+  }
 
-    public static void main(String[] args) {
-        SpringApplication.run(CMCCOperatorApplication.class, args);
-    }
+  @Bean
+  public YamlMapper yamlMapper() {
+    return new YamlMapper();
+  }
+
+  public static void main(String[] args) {
+    SpringApplication.run(CMCCOperatorApplication.class, args);
+  }
 
 }

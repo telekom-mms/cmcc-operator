@@ -12,13 +12,20 @@ package com.tsystemsmms.cmcc.cmccoperator.ingress;
 
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 
-/**
- * Create CAEIngressGenerators.
- */
-public interface CmccIngressGeneratorFactory {
-    /**
-     * Produces a CAEIngressGenerator.
-     * @return the generator
-     */
-    CmccIngressGenerator instance(TargetState targetState, String serviceName);
+public class OnlyLangUrlMappingBuilderFactory implements UrlMappingBuilderFactory {
+    private final IngressBuilderFactory ingressBuilderFactory;
+
+    public OnlyLangUrlMappingBuilderFactory(IngressBuilderFactory ingressBuilderFactory) {
+        this.ingressBuilderFactory = ingressBuilderFactory;
+    }
+
+    @Override
+    public String getName() {
+        return "onlylang";
+    }
+
+    @Override
+    public UrlMappingBuilder instance(TargetState targetState, String serviceName) {
+        return new OnlyLangUrlMappingBuilder(ingressBuilderFactory, targetState, serviceName);
+    }
 }

@@ -10,7 +10,6 @@
 
 package com.tsystemsmms.cmcc.cmccoperator.ingress;
 
-import com.tsystemsmms.cmcc.cmccoperator.crds.IngressTls;
 import com.tsystemsmms.cmcc.cmccoperator.crds.SiteMapping;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 
@@ -19,13 +18,13 @@ import java.util.Collection;
 /**
  * Generate ingress resources suitable for mapping requests to a CAE.
  */
-public interface CmccIngressGenerator {
+public interface UrlMappingBuilder {
     /**
      * Build the ingress resources for the live CAEs. Can build additional resources if necessary.
      *
      * @return collection of Kubernetes resources.
      */
-    Collection<? extends HasMetadata> buildLiveResources();
+    Collection<? extends HasMetadata> buildLiveResources(SiteMapping siteMapping);
 
     /**
      * Returns the absolute URL for the given segment for the live CAE. This is the same function that the CAE link

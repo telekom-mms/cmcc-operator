@@ -22,7 +22,6 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -30,13 +29,13 @@ import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.concatOptional;
 import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.getInt;
 
 @Slf4j
-public abstract class AbstractCmccIngressGenerator implements CmccIngressGenerator {
+public abstract class AbstractUrlMappingBuilder implements UrlMappingBuilder {
   final IngressBuilderFactory ingressBuilderFactory;
   @Getter
   final TargetState targetState;
   final String serviceName;
 
-  public AbstractCmccIngressGenerator(IngressBuilderFactory ingressBuilderFactory, TargetState targetState, String serviceName) {
+  public AbstractUrlMappingBuilder(IngressBuilderFactory ingressBuilderFactory, TargetState targetState, String serviceName) {
     this.ingressBuilderFactory = ingressBuilderFactory;
     this.targetState = targetState;
     this.serviceName = serviceName;
@@ -58,7 +57,7 @@ public abstract class AbstractCmccIngressGenerator implements CmccIngressGenerat
   }
 
   public String liveName(String site, String name, String... more) {
-    return concatOptional(Stream.concat(Stream.of(getDefaults().getNamePrefix(), "live", site, name), Arrays.stream(more)).collect(Collectors.toUnmodifiableList()));
+    return concatOptional(Stream.concat(Stream.of(getDefaults().getNamePrefix(), "live", site, name), Arrays.stream(more)).toList());
   }
 
   public String previewName(String name) {

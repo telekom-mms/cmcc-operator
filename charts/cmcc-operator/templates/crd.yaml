@@ -451,6 +451,14 @@ spec:
                         description: Requests for resources for this components pods
                         type: object
                     type: object
+                  liveUrlMapper:
+                    description: Name of the URL Mapper to use by default for live
+                      URL mappings
+                    type: string
+                  managementUrlMapper:
+                    description: Name of the URL Mapper to use to create preview and
+                      studio URL mappings
+                    type: string
                   namePrefix:
                     description: Prefix resources with this name plus '-'. Empty string
                       means no prefix
@@ -614,6 +622,9 @@ spec:
                           description: Name of secret with the TLS certificate
                           type: string
                       type: object
+                    urlMapper:
+                      description: URL mapper to use for this site
+                      type: string
                   type: object
                 type: array
               with:

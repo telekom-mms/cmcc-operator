@@ -33,8 +33,6 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
-            - name: CMCC_INGRESSBUILDER
-              value: {{  .Values.cmcc.ingressBuilder }}
             - name: CMCC_USECONFIGMAP
               value: {{  .Values.cmcc.useConfigMap | quote }}
             - name: CMCC_USECRD

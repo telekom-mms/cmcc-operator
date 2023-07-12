@@ -14,10 +14,12 @@ import com.tsystemsmms.cmcc.cmccoperator.components.Component;
 import com.tsystemsmms.cmcc.cmccoperator.components.ComponentCollection;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ClientSecretRef;
 import com.tsystemsmms.cmcc.cmccoperator.crds.Milestone;
+import com.tsystemsmms.cmcc.cmccoperator.crds.SiteMapping;
 import com.tsystemsmms.cmcc.cmccoperator.customresource.CustomResource;
-import com.tsystemsmms.cmcc.cmccoperator.ingress.CmccIngressGeneratorFactory;
+import com.tsystemsmms.cmcc.cmccoperator.ingress.UrlMappingBuilderFactory;
 import com.tsystemsmms.cmcc.cmccoperator.resource.ResourceReconcilerManager;
 import com.tsystemsmms.cmcc.cmccoperator.utils.RandomString;
+import com.tsystemsmms.cmcc.cmccoperator.utils.Utils;
 import com.tsystemsmms.cmcc.cmccoperator.utils.YamlMapper;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
@@ -48,15 +50,17 @@ public abstract class AbstractTargetState implements TargetState {
   @Getter
   final KubernetesClient kubernetesClient;
   @Getter
-  final CmccIngressGeneratorFactory cmccIngressGeneratorFactory;
-  @Getter
   final CustomResource cmcc;
   @Getter
   final ComponentCollection componentCollection;
   @Getter
+  final UrlMappingBuilderFactory managementUrlMappingBuilderFactory;
+  @Getter
   final ResourceNamingProvider resourceNamingProvider;
   @Getter
   final ResourceReconcilerManager resourceReconcilerManager;
+  @Getter
+  final Map<String, UrlMappingBuilderFactory> urlMappingBuilderFactories;
   @Getter
   final YamlMapper yamlMapper;
 
@@ -64,21 +68,27 @@ public abstract class AbstractTargetState implements TargetState {
 
   public AbstractTargetState(BeanFactory beanFactory,
                              KubernetesClient kubernetesClient,
-                             CmccIngressGeneratorFactory cmccIngressGeneratorFactory,
                              ResourceNamingProviderFactory resourceNamingProviderFactory,
                              ResourceReconcilerManager resourceReconcilerManager,
+                             Map<String, UrlMappingBuilderFactory> urlMappingBuilderFactories,
                              YamlMapper yamlMapper,
                              CustomResource cmcc) {
     if (cmcc == null || cmcc.getSpec() == null) {
       throw new CustomResourceConfigError("custom resource is null");
     }
     this.kubernetesClient = kubernetesClient;
-    this.cmccIngressGeneratorFactory = cmccIngressGeneratorFactory;
     this.cmcc = cmcc;
     componentCollection = new ComponentCollection(beanFactory, kubernetesClient, this);
     this.resourceNamingProvider = resourceNamingProviderFactory.instance(this);
     this.resourceReconcilerManager = resourceReconcilerManager;
+    this.urlMappingBuilderFactories = urlMappingBuilderFactories;
     this.yamlMapper = yamlMapper;
+
+    String urlMapperName = getCmcc().getSpec().getDefaults().getManagementUrlMapper();
+    managementUrlMappingBuilderFactory = urlMappingBuilderFactories.get(urlMapperName);
+    if (managementUrlMappingBuilderFactory == null)
+      throw new CustomResourceConfigError("Unable to find URL Mapper \"" + urlMapperName + "\"");
+
   }
 
   /**
@@ -267,12 +277,21 @@ public abstract class AbstractTargetState implements TargetState {
     final LinkedList<HasMetadata> resources = new LinkedList<>();
 
     Optional<Component> previewCae = componentCollection.getOfTypeAndKind("cae", "preview");
-    if (previewCae.isPresent() && Milestone.compareTo(previewCae.get().getComponentSpec().getMilestone(), getCmcc().getStatus().getMilestone()) <= 0)
-      resources.addAll(cmccIngressGeneratorFactory.instance(this, getServiceNameFor("cae", "preview")).buildPreviewResources());
+    if (previewCae.isPresent() && Milestone.compareTo(previewCae.get().getComponentSpec().getMilestone(), getCmcc().getStatus().getMilestone()) <= 0) {
+      resources.addAll(managementUrlMappingBuilderFactory.instance(this, getServiceNameFor("cae", "preview")).buildPreviewResources());
+    }
 
     Optional<Component> liveCae = componentCollection.getOfTypeAndKind("cae", "live");
-    if (liveCae.isPresent() && Milestone.compareTo(liveCae.get().getComponentSpec().getMilestone(), getCmcc().getStatus().getMilestone()) <= 0)
-      resources.addAll(cmccIngressGeneratorFactory.instance(this, getServiceNameFor("cae", "live")).buildLiveResources());
+    if (liveCae.isPresent() && Milestone.compareTo(liveCae.get().getComponentSpec().getMilestone(), getCmcc().getStatus().getMilestone()) <= 0) {
+      String defaultUrlMapperName = getCmcc().getSpec().getDefaults().getManagementUrlMapper();
+      for (SiteMapping siteMapping : getCmcc().getSpec().getSiteMappings()) {
+        String urlMapperName = Utils.defaultString(siteMapping.getUrlMapper(), defaultUrlMapperName);
+        UrlMappingBuilderFactory urlMappingBuilderFactory = urlMappingBuilderFactories.get(urlMapperName);
+        if (urlMappingBuilderFactory == null)
+          throw new CustomResourceConfigError("Unable to find URL Mapper \"" + urlMapperName + "\" for site mapping \"" + siteMapping + "\"");
+        resources.addAll(urlMappingBuilderFactory.instance(this, getServiceNameFor("cae", "live")).buildLiveResources(siteMapping));
+      }
+    }
 
     return resources;
   }
