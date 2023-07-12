@@ -3,7 +3,7 @@
 The Custom Resource `CoreMediaContentClouds` (`cmcc` for short) defines all aspects of a CoreMedia Content Cloud
 installation to be deployed. This document explains all properties and their use.
 
-<!-- npx markdown-toc --maxdepth 3 -i docs/custom-resource.md-->
+<!-- npx markdown-toc --maxdepth 3 -i docs/custom-resource.md -->
 
 # Table of Contents
 
@@ -27,7 +27,7 @@ installation to be deployed. This document explains all properties and their use
 - [Automatic Generation of Ingresses and Site Mappings `siteMappings`](#automatic-generation-of-ingresses-and-site-mappings-sitemappings)
   * [Site Mappings](#site-mappings)
   * [FQDN Aliases](#fqdn-aliases)
-  * [Configuring the Ingress Builder](#configuring-the-ingress-builder)
+  * [Configuring the URL Mapper](#configuring-the-url-mapper)
   * [Handler Prefixes](#handler-prefixes)
   * [Ingress Annotations](#ingress-annotations)
   * [`robots.txt` and `sitemap.xml`](#robotstxt-and-sitemapxml)
@@ -102,6 +102,8 @@ properties have suitable defaults.
 | `defaults.ingressDomain`            | String               | ""                                                | Fully qualified domain name to append to ingress host names                                                                                  |
 | `defaults.insecureDatabasePassword` | String               | ""                                                | **DO NOT SET**. See below for more information.                                                                                              |
 | `defaults.javaOpts`                 | String               | `-XX:MinRAMPercentage=75 -XX:MaxRAMPercentage=90` | For Java components, use these JVM options.                                                                                                  |
+| `defaults.liveUrlMapper`            | String               | `blueprint`                                       | Name of the URL mapper to use by default for live site mappings.                                                                             |
+| `defaults.mangementUrlMapper`       | String               | `blueprint`                                       | Name of the URL mapper to use for management apps like Studio and preview.                                                                   |
 | `defaults.namePrefix`               | String               | ""                                                | Prefix resources with this name plus '-'.                                                                                                    |
 | `defaults.podSecurityContext`       | object               | -                                                 | Default security context for a pod                                                                                                           |
 | `defaults.previewHostname`          | String               | `preview`                                         | Hostname of the preview CAE. Unless it is a fully-qualified domain name, the `namePrefix` and the `ingressDomain` will be pre- and appended. |
@@ -440,17 +442,18 @@ the [kubernetes/ingress-nginx](https://github.com/kubernetes/ingress-nginx).
 
 Each entry defines one DNS name and all the site segments that will be served under this name.
 
-| Property             | Type            | Default | Description                                                                                                                                                          |
-|----------------------|-----------------|---------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `hostname`           | String          | –       | Short name of the mapping; also used as the key for this entry.                                                                                                      |
-| `fqdn`               | String          | –       | DNS name, either a fully-qualified domain name (FQDN, www.example.com). Defaults to the `hostname` with the default ingress domain appended.                         |
-| `fqdnAliases`        | array of String | –       | Additional FQDNs that should also map to this host. Note that the CAE will only generate links to `fqdn`.                                                            |
-| `primarySegment`     | String          | –       | Primary site segment; this is the site for the `/` URI.                                                                                                              |
-| `additionalSegments` | array of String | –       | Segments of additional sites served from this host.                                                                                                                  |
-| `protocol`           | String          | –       | Protocol for this entry; if not set, `defaults.siteMappingProtocol` is used.                                                                                         |
-| `tls`                | object          | –       | TLS settings for this host                                                                                                                                           |
-| `tls.enabled`        | boolean         | true    | Should TLS be enabled for this ingress                                                                                                                               |
-| `tls.secretName`     | object          | –       | Name of the secret that stores the certificate and key for this hostname. Some Ingress controllers allow this to be empty, they will then use a default certificate. |
+| Property             | Type            | Default     | Description                                                                                                                                                          |
+|----------------------|-----------------|-------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `hostname`           | String          | –           | Short name of the mapping; also used as the key for this entry.                                                                                                      |
+| `fqdn`               | String          | –           | DNS name, either a fully-qualified domain name (FQDN, www.example.com). Defaults to the `hostname` with the default ingress domain appended.                         |
+| `fqdnAliases`        | array of String | –           | Additional FQDNs that should also map to this host. Note that the CAE will only generate links to `fqdn`.                                                            |
+| `primarySegment`     | String          | –           | Primary site segment; this is the site for the `/` URI.                                                                                                              |
+| `additionalSegments` | array of String | –           | Segments of additional sites served from this host.                                                                                                                  |
+| `urlMapper`          | String          | `blueprint` | Name of the URL mapper to use, or the default set in `defaults.liveUrlMapper`.                                                                                       |
+| `protocol`           | String          | –           | Protocol for this entry; if not set, `defaults.siteMappingProtocol` is used.                                                                                         |
+| `tls`                | object          | –           | TLS settings for this host                                                                                                                                           |
+| `tls.enabled`        | boolean         | true        | Should TLS be enabled for this ingress                                                                                                                               |
+| `tls.secretName`     | object          | –           | Name of the secret that stores the certificate and key for this hostname. Some Ingress controllers allow this to be empty, they will then use a default certificate. |
 
 If you have a single certificate for your setup (for example, a certificate with SNI for all hosts, or a wildcard
 certificate), you can simply configure `defaultIngressTls.secretName` with the name of that secret, and leave out
@@ -490,24 +493,27 @@ described above.
 **Note** The CAE will only create URLs pointing to the FQDN of the site, so you will need to make sure that those URLs
 always work.
 
-### Configuring the Ingress Builder
+### Configuring the URL Mapper
 
 The operator supports two different schemes for mapping live URLs to CAE URIs: the default `blueprint` scheme (the
 default Link Building Scheme in the CAE, see above), and `onlylang`. You configure the ingress builder by setting the
-application property `cmcc.ingressbuilder`, for example by adding the `CMCC_INGRESSBUILDER` environment variable to the
-deployment resource of the operator.
+custom resource property `defaults.managementUrlMapper` for Studio and the preview, and by configuring a mapper to be
+used for live site URLs, either by setting `defaults.liveUrlMapper` as a default for all site mappings, or by setting
+`urlMapper` in the site mapping.
 
-The `onlylang` ingress builder maps hostnames of the form *countrysite*/*lang* to URIs of the form *sitesegment*-*lang*
+The `onlylang` URL mapper maps hostnames of the form *countrysite*/*lang* to URIs of the form *sitesegment*-*lang*
 -*locale*. Consider these `siteMappings`:
 
 ```yaml
 siteMappings:
   - hostname: corporate.example.de
     primarySegment: corporate-de-de
+    urlMapper: onlylang
   - hostname: corporate.example.ca
     primarySegment: corporate-en-ca
     additionalSegments:
       - corporate-fr-ca
+    urlMapper: onlylang
 ```
 
 This will create ingresses for:
@@ -529,7 +535,7 @@ For example, `https://corporate.example.de/campaign` will map to `corporate-de-d
 On a live CAE, most URI paths map to specific content, based on the site and navigation hierarchy. However, resources
 like images, CSS, JS, or downloads are provided by specialized handlers. When transforming the URI presented by the
 client to a form the CAE understands, these need to be mapped directly to `/blueprint/servlet/...` URIs, instead of
-a site segment being mapped from the beginning of the URI, as is done with the OnlyLang ingress generator.
+a site segment being mapped from the beginning of the URI, as is done with the onlylang ingress generator.
 
 The default list of handler prefix regular expressions ("resource", "service-sitemap-.*", "static") handles the mappings
 required for standard Blueprint handlers. If you add your own handlers, you need to add their URI prefixes to the list

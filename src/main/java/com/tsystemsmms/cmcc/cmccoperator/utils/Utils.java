@@ -42,6 +42,12 @@ public class Utils {
     return new EnvVar(name, var.getValue(), var.getValueFrom());
   }
 
+  /**
+   * From the list of strings, return the first one that is non-null. Returns null if all strings are null.
+   *
+   * @param values list of strings
+   * @return first non-null one
+   */
   public static String defaultString(String... values) {
     return Stream.of(values).filter(s -> s != null && !s.isBlank()).findFirst().orElseThrow();
   }

@@ -44,6 +44,12 @@ public class ComponentDefaults {
     @JsonPropertyDescription("Default resource management (limits, requests)")
     private ResourceMgmt resources;
 
+    @JsonPropertyDescription("Name of the URL Mapper to use by default for live URL mappings")
+    String liveUrlMapper = "blueprint";
+
+    @JsonPropertyDescription("Name of the URL Mapper to use to create preview and studio URL mappings")
+    String managementUrlMapper = "blueprint";
+
     @JsonPropertyDescription("Prefix resources with this name plus '-'. Empty string means no prefix")
     String namePrefix = "";
 

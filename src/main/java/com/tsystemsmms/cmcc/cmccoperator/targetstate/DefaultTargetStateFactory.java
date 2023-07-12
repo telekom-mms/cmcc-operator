@@ -11,11 +11,14 @@
 package com.tsystemsmms.cmcc.cmccoperator.targetstate;
 
 import com.tsystemsmms.cmcc.cmccoperator.customresource.CustomResource;
-import com.tsystemsmms.cmcc.cmccoperator.ingress.CmccIngressGeneratorFactory;
+import com.tsystemsmms.cmcc.cmccoperator.ingress.UrlMappingBuilderFactory;
 import com.tsystemsmms.cmcc.cmccoperator.resource.ResourceReconcilerManager;
 import com.tsystemsmms.cmcc.cmccoperator.utils.YamlMapper;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import org.springframework.beans.factory.BeanFactory;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * Create a DefaultTargetState based on a CustomResource custom resource.
@@ -23,22 +26,22 @@ import org.springframework.beans.factory.BeanFactory;
 public class DefaultTargetStateFactory implements TargetStateFactory {
     private final BeanFactory beanFactory;
     private final KubernetesClient kubernetesClient;
-    private final CmccIngressGeneratorFactory cmccIngressGeneratorFactory;
     private final ResourceNamingProviderFactory resourceNamingProviderFactory;
     private final ResourceReconcilerManager resourceReconcilerManager;
+    private final Map<String, UrlMappingBuilderFactory> urlMappingBuilderFactories;
     private final YamlMapper yamlMapper;
 
     public DefaultTargetStateFactory(BeanFactory beanFactory,
                                      KubernetesClient kubernetesClient,
-                                     CmccIngressGeneratorFactory cmccIngressGeneratorFactory,
                                      ResourceNamingProviderFactory resourceNamingProviderFactory,
                                      ResourceReconcilerManager resourceReconcilerManager,
+                                     Map<String, UrlMappingBuilderFactory> urlMappingBuilderFactories,
                                      YamlMapper yamlMapper) {
         this.beanFactory = beanFactory;
         this.kubernetesClient = kubernetesClient;
-        this.cmccIngressGeneratorFactory = cmccIngressGeneratorFactory;
         this.resourceNamingProviderFactory = resourceNamingProviderFactory;
         this.resourceReconcilerManager = resourceReconcilerManager;
+        this.urlMappingBuilderFactories = urlMappingBuilderFactories;
         this.yamlMapper = yamlMapper;
     }
 
@@ -46,9 +49,9 @@ public class DefaultTargetStateFactory implements TargetStateFactory {
     public TargetState buildTargetState(CustomResource cmcc) {
         return new DefaultTargetState(beanFactory,
                 kubernetesClient,
-                cmccIngressGeneratorFactory,
                 resourceNamingProviderFactory,
                 resourceReconcilerManager,
+                urlMappingBuilderFactories,
                 yamlMapper,
                 cmcc);
     }

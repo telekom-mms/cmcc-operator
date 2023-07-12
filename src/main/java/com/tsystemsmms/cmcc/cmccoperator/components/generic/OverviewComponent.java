@@ -18,9 +18,12 @@ import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ImageSpec;
 import com.tsystemsmms.cmcc.cmccoperator.crds.IngressTls;
 import com.tsystemsmms.cmcc.cmccoperator.crds.SiteMapping;
-import com.tsystemsmms.cmcc.cmccoperator.ingress.CmccIngressGenerator;
+import com.tsystemsmms.cmcc.cmccoperator.ingress.UrlMappingBuilder;
+import com.tsystemsmms.cmcc.cmccoperator.ingress.UrlMappingBuilderFactory;
+import com.tsystemsmms.cmcc.cmccoperator.targetstate.CustomResourceConfigError;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 import com.tsystemsmms.cmcc.cmccoperator.utils.EnvVarSet;
+import com.tsystemsmms.cmcc.cmccoperator.utils.Utils;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import lombok.Data;
@@ -79,16 +82,24 @@ public class OverviewComponent extends AbstractComponent implements HasService {
 
         Info info = new Info();
         info.comment = getSpec().getComment();
-        info.ingressBuilder = getTargetState().getCmccIngressGeneratorFactory().getClass().getCanonicalName();
         info.name = getCmcc().getMetadata().getName();
         info.prefix = getDefaults().getNamePrefix();
         info.previewUrl = "https://" + getTargetState().getPreviewHostname();
         info.studioUrl = "https://" + getTargetState().getStudioHostname();
 
-        CmccIngressGenerator liveIngressGenerator = getTargetState().getCmccIngressGeneratorFactory().instance(getTargetState(), getTargetState().getServiceNameFor("cae", "live"));
-        CmccIngressGenerator previewIngressGenerator = getTargetState().getCmccIngressGeneratorFactory().instance(getTargetState(), getTargetState().getServiceNameFor("cae", "preview"));
+        String urlMapperName = getCmcc().getSpec().getDefaults().getManagementUrlMapper();
+        UrlMappingBuilderFactory mangementUrlMappingBuilderFactory = getTargetState().getUrlMappingBuilderFactories().get(urlMapperName);
+        if (mangementUrlMappingBuilderFactory == null)
+            throw new CustomResourceConfigError("Unable to find URL Mapper \"" + urlMapperName + "\"");
+        UrlMappingBuilder managementMappingBuilder = mangementUrlMappingBuilderFactory.instance(getTargetState(), getTargetState().getServiceNameFor("cae", "preview"));
+        String defaultUrlMapperName = getCmcc().getSpec().getDefaults().getManagementUrlMapper();
         info.siteMappings = new TreeSet<>(Comparator.comparing(InfoSiteMapping::getHostname));
         for (SiteMapping siteMapping : getSpec().getSiteMappings()) {
+            String siteUrlMapperName = Utils.defaultString(siteMapping.getUrlMapper(), defaultUrlMapperName);
+            UrlMappingBuilderFactory urlMappingBuilderFactory = getTargetState().getUrlMappingBuilderFactories().get(siteUrlMapperName);
+            if (urlMappingBuilderFactory == null)
+                throw new CustomResourceConfigError("Unable to find URL Mapper \"" + urlMapperName + "\" for site mapping \"" + siteMapping + "\"");
+            UrlMappingBuilder liveIngressGenerator = urlMappingBuilderFactory.instance(getTargetState(), getTargetState().getServiceNameFor("cae", "live"));
             String fqdn = concatOptional(getDefaults().getNamePrefix(), siteMapping.getHostname()) + "." + getDefaults().getIngressDomain();
             if (siteMapping.getFqdn() != null && !siteMapping.getFqdn().isEmpty())
                 fqdn = siteMapping.getFqdn();
@@ -104,9 +115,9 @@ public class OverviewComponent extends AbstractComponent implements HasService {
                 ism.liveUrls.put(segment, liveIngressGenerator.buildLiveUrl(siteMapping, segment));
             }
             ism.previewUrls = new HashMap<>();
-            ism.previewUrls.put(siteMapping.getPrimarySegment(), previewIngressGenerator.buildPreviewUrl(siteMapping, siteMapping.getPrimarySegment()));
+            ism.previewUrls.put(siteMapping.getPrimarySegment(), managementMappingBuilder.buildPreviewUrl(siteMapping, siteMapping.getPrimarySegment()));
             for (String segment : siteMapping.getAdditionalSegments()) {
-                ism.previewUrls.put(segment, previewIngressGenerator.buildPreviewUrl(siteMapping, segment));
+                ism.previewUrls.put(segment, managementMappingBuilder.buildPreviewUrl(siteMapping, segment));
             }
             info.siteMappings.add(ism);
         }
@@ -126,7 +137,7 @@ public class OverviewComponent extends AbstractComponent implements HasService {
 
     Collection<? extends HasMetadata> buildIngress() {
         String service = getTargetState().getServiceNameFor(this);
-        return getTargetState().getCmccIngressGeneratorFactory().instance(getTargetState(), service)
+        return getTargetState().getManagementUrlMappingBuilderFactory().instance(getTargetState(), service)
                 .builder(getTargetState().getResourceNameFor(this), getSpecName())
                 .pathPrefix("/", service)
                 .build();
@@ -260,7 +271,6 @@ public class OverviewComponent extends AbstractComponent implements HasService {
     private static class Info {
         String comment;
         String name;
-        String ingressBuilder;
         String prefix;
         String previewUrl;
         Set<InfoSiteMapping> siteMappings;

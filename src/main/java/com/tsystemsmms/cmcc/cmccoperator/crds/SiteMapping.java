@@ -39,4 +39,7 @@ public class SiteMapping {
 
     @JsonPropertyDescription("TLS settings for this mapping")
     private IngressTls tls;
+
+    @JsonPropertyDescription("URL mapper to use for this site")
+    private String urlMapper;
 }

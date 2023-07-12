@@ -18,7 +18,7 @@ import com.tsystemsmms.cmcc.cmccoperator.components.generic.MongoDBComponent;
 import com.tsystemsmms.cmcc.cmccoperator.components.generic.MySQLComponent;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
 import com.tsystemsmms.cmcc.cmccoperator.crds.Milestone;
-import com.tsystemsmms.cmcc.cmccoperator.ingress.CmccIngressGeneratorFactory;
+import com.tsystemsmms.cmcc.cmccoperator.ingress.UrlMappingBuilderFactory;
 import com.tsystemsmms.cmcc.cmccoperator.resource.ResourceReconcilerManager;
 import com.tsystemsmms.cmcc.cmccoperator.utils.Utils;
 import com.tsystemsmms.cmcc.cmccoperator.utils.YamlMapper;
@@ -39,16 +39,16 @@ import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.getInt;
 public class DefaultTargetState extends AbstractTargetState {
     public DefaultTargetState(BeanFactory beanFactory,
                               KubernetesClient kubernetesClient,
-                              CmccIngressGeneratorFactory cmccIngressGeneratorFactory,
                               ResourceNamingProviderFactory resourceNamingProviderFactory,
                               ResourceReconcilerManager resourceReconcilerManager,
+                              Map<String, UrlMappingBuilderFactory> urlMappingBuilderFactories,
                               YamlMapper yamlMapper,
                               CustomResource cmcc) {
         super(beanFactory,
                 kubernetesClient,
-                cmccIngressGeneratorFactory,
                 resourceNamingProviderFactory,
                 resourceReconcilerManager,
+                urlMappingBuilderFactories,
                 yamlMapper,
                 cmcc);
     }

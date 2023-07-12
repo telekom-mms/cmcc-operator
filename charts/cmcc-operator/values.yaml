@@ -3,8 +3,6 @@
 # Declare variables to be passed into your templates.
 
 cmcc:
-  # Which URL mapping scheme to use
-  ingressBuilder: blueprint
   # Should the operator be able to create secrets automatically, for example for database schemas or UAPI accounts.
   manageSecrets: true
   # Watch for ConfigMaps to control deployment of CoreMedia instances

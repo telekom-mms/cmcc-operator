@@ -10,18 +10,22 @@
 
 package com.tsystemsmms.cmcc.cmccoperator.ingress;
 
-import com.tsystemsmms.cmcc.cmccoperator.crds.IngressTls;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 
-public class BlueprintCmccIngressGeneratorFactory implements CmccIngressGeneratorFactory {
+public class BlueprintUrlMappingBuilderFactory implements UrlMappingBuilderFactory {
     private final IngressBuilderFactory ingressBuilderFactory;
 
-    public BlueprintCmccIngressGeneratorFactory(IngressBuilderFactory ingressBuilderFactory) {
+    public BlueprintUrlMappingBuilderFactory(IngressBuilderFactory ingressBuilderFactory) {
         this.ingressBuilderFactory = ingressBuilderFactory;
     }
 
     @Override
-    public CmccIngressGenerator instance(TargetState targetState, String serviceName) {
-        return new BlueprintCmccIngressGenerator(ingressBuilderFactory, targetState, serviceName);
+    public String getName() {
+        return "blueprint";
+    }
+
+    @Override
+    public UrlMappingBuilder instance(TargetState targetState, String serviceName) {
+        return new BlueprintUrlMappingBuilder(ingressBuilderFactory, targetState, serviceName);
     }
 }

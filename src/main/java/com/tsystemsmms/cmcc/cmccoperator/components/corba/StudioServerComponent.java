@@ -15,7 +15,7 @@ import com.tsystemsmms.cmcc.cmccoperator.components.HasMongoDBClient;
 import com.tsystemsmms.cmcc.cmccoperator.components.HasService;
 import com.tsystemsmms.cmcc.cmccoperator.components.HasSolrClient;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
-import com.tsystemsmms.cmcc.cmccoperator.ingress.CmccIngressGenerator;
+import com.tsystemsmms.cmcc.cmccoperator.ingress.UrlMappingBuilder;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 import com.tsystemsmms.cmcc.cmccoperator.utils.EnvVarSet;
 import io.fabric8.kubernetes.api.model.*;
@@ -132,7 +132,7 @@ public class StudioServerComponent extends CorbaComponent implements HasMongoDBC
      * @return the ingress definition
      */
     public Collection<? extends HasMetadata> buildIngress() {
-        CmccIngressGenerator generator = getTargetState().getCmccIngressGeneratorFactory().instance(getTargetState(), getTargetState().getServiceNameFor(this));
+        UrlMappingBuilder generator = getTargetState().getManagementUrlMappingBuilderFactory().instance(getTargetState(), getTargetState().getServiceNameFor(this));
         return generator.buildStudioResources();
     }
 }

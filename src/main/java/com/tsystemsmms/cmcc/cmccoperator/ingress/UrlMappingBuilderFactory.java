@@ -12,15 +12,22 @@ package com.tsystemsmms.cmcc.cmccoperator.ingress;
 
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 
-public class OnlyLangCmccIngressGeneratorFactory implements CmccIngressGeneratorFactory {
-    private final IngressBuilderFactory ingressBuilderFactory;
+/**
+ * Produces an UrlMappingBuilder for a specific target state. The name is used to select this factory for either
+ * management or live URLs.
+ */
+public interface UrlMappingBuilderFactory {
+  /**
+   * Produces an UrlMappingBuilder for a specific target state.
+   *
+   * @return the generator
+   */
+  UrlMappingBuilder instance(TargetState targetState, String serviceName);
 
-    public OnlyLangCmccIngressGeneratorFactory(IngressBuilderFactory ingressBuilderFactory) {
-        this.ingressBuilderFactory = ingressBuilderFactory;
-    }
-
-    @Override
-    public CmccIngressGenerator instance(TargetState targetState, String serviceName) {
-        return new OnlyLangCmccIngressGenerator(ingressBuilderFactory, targetState, serviceName);
-    }
+  /**
+   * Returns the name of this factory. It is used in the custom resource to select this factory for URL mappings.
+   *
+   * @return name of this factory
+   */
+  String getName();
 }
