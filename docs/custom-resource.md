@@ -120,6 +120,7 @@ properties have suitable defaults.
 | `licenseSecrets.RLSLicense`         | String               | `license-rls`                                     | Name of the secret containing a `license.zip` entry with the appropriate file contents                                                       |
 | `siteMappings`                      | array                | –                                                 | Mappings between DNS names and site segments, see below                                                                                      |
 | `with`                              | object               | –                                                 | Optional special components and configurations                                                                                               |
+| `with.cachesAsPvc`                 | boolean              | false                                             | Use Persistent Volume Claims when creating various cache directories, instead of EmptyDirs.                                                  |
 | `with.databases`                    | boolean              | false                                             | Create both a MariaDB and MongoDB server, and schemas and secrets for all components that require them                                       |
 | `with.databasesOverride`            | object               | –                                                 | If `with.databases` is `true`, override the creation for specific kinds.                                                                     |
 | `with.databasesOverride.`*kind*     | boolean              | true                                              | When set to `false`, do not create database and secrets for *kind*. If set to true, or the entry is missing, do create them.                 |
@@ -142,6 +143,14 @@ properties have suitable defaults.
 | `with.uploadSize.studio`            | integer              | 0                                                 | Maximum size of POST/PUT uploads the ingress and Studio will allow. 0 means do not configure.                                                |
 
 ## Enabling Convenience Options `with`
+
+### Persistent Caches `with.cachesAsPvc`
+
+By default, cache directories in UAPI components are created
+using [EmptyDir](https://kubernetes.io/docs/concepts/storage/volumes/#emptydir)s.
+
+Set this to `true` to instead use Persistent Volume Claims. This allows the caches to persist across pod restarts. Note
+however, that this requires a large number of PVCs, which might exceed the limit on your nodes.
 
 ### Local database servers `with.databases`
 

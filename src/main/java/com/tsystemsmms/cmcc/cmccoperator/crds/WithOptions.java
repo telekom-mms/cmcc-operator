@@ -23,6 +23,9 @@ public class WithOptions {
     @JsonPropertyDescription("Import content, users, themes and workflows")
     Boolean contentImport = true;
 
+    @JsonPropertyDescription("Create cache directories as Persistent Volume Claims")
+    Boolean cachesAsPvc = false;
+
     @JsonPropertyDescription("Create databases and secrets for CoreMedia")
     Boolean databases = false;
 

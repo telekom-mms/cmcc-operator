@@ -137,6 +137,18 @@ public abstract class CorbaComponent extends SpringBootComponent implements HasS
                     .withEmptyDir(new EmptyDirVolumeSource())
                     .build()
     ));
+    if (!getCmcc().getSpec().getWith().getCachesAsPvc()) {
+      volumes.addAll(List.of(
+              new VolumeBuilder()
+                      .withName(PVC_TRANSFORMED_BLOBCACHE)
+                      .withEmptyDir(new EmptyDirVolumeSource())
+                      .build(),
+              new VolumeBuilder()
+                      .withName(PVC_UAPI_BLOBCACHE)
+                      .withEmptyDir(new EmptyDirVolumeSource())
+                      .build()
+      ));
+    }
     return volumes;
   }
 
@@ -144,9 +156,10 @@ public abstract class CorbaComponent extends SpringBootComponent implements HasS
   public List<PersistentVolumeClaim> getVolumeClaims() {
     List<PersistentVolumeClaim> claims = super.getVolumeClaims();
 
-    claims.add(getPersistentVolumeClaim(PVC_TRANSFORMED_BLOBCACHE, getVolumeSize(ComponentSpec.VolumeSize::getTransformedBlobCache)));
-    claims.add(getPersistentVolumeClaim(PVC_UAPI_BLOBCACHE, getVolumeSize(ComponentSpec.VolumeSize::getUapiBlobCache)));
-
+    if (getCmcc().getSpec().getWith().getCachesAsPvc()) {
+      claims.add(getPersistentVolumeClaim(PVC_TRANSFORMED_BLOBCACHE, getVolumeSize(ComponentSpec.VolumeSize::getTransformedBlobCache)));
+      claims.add(getPersistentVolumeClaim(PVC_UAPI_BLOBCACHE, getVolumeSize(ComponentSpec.VolumeSize::getUapiBlobCache)));
+    }
     return claims;
   }
 
