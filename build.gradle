@@ -49,7 +49,7 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok'
     annotationProcessor 'io.fabric8:crd-generator-apt:6.7.2'
     testImplementation 'org.springframework.boot:spring-boot-starter-test:3.1.4'
-    testImplementation 'io.javaoperatorsdk:operator-framework-spring-boot-starter-test:5.1.0'
+    testImplementation 'io.javaoperatorsdk:operator-framework-spring-boot-starter-test:5.2.0'
 }
 
 tasks.named('test') {
