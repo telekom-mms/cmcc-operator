@@ -35,7 +35,7 @@ dependencies {
 //    developmentOnly 'org.springframework.boot:spring-boot-devtools:3.1.1'
     implementation 'org.springframework.boot:spring-boot-starter-actuator:3.1.4'
     implementation 'org.springframework.boot:spring-boot-starter-web:3.1.4'
-    implementation 'io.javaoperatorsdk:operator-framework-spring-boot-starter:5.1.0'
+    implementation 'io.javaoperatorsdk:operator-framework-spring-boot-starter:5.2.0'
     constraints {
         implementation('io.fabric8:kubernetes-httpclient-okhttp:6.7.2') {
             because 'some internal dependencies seem to be for 6.6.2 which works differently'
