@@ -632,6 +632,9 @@ spec:
                   contentImport:
                     description: "Import content, users, themes and workflows"
                     type: boolean
+                  cachesAsPvc:
+                    description: Create cache directories as Persistent Volume Claims
+                    type: boolean
                   databases:
                     description: Create databases and secrets for CoreMedia
                     type: boolean

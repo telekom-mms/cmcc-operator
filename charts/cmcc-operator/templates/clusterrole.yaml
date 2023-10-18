@@ -11,13 +11,26 @@ rules:
     resources:
       - configmaps
       - persistentvolumeclaims
-      - pods/exec
 {{- if .Values.cmcc.manageSecrets }}
       - secrets
 {{- end }}
       - services
     verbs:
       - '*'
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+    verbs:
+      - get
+      - list
+  - apiGroups:
+      - ""
+    resources:
+      - pods/exec
+    verbs:
+      - create
+      - get
   - apiGroups:
       - "apps"
     resources:
