@@ -37,7 +37,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web:3.1.5'
     implementation 'io.javaoperatorsdk:operator-framework-spring-boot-starter:5.2.0'
     constraints {
-        implementation('io.fabric8:kubernetes-httpclient-okhttp:6.7.2') {
+        implementation('io.fabric8:kubernetes-httpclient-okhttp:6.9.1') {
             because 'some internal dependencies seem to be for 6.6.2 which works differently'
         }
     }
@@ -47,7 +47,7 @@ dependencies {
     compileOnly 'org.projectlombok:lombok'
     testCompileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
-    annotationProcessor 'io.fabric8:crd-generator-apt:6.7.2'
+    annotationProcessor 'io.fabric8:crd-generator-apt:6.9.1'
     testImplementation 'org.springframework.boot:spring-boot-starter-test:3.1.5'
     testImplementation 'io.javaoperatorsdk:operator-framework-spring-boot-starter-test:5.2.0'
 }
