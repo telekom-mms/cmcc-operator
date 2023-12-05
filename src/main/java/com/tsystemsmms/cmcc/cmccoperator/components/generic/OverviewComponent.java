@@ -60,7 +60,7 @@ public class OverviewComponent extends AbstractComponent implements HasService {
 
     @Override
     public ImageSpec getDefaultImage() {
-        return new ImageSpec("docker.io/library/nginx:1.21");
+        return new ImageSpec("docker.io/library/nginx:1.25");
     }
 
     @Override
