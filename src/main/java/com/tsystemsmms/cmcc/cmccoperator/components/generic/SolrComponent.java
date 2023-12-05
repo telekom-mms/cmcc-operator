@@ -332,8 +332,9 @@ public class SolrComponent extends AbstractComponent implements HasService {
     return new ProbeBuilder()
             .withPeriodSeconds(10)
             .withFailureThreshold(30)
+            .withTimeoutSeconds(15)
             .withHttpGet(new HTTPGetActionBuilder()
-                    .withPath("/solr")
+                    .withPath("/solr/admin/info/health")
                     .withPort(new IntOrString("http"))
                     .build())
             .build();
@@ -348,8 +349,9 @@ public class SolrComponent extends AbstractComponent implements HasService {
     return new ProbeBuilder()
             .withPeriodSeconds(10)
             .withFailureThreshold(20)
+            .withTimeoutSeconds(15)
             .withHttpGet(new HTTPGetActionBuilder()
-                    .withPath("/solr")
+                    .withPath("/solr/admin/info/health")
                     .withPort(new IntOrString("http"))
                     .build())
             .build();
@@ -364,8 +366,9 @@ public class SolrComponent extends AbstractComponent implements HasService {
     return new ProbeBuilder()
             .withPeriodSeconds(10)
             .withFailureThreshold(10)
+            .withTimeoutSeconds(15)
             .withHttpGet(new HTTPGetActionBuilder()
-                    .withPath("/solr")
+                    .withPath("/solr/admin/info/health")
                     .withPort(new IntOrString("http"))
                     .build())
             .build();
