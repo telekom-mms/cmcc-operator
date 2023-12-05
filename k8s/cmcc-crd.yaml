@@ -17,9 +17,11 @@ spec:
   - additionalPrinterColumns:
     - jsonPath: .status.error
       name: ERROR
+      priority: 0
       type: string
     - jsonPath: .status.milestone
       name: MILESTONE
+      priority: 0
       type: string
     name: v1
     schema:
@@ -27,6 +29,39 @@ spec:
         properties:
           spec:
             properties:
+              clientSecretRefs:
+                additionalProperties:
+                  additionalProperties:
+                    properties:
+                      driverKey:
+                        description: entry in the secret for the driver class or name
+                        type: string
+                      hostnameKey:
+                        description: entry in the secret for hostname of the server
+                        type: string
+                      passwordKey:
+                        description: entry in the secret for the password to authenticate
+                          with
+                        type: string
+                      schemaKey:
+                        description: "entry in the secret for the schema, database\
+                          \ or service to use"
+                        type: string
+                      secretName:
+                        description: resource name of the secret
+                        type: string
+                      urlKey:
+                        description: entry in the secret for the url to connect to
+                        type: string
+                      usernameKey:
+                        description: entry in the secret for the username to authenticate
+                          with
+                        type: string
+                    type: object
+                  type: object
+                description: References to existing secrets for components connecting
+                  as clients to services
+                type: object
               comment:
                 description: An arbitrary comment; can be used to force an update
                   to the object
@@ -35,16 +70,6 @@ spec:
                 description: "List of components (CMS, Solr, CAE, etc.)"
                 items:
                   properties:
-                    type:
-                      description: Type of the component
-                      type: string
-                    kind:
-                      description: "Sub-type ('cms' or 'mls', or 'master' and 'replica',\
-                        \ or 'preview' and 'live')"
-                      type: string
-                    name:
-                      description: Name to be used for k8s objects
-                      type: string
                     annotations:
                       additionalProperties:
                         type: string
@@ -113,6 +138,9 @@ spec:
                     image:
                       description: Image for main pod' main container
                       properties:
+                        pullPolicy:
+                          description: Image pull policy (default 'IfNotPresent')
+                          type: string
                         registry:
                           description: Image registry (default 'coremedia')
                           type: string
@@ -122,22 +150,26 @@ spec:
                         tag:
                           description: Image tag (default 'latest')
                           type: string
-                        pullPolicy:
-                          description: Image pull policy (default 'IfNotPresent')
-                          type: string
                       type: object
+                    kind:
+                      description: "Sub-type ('cms' or 'mls', or 'master' and 'replica',\
+                        \ or 'preview' and 'live')"
+                      type: string
                     milestone:
                       description: Make available with this milestone
                       enum:
-                      - Created
-                      - DatabasesReady
                       - ContentServerInitialized
                       - ContentServerReady
+                      - Created
+                      - DatabasesReady
+                      - Healing
                       - ManagementReady
+                      - Never
                       - Ready
                       - RunJob
-                      - Healing
-                      - Never
+                      type: string
+                    name:
+                      description: Name to be used for k8s objects
                       type: string
                     podSecurityContext:
                       description: Security context for a pod
@@ -273,6 +305,9 @@ spec:
                               type: string
                           type: object
                       type: object
+                    type:
+                      description: Type of the component
+                      type: string
                     volumeSize:
                       description: Size of persistent data/cache volumes
                       properties:
@@ -300,39 +335,6 @@ spec:
                       type: object
                   type: object
                 type: array
-              clientSecretRefs:
-                additionalProperties:
-                  additionalProperties:
-                    properties:
-                      secretName:
-                        description: resource name of the secret
-                        type: string
-                      driverKey:
-                        description: entry in the secret for the driver class or name
-                        type: string
-                      hostnameKey:
-                        description: entry in the secret for hostname of the server
-                        type: string
-                      passwordKey:
-                        description: entry in the secret for the password to authenticate
-                          with
-                        type: string
-                      schemaKey:
-                        description: "entry in the secret for the schema, database\
-                          \ or service to use"
-                        type: string
-                      urlKey:
-                        description: entry in the secret for the url to connect to
-                        type: string
-                      usernameKey:
-                        description: entry in the secret for the username to authenticate
-                          with
-                        type: string
-                    type: object
-                  type: object
-                description: References to existing secrets for components connecting
-                  as clients to services
-                type: object
               defaultIngressTls:
                 description: Ingress TLS defaults
                 properties:
@@ -357,6 +359,9 @@ spec:
                   image:
                     description: Defaults for the image specification
                     properties:
+                      pullPolicy:
+                        description: Image pull policy (default 'IfNotPresent')
+                        type: string
                       registry:
                         description: Image registry (default 'coremedia')
                         type: string
@@ -365,9 +370,6 @@ spec:
                         type: string
                       tag:
                         description: Image tag (default 'latest')
-                        type: string
-                      pullPolicy:
-                        description: Image pull policy (default 'IfNotPresent')
                         type: string
                     type: object
                   ingressDomain:
@@ -379,6 +381,18 @@ spec:
                     type: string
                   javaOpts:
                     description: "For Java components, use these JAVA_OPTS."
+                    type: string
+                  liveUrlMapper:
+                    description: Name of the URL Mapper to use by default for live
+                      URL mappings
+                    type: string
+                  managementUrlMapper:
+                    description: Name of the URL Mapper to use to create preview and
+                      studio URL mappings
+                    type: string
+                  namePrefix:
+                    description: Prefix resources with this name plus '-'. Empty string
+                      means no prefix
                     type: string
                   podSecurityContext:
                     description: Default security context for a pod
@@ -436,6 +450,10 @@ spec:
                             type: string
                         type: object
                     type: object
+                  previewHostname:
+                    description: "Hostname of the preview CAE. If short, will be prefixed\
+                      \ with the prefix and the ingressDomain appended"
+                    type: string
                   resources:
                     description: "Default resource management (limits, requests)"
                     properties:
@@ -450,22 +468,6 @@ spec:
                         description: Requests for resources for this components pods
                         type: object
                     type: object
-                  liveUrlMapper:
-                    description: Name of the URL Mapper to use by default for live
-                      URL mappings
-                    type: string
-                  managementUrlMapper:
-                    description: Name of the URL Mapper to use to create preview and
-                      studio URL mappings
-                    type: string
-                  namePrefix:
-                    description: Prefix resources with this name plus '-'. Empty string
-                      means no prefix
-                    type: string
-                  previewHostname:
-                    description: "Hostname of the preview CAE. If short, will be prefixed\
-                      \ with the prefix and the ingressDomain appended"
-                    type: string
                   securityContext:
                     description: Default security context for containers in a pod
                     properties:
@@ -524,6 +526,11 @@ spec:
                             type: string
                         type: object
                     type: object
+                  servletNames:
+                    description: List of servlets the CAE serves
+                    items:
+                      type: string
+                    type: array
                   siteMappingProtocol:
                     description: Default protocol for all site mapping entries
                     type: string
@@ -534,11 +541,6 @@ spec:
                     description: "Hostname of the Studio. If short, will be prefixed\
                       \ with the prefix and the ingressDomain appended"
                     type: string
-                  servletNames:
-                    description: List of servlets the CAE serves
-                    items:
-                      type: string
-                    type: array
                   volumeSize:
                     description: Size of persistent data/cache volumes
                     properties:
@@ -565,6 +567,9 @@ spec:
                         type: string
                     type: object
                 type: object
+              job:
+                description: Run this job component once from Ready
+                type: string
               licenseSecrets:
                 description: Names of the secrets containing the license
                 properties:
@@ -629,11 +634,11 @@ spec:
               with:
                 description: Optional special components and configurations
                 properties:
-                  contentImport:
-                    description: "Import content, users, themes and workflows"
-                    type: boolean
                   cachesAsPvc:
                     description: Create cache directories as Persistent Volume Claims
+                    type: boolean
+                  contentImport:
+                    description: "Import content, users, themes and workflows"
                     type: boolean
                   databases:
                     description: Create databases and secrets for CoreMedia
@@ -646,11 +651,11 @@ spec:
                   delivery:
                     description: Create default components for the delivery stage
                     properties:
-                      rls:
+                      maxCae:
                         anyOf:
                         - type: integer
                         - type: string
-                        description: Number of RLS to create
+                        description: Maximum number of CAEs per RLS
                         x-kubernetes-int-or-string: true
                       minCae:
                         anyOf:
@@ -658,11 +663,11 @@ spec:
                         - type: string
                         description: Minimum number of CAEs per RLS
                         x-kubernetes-int-or-string: true
-                      maxCae:
+                      rls:
                         anyOf:
                         - type: integer
                         - type: string
-                        description: Maximum number of CAEs per RLS
+                        description: Number of RLS to create
                         x-kubernetes-int-or-string: true
                     type: object
                   handlerPrefixes:
@@ -759,9 +764,6 @@ spec:
                         type: string
                     type: object
                 type: object
-              job:
-                description: Run this job component once from Ready
-                type: string
             type: object
           status:
             properties:
@@ -782,21 +784,21 @@ spec:
               milestone:
                 description: Which milestone has been reached in configuring all components
                 enum:
-                - Created
-                - DatabasesReady
                 - ContentServerInitialized
                 - ContentServerReady
+                - Created
+                - DatabasesReady
+                - Healing
                 - ManagementReady
+                - Never
                 - Ready
                 - RunJob
-                - Healing
-                - Never
-                type: string
-              ownedResourceRefs:
-                description: Unused
                 type: string
               observedGeneration:
                 type: integer
+              ownedResourceRefs:
+                description: Unused
+                type: string
             type: object
         type: object
     served: true

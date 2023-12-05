@@ -11,7 +11,7 @@
 package com.tsystemsmms.cmcc.cmccoperator.crds;
 
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
-import io.fabric8.kubernetes.model.annotation.PrinterColumn;
+import io.fabric8.crd.generator.annotation.PrinterColumn;
 import io.javaoperatorsdk.operator.api.ObservedGenerationAwareStatus;
 import lombok.Getter;
 import lombok.Setter;
