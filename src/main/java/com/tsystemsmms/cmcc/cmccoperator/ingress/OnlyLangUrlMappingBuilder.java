@@ -16,6 +16,7 @@ import com.tsystemsmms.cmcc.cmccoperator.targetstate.CustomResourceConfigError;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -38,7 +39,7 @@ import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.getInt;
  * <p>
  * The resulting rewrite rules build these mappings:
  * <ul>
- *     <li>https://corporate.example.de/ redirects to /de/</li>
+ *     <li>https://corporate.example.de/ redirects to /de</li>
  *     <li>https://corporate.example.de/de maps to corporate-de-de</li>
  *     <li>https://corporate.example.ca/ redirects to /en</li>
  *     <li>https://corporate.example.ca/en maps to corporate-en-ca</li>
@@ -81,7 +82,9 @@ public class OnlyLangUrlMappingBuilder extends AbstractUrlMappingBuilder {
       ingresses.addAll(ingressBuilderFactory.builder(targetState, liveName(site, "home", suffix), fqdn, tls)
               .responseTimeout(responseTimeout)
               .uploadSize(uploadSize)
-              .pathExact("/", serviceName).redirect("/" + getLanguage(siteMapping.getPrimarySegment())).build());
+              .pathPattern("/", serviceName)
+              .redirect("$scheme://" + fqdn + "/" + getLanguage(siteMapping.getPrimarySegment()), HttpStatus.MOVED_PERMANENTLY.value())
+              .build());
       ingresses.addAll(ingressBuilderFactory.builder(targetState, liveName(site, "blueprint", suffix), fqdn, tls)
               .responseTimeout(responseTimeout)
               .uploadSize(uploadSize)
@@ -97,7 +100,7 @@ public class OnlyLangUrlMappingBuilder extends AbstractUrlMappingBuilder {
       ingresses.addAll(ingressBuilderFactory.builder(targetState, liveName(site, "default", suffix), fqdn, tls)
               .responseTimeout(responseTimeout)
               .uploadSize(uploadSize)
-              .pathPattern("/(.*)", serviceName).rewrite("/blueprint/servlet/" + siteMapping.getPrimarySegment() + "/$1").build());
+              .pathPattern("/(.+)", serviceName).rewrite("/blueprint/servlet/" + siteMapping.getPrimarySegment() + "/$1").build());
       ingresses.addAll(ingressBuilderFactory.builder(targetState, liveName(site, "seo", suffix), fqdn, tls)
               .responseTimeout(responseTimeout)
               .uploadSize(uploadSize)

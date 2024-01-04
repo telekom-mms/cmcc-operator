@@ -61,11 +61,20 @@ public interface IngressBuilder {
   IngressBuilder redirect(String uri);
 
   /**
-   * Sets the response timeout for this ingress.
+   * Redirect the client to the new relative or absolute URL, using status code {@code code}.
    *
-   * @param seconds timeout
+   * @param uri the target URI
+   * @param code the HTTP status code for the redirect, for example, 301
    * @return the builder
    */
+  IngressBuilder redirect(String uri, int code);
+
+    /**
+     * Sets the response timeout for this ingress.
+     *
+     * @param seconds timeout
+     * @return the builder
+     */
   IngressBuilder responseTimeout(int seconds);
 
   /**

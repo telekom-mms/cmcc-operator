@@ -82,6 +82,7 @@ public class NginxIngressBuilder extends AbstractIngressBuilder {
 
   @Override
   public IngressBuilder pathPattern(String path, String service) {
+    annotations.put("nginx.ingress.kubernetes.io/use-regex", "true");
     paths.add(new Path(path, PathType.PATTERN, service));
     return this;
   }
@@ -95,6 +96,14 @@ public class NginxIngressBuilder extends AbstractIngressBuilder {
   @Override
   public IngressBuilder redirect(String uri) {
     annotations.put("nginx.ingress.kubernetes.io/app-root", uri);
+    return this;
+  }
+
+  @Override
+  public IngressBuilder redirect(String uri, int code) {
+    annotations.put("nginx.ingress.kubernetes.io/permanent-redirect", uri);
+    if (code != 301)
+      annotations.put("nginx.ingress.kubernetes.io/permanent-redirect-code", String.valueOf(code));
     return this;
   }
 
