@@ -100,7 +100,8 @@ public class OnlyLangUrlMappingBuilder extends AbstractUrlMappingBuilder {
       ingresses.addAll(ingressBuilderFactory.builder(targetState, liveName(site, "default", suffix), fqdn, tls)
               .responseTimeout(responseTimeout)
               .uploadSize(uploadSize)
-              .pathPattern("/(.+)", serviceName).rewrite("/blueprint/servlet/" + siteMapping.getPrimarySegment() + "/$1").build());
+              .pathPattern("/(.*)", serviceName)
+              .redirect("$scheme://" + fqdn + "/" + getLanguage(siteMapping.getPrimarySegment()) + "/$1", HttpStatus.MOVED_PERMANENTLY.value()).build());
       ingresses.addAll(ingressBuilderFactory.builder(targetState, liveName(site, "seo", suffix), fqdn, tls)
               .responseTimeout(responseTimeout)
               .uploadSize(uploadSize)
