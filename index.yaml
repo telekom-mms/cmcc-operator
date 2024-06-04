@@ -9,7 +9,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-v1.14.8/cmcc-v1.14.8.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-v1.14.8/cmcc-v1.14.8.tgz
     version: v1.14.8
   - apiVersion: v2
     appVersion: v1.14.7
@@ -19,7 +19,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-v1.14.7/cmcc-v1.14.7.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-v1.14.7/cmcc-v1.14.7.tgz
     version: v1.14.7
   - apiVersion: v2
     appVersion: v1.14.6
@@ -29,7 +29,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-v1.14.6/cmcc-v1.14.6.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-v1.14.6/cmcc-v1.14.6.tgz
     version: v1.14.6
   - apiVersion: v2
     appVersion: v1.14.5
@@ -39,7 +39,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-v1.14.5/cmcc-v1.14.5.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-v1.14.5/cmcc-v1.14.5.tgz
     version: v1.14.5
   - apiVersion: v2
     appVersion: v1.14.4
@@ -49,7 +49,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-v1.14.4/cmcc-v1.14.4.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-v1.14.4/cmcc-v1.14.4.tgz
     version: v1.14.4
   - apiVersion: v2
     appVersion: v1.14.3
@@ -59,7 +59,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-v1.14.3/cmcc-v1.14.3.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-v1.14.3/cmcc-v1.14.3.tgz
     version: v1.14.3
   - apiVersion: v2
     appVersion: v1.14.2
@@ -69,7 +69,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-v1.14.2/cmcc-v1.14.2.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-v1.14.2/cmcc-v1.14.2.tgz
     version: v1.14.2
   - apiVersion: v2
     appVersion: v1.14.1
@@ -79,7 +79,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-v1.14.1/cmcc-v1.14.1.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-v1.14.1/cmcc-v1.14.1.tgz
     version: v1.14.1
   - apiVersion: v2
     appVersion: v1.14.0
@@ -89,7 +89,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-v1.14.0/cmcc-v1.14.0.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-v1.14.0/cmcc-v1.14.0.tgz
     version: v1.14.0
   - apiVersion: v2
     appVersion: v1.13.0
@@ -99,7 +99,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-v1.13.0/cmcc-v1.13.0.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-v1.13.0/cmcc-v1.13.0.tgz
     version: v1.13.0
   - apiVersion: v2
     appVersion: v1.13.0-beta.2
@@ -109,7 +109,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-v1.13.0-beta.2/cmcc-v1.13.0-beta.2.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-v1.13.0-beta.2/cmcc-v1.13.0-beta.2.tgz
     version: v1.13.0-beta.2
   - apiVersion: v2
     appVersion: v1.13.0-beta.1
@@ -119,7 +119,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-v1.13.0-beta.1/cmcc-v1.13.0-beta.1.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-v1.13.0-beta.1/cmcc-v1.13.0-beta.1.tgz
     version: v1.13.0-beta.1
   - apiVersion: v2
     appVersion: v1.13.0-beta.1
@@ -129,7 +129,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-v1.13.0-beta.1/cmcc-v1.13.0-beta.1.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-v1.13.0-beta.1/cmcc-v1.13.0-beta.1.tgz
     version: v1.13.0-beta.1
   - apiVersion: v2
     appVersion: v1.13.0-beta.1
@@ -139,7 +139,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-v1.13.0-beta.1/cmcc-v1.13.0-beta.1.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-v1.13.0-beta.1/cmcc-v1.13.0-beta.1.tgz
     version: v1.13.0-beta.1
   - apiVersion: v2
     appVersion: v1.13.0-beta.1
@@ -149,7 +149,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-v1.13.0-beta.1/cmcc-v1.13.0-beta.1.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-v1.13.0-beta.1/cmcc-v1.13.0-beta.1.tgz
     version: v1.13.0-beta.1
   - apiVersion: v2
     appVersion: v1.12.7
@@ -159,7 +159,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-v1.12.7/cmcc-v1.12.7.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-v1.12.7/cmcc-v1.12.7.tgz
     version: v1.12.7
   - apiVersion: v2
     appVersion: v1.12.6
@@ -169,7 +169,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-v1.12.6/cmcc-v1.12.6.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-v1.12.6/cmcc-v1.12.6.tgz
     version: v1.12.6
   - apiVersion: v2
     appVersion: v1.12.5
@@ -179,7 +179,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-v1.12.5/cmcc-v1.12.5.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-v1.12.5/cmcc-v1.12.5.tgz
     version: v1.12.5
   - apiVersion: v2
     appVersion: v1.12.4
@@ -189,7 +189,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-v1.12.4/cmcc-v1.12.4.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-v1.12.4/cmcc-v1.12.4.tgz
     version: v1.12.4
   - apiVersion: v2
     appVersion: v1.12.3
@@ -199,7 +199,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-v1.12.3/cmcc-v1.12.3.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-v1.12.3/cmcc-v1.12.3.tgz
     version: v1.12.3
   - apiVersion: v2
     appVersion: v1.12.2
@@ -209,7 +209,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-v1.12.2/cmcc-v1.12.2.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-v1.12.2/cmcc-v1.12.2.tgz
     version: v1.12.2
   - apiVersion: v2
     appVersion: v1.12.1
@@ -219,7 +219,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-v1.12.1/cmcc-v1.12.1.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-v1.12.1/cmcc-v1.12.1.tgz
     version: v1.12.1
   - apiVersion: v2
     appVersion: v1.12.0
@@ -229,7 +229,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-v1.12.0/cmcc-v1.12.0.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-v1.12.0/cmcc-v1.12.0.tgz
     version: v1.12.0
   - apiVersion: v2
     appVersion: v1.11.1
@@ -239,7 +239,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-v1.11.1/cmcc-v1.11.1.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-v1.11.1/cmcc-v1.11.1.tgz
     version: v1.11.1
   - apiVersion: v2
     appVersion: v1.11.0
@@ -249,7 +249,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-v1.11.0/cmcc-v1.11.0.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-v1.11.0/cmcc-v1.11.0.tgz
     version: v1.11.0
   - apiVersion: v2
     appVersion: v1.10.2
@@ -259,7 +259,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-v1.10.2/cmcc-v1.10.2.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-v1.10.2/cmcc-v1.10.2.tgz
     version: v1.10.2
   - apiVersion: v2
     appVersion: v1.10.1
@@ -269,7 +269,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-v1.10.1/cmcc-v1.10.1.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-v1.10.1/cmcc-v1.10.1.tgz
     version: v1.10.1
   - apiVersion: v2
     appVersion: v1.10.0
@@ -279,7 +279,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-v1.10.0/cmcc-v1.10.0.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-v1.10.0/cmcc-v1.10.0.tgz
     version: v1.10.0
   - apiVersion: v2
     appVersion: v1.9.0
@@ -289,7 +289,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-v1.9.0/cmcc-v1.9.0.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-v1.9.0/cmcc-v1.9.0.tgz
     version: v1.9.0
   - apiVersion: v2
     appVersion: v1.8.0
@@ -299,7 +299,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-v1.8.0/cmcc-v1.8.0.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-v1.8.0/cmcc-v1.8.0.tgz
     version: v1.8.0
   - apiVersion: v2
     appVersion: v1.7.4
@@ -309,7 +309,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-v1.7.4/cmcc-v1.7.4.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-v1.7.4/cmcc-v1.7.4.tgz
     version: v1.7.4
   - apiVersion: v2
     appVersion: v1.7.3
@@ -319,7 +319,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-v1.7.3/cmcc-v1.7.3.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-v1.7.3/cmcc-v1.7.3.tgz
     version: v1.7.3
   - apiVersion: v2
     appVersion: v1.7.2
@@ -329,7 +329,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-v1.7.2/cmcc-v1.7.2.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-v1.7.2/cmcc-v1.7.2.tgz
     version: v1.7.2
   - apiVersion: v2
     appVersion: v1.7.1
@@ -339,7 +339,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-v1.7.1/cmcc-v1.7.1.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-v1.7.1/cmcc-v1.7.1.tgz
     version: v1.7.1
   - apiVersion: v2
     appVersion: v1.7.0
@@ -349,7 +349,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-v1.7.0/cmcc-v1.7.0.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-v1.7.0/cmcc-v1.7.0.tgz
     version: v1.7.0
   - apiVersion: v2
     appVersion: v1.6.1
@@ -359,7 +359,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-v1.6.1/cmcc-v1.6.1.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-v1.6.1/cmcc-v1.6.1.tgz
     version: v1.6.1
   - apiVersion: v2
     appVersion: v1.6.0
@@ -369,7 +369,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-v1.6.0/cmcc-v1.6.0.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-v1.6.0/cmcc-v1.6.0.tgz
     version: v1.6.0
   - apiVersion: v2
     appVersion: v1.5.2
@@ -379,7 +379,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-v1.5.2/cmcc-v1.5.2.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-v1.5.2/cmcc-v1.5.2.tgz
     version: v1.5.2
   - apiVersion: v2
     appVersion: v1.5.1
@@ -389,7 +389,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-v1.5.1/cmcc-v1.5.1.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-v1.5.1/cmcc-v1.5.1.tgz
     version: v1.5.1
   - apiVersion: v2
     appVersion: 1.5.0
@@ -399,7 +399,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-1.5.0/cmcc-1.5.0.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-1.5.0/cmcc-1.5.0.tgz
     version: 1.5.0
   - apiVersion: v2
     appVersion: 1.4.1
@@ -409,7 +409,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-1.4.1/cmcc-1.4.1.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-1.4.1/cmcc-1.4.1.tgz
     version: 1.4.1
   - apiVersion: v2
     appVersion: 1.4.0
@@ -419,7 +419,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-1.4.0/cmcc-1.4.0.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-1.4.0/cmcc-1.4.0.tgz
     version: 1.4.0
   - apiVersion: v2
     appVersion: 1.3.0
@@ -429,7 +429,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-1.3.0/cmcc-1.3.0.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-1.3.0/cmcc-1.3.0.tgz
     version: 1.3.0
   - apiVersion: v2
     appVersion: 1.2.2
@@ -439,7 +439,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-1.2.2/cmcc-1.2.2.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-1.2.2/cmcc-1.2.2.tgz
     version: 1.2.2
   - apiVersion: v2
     appVersion: 1.2.1
@@ -449,7 +449,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-1.2.1/cmcc-1.2.1.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-1.2.1/cmcc-1.2.1.tgz
     version: 1.2.1
   - apiVersion: v2
     appVersion: 1.2.0
@@ -459,7 +459,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-1.2.0/cmcc-1.2.0.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-1.2.0/cmcc-1.2.0.tgz
     version: 1.2.0
   - apiVersion: v2
     appVersion: 1.1.2
@@ -469,7 +469,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-1.1.2/cmcc-1.1.2.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-1.1.2/cmcc-1.1.2.tgz
     version: 1.1.2
   - apiVersion: v2
     appVersion: 1.1.1
@@ -479,7 +479,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-1.1.1/cmcc-1.1.1.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-1.1.1/cmcc-1.1.1.tgz
     version: 1.1.1
   - apiVersion: v2
     appVersion: 1.1.0
@@ -489,7 +489,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-1.1.0/cmcc-1.1.0.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-1.1.0/cmcc-1.1.0.tgz
     version: 1.1.0
   - apiVersion: v2
     appVersion: 1.0.1
@@ -499,7 +499,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-1.0.1/cmcc-1.0.1.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-1.0.1/cmcc-1.0.1.tgz
     version: 1.0.1
   - apiVersion: v2
     appVersion: 1.0.0
@@ -509,7 +509,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-1.0.0/cmcc-1.0.0.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-1.0.0/cmcc-1.0.0.tgz
     version: 1.0.0
   - apiVersion: v2
     appVersion: 0.9.10-beta.8
@@ -519,7 +519,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-0.9.10-beta.8/cmcc-0.9.10-beta.8.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-0.9.10-beta.8/cmcc-0.9.10-beta.8.tgz
     version: 0.9.10-beta.8
   - apiVersion: v2
     appVersion: 0.9.10-beta.7
@@ -529,7 +529,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-0.9.10-beta.7/cmcc-0.9.10-beta.7.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-0.9.10-beta.7/cmcc-0.9.10-beta.7.tgz
     version: 0.9.10-beta.7
   - apiVersion: v2
     appVersion: 0.9.10-beta.6
@@ -539,7 +539,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-0.9.10-beta.6/cmcc-0.9.10-beta.6.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-0.9.10-beta.6/cmcc-0.9.10-beta.6.tgz
     version: 0.9.10-beta.6
   - apiVersion: v2
     appVersion: 0.9.10-beta.5
@@ -549,7 +549,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-0.9.10-beta.5/cmcc-0.9.10-beta.5.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-0.9.10-beta.5/cmcc-0.9.10-beta.5.tgz
     version: 0.9.10-beta.5
   - apiVersion: v2
     appVersion: 0.9.10-beta.4
@@ -559,7 +559,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-0.9.10-beta.4/cmcc-0.9.10-beta.4.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-0.9.10-beta.4/cmcc-0.9.10-beta.4.tgz
     version: 0.9.10-beta.4
   - apiVersion: v2
     appVersion: 0.9.10-beta.3
@@ -569,7 +569,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-0.9.10-beta.3/cmcc-0.9.10-beta.3.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-0.9.10-beta.3/cmcc-0.9.10-beta.3.tgz
     version: 0.9.10-beta.3
   - apiVersion: v2
     appVersion: 0.9.10-beta.2
@@ -579,7 +579,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-0.9.10-beta.2/cmcc-0.9.10-beta.2.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-0.9.10-beta.2/cmcc-0.9.10-beta.2.tgz
     version: 0.9.10-beta.2
   - apiVersion: v2
     appVersion: 0.9.10-beta.1
@@ -589,7 +589,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-0.9.10-beta.1/cmcc-0.9.10-beta.1.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-0.9.10-beta.1/cmcc-0.9.10-beta.1.tgz
     version: 0.9.10-beta.1
   - apiVersion: v2
     appVersion: 0.9.9-beta.9
@@ -599,7 +599,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-0.9.9-beta.9/cmcc-0.9.9-beta.9.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-0.9.9-beta.9/cmcc-0.9.9-beta.9.tgz
     version: 0.9.9-beta.9
   - apiVersion: v2
     appVersion: 0.9.9-beta.8
@@ -609,7 +609,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-0.9.9-beta.8/cmcc-0.9.9-beta.8.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-0.9.9-beta.8/cmcc-0.9.9-beta.8.tgz
     version: 0.9.9-beta.8
   - apiVersion: v2
     appVersion: 0.9.9-beta.7
@@ -619,7 +619,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-0.9.9-beta.7/cmcc-0.9.9-beta.7.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-0.9.9-beta.7/cmcc-0.9.9-beta.7.tgz
     version: 0.9.9-beta.7
   - apiVersion: v2
     appVersion: 0.9.9-beta.6
@@ -629,7 +629,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-0.9.9-beta.6/cmcc-0.9.9-beta.6.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-0.9.9-beta.6/cmcc-0.9.9-beta.6.tgz
     version: 0.9.9-beta.6
   - apiVersion: v2
     appVersion: 0.9.9-beta.5
@@ -639,7 +639,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-0.9.9-beta.5/cmcc-0.9.9-beta.5.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-0.9.9-beta.5/cmcc-0.9.9-beta.5.tgz
     version: 0.9.9-beta.5
   - apiVersion: v2
     appVersion: 0.9.9-beta.4
@@ -649,7 +649,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-0.9.9-beta.4/cmcc-0.9.9-beta.4.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-0.9.9-beta.4/cmcc-0.9.9-beta.4.tgz
     version: 0.9.9-beta.4
   - apiVersion: v2
     appVersion: 0.9.9-beta.3
@@ -659,7 +659,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-0.9.9-beta.3/cmcc-0.9.9-beta.3.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-0.9.9-beta.3/cmcc-0.9.9-beta.3.tgz
     version: 0.9.9-beta.3
   - apiVersion: v2
     appVersion: 0.9.9-beta.2
@@ -669,7 +669,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-0.9.9-beta.2/cmcc-0.9.9-beta.2.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-0.9.9-beta.2/cmcc-0.9.9-beta.2.tgz
     version: 0.9.9-beta.2
   - apiVersion: v2
     appVersion: 0.9.9-beta.1
@@ -679,7 +679,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-0.9.9-beta.1/cmcc-0.9.9-beta.1.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-0.9.9-beta.1/cmcc-0.9.9-beta.1.tgz
     version: 0.9.9-beta.1
   - apiVersion: v2
     appVersion: 0.9.8-beta9
@@ -689,7 +689,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-0.9.8-beta9/cmcc-0.9.8-beta9.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-0.9.8-beta9/cmcc-0.9.8-beta9.tgz
     version: 0.9.8-beta9
   - apiVersion: v2
     appVersion: 0.9.8-beta8
@@ -699,7 +699,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-0.9.8-beta8/cmcc-0.9.8-beta8.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-0.9.8-beta8/cmcc-0.9.8-beta8.tgz
     version: 0.9.8-beta8
   - apiVersion: v2
     appVersion: 0.9.8-beta11
@@ -709,7 +709,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-0.9.8-beta11/cmcc-0.9.8-beta11.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-0.9.8-beta11/cmcc-0.9.8-beta11.tgz
     version: 0.9.8-beta11
   - apiVersion: v2
     appVersion: 0.9.8-beta10
@@ -719,7 +719,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-0.9.8-beta10/cmcc-0.9.8-beta10.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-0.9.8-beta10/cmcc-0.9.8-beta10.tgz
     version: 0.9.8-beta10
   - apiVersion: v2
     appVersion: 0.9.8-beta.11
@@ -729,7 +729,7 @@ entries:
     name: cmcc
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-0.9.8-beta.11/cmcc-0.9.8-beta.11.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-0.9.8-beta.11/cmcc-0.9.8-beta.11.tgz
     version: 0.9.8-beta.11
   cmcc-operator:
   - apiVersion: v2
@@ -740,7 +740,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-v1.14.8/cmcc-operator-v1.14.8.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-v1.14.8/cmcc-operator-v1.14.8.tgz
     version: v1.14.8
   - apiVersion: v2
     appVersion: v1.14.7
@@ -750,7 +750,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-v1.14.7/cmcc-operator-v1.14.7.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-v1.14.7/cmcc-operator-v1.14.7.tgz
     version: v1.14.7
   - apiVersion: v2
     appVersion: v1.14.6
@@ -760,7 +760,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-v1.14.6/cmcc-operator-v1.14.6.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-v1.14.6/cmcc-operator-v1.14.6.tgz
     version: v1.14.6
   - apiVersion: v2
     appVersion: v1.14.5
@@ -770,7 +770,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-v1.14.5/cmcc-operator-v1.14.5.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-v1.14.5/cmcc-operator-v1.14.5.tgz
     version: v1.14.5
   - apiVersion: v2
     appVersion: v1.14.4
@@ -780,7 +780,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-v1.14.4/cmcc-operator-v1.14.4.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-v1.14.4/cmcc-operator-v1.14.4.tgz
     version: v1.14.4
   - apiVersion: v2
     appVersion: v1.14.3
@@ -790,7 +790,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-v1.14.3/cmcc-operator-v1.14.3.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-v1.14.3/cmcc-operator-v1.14.3.tgz
     version: v1.14.3
   - apiVersion: v2
     appVersion: v1.14.2
@@ -800,7 +800,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-v1.14.2/cmcc-operator-v1.14.2.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-v1.14.2/cmcc-operator-v1.14.2.tgz
     version: v1.14.2
   - apiVersion: v2
     appVersion: v1.14.1
@@ -810,7 +810,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-v1.14.1/cmcc-operator-v1.14.1.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-v1.14.1/cmcc-operator-v1.14.1.tgz
     version: v1.14.1
   - apiVersion: v2
     appVersion: v1.14.0
@@ -820,7 +820,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-v1.14.0/cmcc-operator-v1.14.0.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-v1.14.0/cmcc-operator-v1.14.0.tgz
     version: v1.14.0
   - apiVersion: v2
     appVersion: v1.13.0
@@ -830,7 +830,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-v1.13.0/cmcc-operator-v1.13.0.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-v1.13.0/cmcc-operator-v1.13.0.tgz
     version: v1.13.0
   - apiVersion: v2
     appVersion: v1.13.0-beta.2
@@ -840,7 +840,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-v1.13.0-beta.2/cmcc-operator-v1.13.0-beta.2.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-v1.13.0-beta.2/cmcc-operator-v1.13.0-beta.2.tgz
     version: v1.13.0-beta.2
   - apiVersion: v2
     appVersion: v1.13.0-beta.1
@@ -850,7 +850,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-v1.13.0-beta.1/cmcc-operator-v1.13.0-beta.1.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-v1.13.0-beta.1/cmcc-operator-v1.13.0-beta.1.tgz
     version: v1.13.0-beta.1
   - apiVersion: v2
     appVersion: v1.13.0-beta.1
@@ -860,7 +860,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-v1.13.0-beta.1/cmcc-operator-v1.13.0-beta.1.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-v1.13.0-beta.1/cmcc-operator-v1.13.0-beta.1.tgz
     version: v1.13.0-beta.1
   - apiVersion: v2
     appVersion: v1.13.0-beta.1
@@ -870,7 +870,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-v1.13.0-beta.1/cmcc-operator-v1.13.0-beta.1.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-v1.13.0-beta.1/cmcc-operator-v1.13.0-beta.1.tgz
     version: v1.13.0-beta.1
   - apiVersion: v2
     appVersion: v1.13.0-beta.1
@@ -880,7 +880,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-v1.13.0-beta.1/cmcc-operator-v1.13.0-beta.1.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-v1.13.0-beta.1/cmcc-operator-v1.13.0-beta.1.tgz
     version: v1.13.0-beta.1
   - apiVersion: v2
     appVersion: v1.12.7
@@ -890,7 +890,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-v1.12.7/cmcc-operator-v1.12.7.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-v1.12.7/cmcc-operator-v1.12.7.tgz
     version: v1.12.7
   - apiVersion: v2
     appVersion: v1.12.6
@@ -900,7 +900,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-v1.12.6/cmcc-operator-v1.12.6.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-v1.12.6/cmcc-operator-v1.12.6.tgz
     version: v1.12.6
   - apiVersion: v2
     appVersion: v1.12.5
@@ -910,7 +910,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-v1.12.5/cmcc-operator-v1.12.5.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-v1.12.5/cmcc-operator-v1.12.5.tgz
     version: v1.12.5
   - apiVersion: v2
     appVersion: v1.12.4
@@ -920,7 +920,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-v1.12.4/cmcc-operator-v1.12.4.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-v1.12.4/cmcc-operator-v1.12.4.tgz
     version: v1.12.4
   - apiVersion: v2
     appVersion: v1.12.3
@@ -930,7 +930,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-v1.12.3/cmcc-operator-v1.12.3.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-v1.12.3/cmcc-operator-v1.12.3.tgz
     version: v1.12.3
   - apiVersion: v2
     appVersion: v1.12.2
@@ -940,7 +940,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-v1.12.2/cmcc-operator-v1.12.2.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-v1.12.2/cmcc-operator-v1.12.2.tgz
     version: v1.12.2
   - apiVersion: v2
     appVersion: v1.12.1
@@ -950,7 +950,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-v1.12.1/cmcc-operator-v1.12.1.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-v1.12.1/cmcc-operator-v1.12.1.tgz
     version: v1.12.1
   - apiVersion: v2
     appVersion: v1.12.0
@@ -960,7 +960,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-v1.12.0/cmcc-operator-v1.12.0.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-v1.12.0/cmcc-operator-v1.12.0.tgz
     version: v1.12.0
   - apiVersion: v2
     appVersion: v1.11.1
@@ -970,7 +970,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-v1.11.1/cmcc-operator-v1.11.1.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-v1.11.1/cmcc-operator-v1.11.1.tgz
     version: v1.11.1
   - apiVersion: v2
     appVersion: v1.11.0
@@ -980,7 +980,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-v1.11.0/cmcc-operator-v1.11.0.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-v1.11.0/cmcc-operator-v1.11.0.tgz
     version: v1.11.0
   - apiVersion: v2
     appVersion: v1.10.2
@@ -990,7 +990,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-v1.10.2/cmcc-operator-v1.10.2.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-v1.10.2/cmcc-operator-v1.10.2.tgz
     version: v1.10.2
   - apiVersion: v2
     appVersion: v1.10.1
@@ -1000,7 +1000,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-v1.10.1/cmcc-operator-v1.10.1.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-v1.10.1/cmcc-operator-v1.10.1.tgz
     version: v1.10.1
   - apiVersion: v2
     appVersion: v1.10.0
@@ -1010,7 +1010,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-v1.10.0/cmcc-operator-v1.10.0.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-v1.10.0/cmcc-operator-v1.10.0.tgz
     version: v1.10.0
   - apiVersion: v2
     appVersion: v1.9.0
@@ -1020,7 +1020,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-v1.9.0/cmcc-operator-v1.9.0.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-v1.9.0/cmcc-operator-v1.9.0.tgz
     version: v1.9.0
   - apiVersion: v2
     appVersion: v1.8.0
@@ -1030,7 +1030,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-v1.8.0/cmcc-operator-v1.8.0.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-v1.8.0/cmcc-operator-v1.8.0.tgz
     version: v1.8.0
   - apiVersion: v2
     appVersion: v1.7.4
@@ -1040,7 +1040,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-v1.7.4/cmcc-operator-v1.7.4.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-v1.7.4/cmcc-operator-v1.7.4.tgz
     version: v1.7.4
   - apiVersion: v2
     appVersion: v1.7.3
@@ -1050,7 +1050,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-v1.7.3/cmcc-operator-v1.7.3.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-v1.7.3/cmcc-operator-v1.7.3.tgz
     version: v1.7.3
   - apiVersion: v2
     appVersion: v1.7.2
@@ -1060,7 +1060,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-v1.7.2/cmcc-operator-v1.7.2.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-v1.7.2/cmcc-operator-v1.7.2.tgz
     version: v1.7.2
   - apiVersion: v2
     appVersion: v1.7.1
@@ -1070,7 +1070,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-v1.7.1/cmcc-operator-v1.7.1.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-v1.7.1/cmcc-operator-v1.7.1.tgz
     version: v1.7.1
   - apiVersion: v2
     appVersion: v1.7.0
@@ -1080,7 +1080,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-v1.7.0/cmcc-operator-v1.7.0.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-v1.7.0/cmcc-operator-v1.7.0.tgz
     version: v1.7.0
   - apiVersion: v2
     appVersion: v1.6.1
@@ -1090,7 +1090,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-v1.6.1/cmcc-operator-v1.6.1.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-v1.6.1/cmcc-operator-v1.6.1.tgz
     version: v1.6.1
   - apiVersion: v2
     appVersion: v1.6.0
@@ -1100,7 +1100,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-v1.6.0/cmcc-operator-v1.6.0.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-v1.6.0/cmcc-operator-v1.6.0.tgz
     version: v1.6.0
   - apiVersion: v2
     appVersion: v1.5.2
@@ -1110,7 +1110,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-v1.5.2/cmcc-operator-v1.5.2.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-v1.5.2/cmcc-operator-v1.5.2.tgz
     version: v1.5.2
   - apiVersion: v2
     appVersion: v1.5.1
@@ -1120,7 +1120,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-v1.5.1/cmcc-operator-v1.5.1.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-v1.5.1/cmcc-operator-v1.5.1.tgz
     version: v1.5.1
   - apiVersion: v2
     appVersion: 1.5.0
@@ -1130,7 +1130,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-1.5.0/cmcc-operator-1.5.0.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-1.5.0/cmcc-operator-1.5.0.tgz
     version: 1.5.0
   - apiVersion: v2
     appVersion: 1.4.1
@@ -1140,7 +1140,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-1.4.1/cmcc-operator-1.4.1.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-1.4.1/cmcc-operator-1.4.1.tgz
     version: 1.4.1
   - apiVersion: v2
     appVersion: 1.4.0
@@ -1150,7 +1150,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-1.4.0/cmcc-operator-1.4.0.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-1.4.0/cmcc-operator-1.4.0.tgz
     version: 1.4.0
   - apiVersion: v2
     appVersion: 1.3.0
@@ -1160,7 +1160,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-1.3.0/cmcc-operator-1.3.0.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-1.3.0/cmcc-operator-1.3.0.tgz
     version: 1.3.0
   - apiVersion: v2
     appVersion: 1.2.2
@@ -1170,7 +1170,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-1.2.2/cmcc-operator-1.2.2.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-1.2.2/cmcc-operator-1.2.2.tgz
     version: 1.2.2
   - apiVersion: v2
     appVersion: 1.2.1
@@ -1180,7 +1180,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-1.2.1/cmcc-operator-1.2.1.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-1.2.1/cmcc-operator-1.2.1.tgz
     version: 1.2.1
   - apiVersion: v2
     appVersion: 1.2.0
@@ -1190,7 +1190,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-1.2.0/cmcc-operator-1.2.0.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-1.2.0/cmcc-operator-1.2.0.tgz
     version: 1.2.0
   - apiVersion: v2
     appVersion: 1.1.2
@@ -1200,7 +1200,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-1.1.2/cmcc-operator-1.1.2.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-1.1.2/cmcc-operator-1.1.2.tgz
     version: 1.1.2
   - apiVersion: v2
     appVersion: 1.1.1
@@ -1210,7 +1210,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-1.1.1/cmcc-operator-1.1.1.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-1.1.1/cmcc-operator-1.1.1.tgz
     version: 1.1.1
   - apiVersion: v2
     appVersion: 1.1.0
@@ -1220,7 +1220,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-1.1.0/cmcc-operator-1.1.0.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-1.1.0/cmcc-operator-1.1.0.tgz
     version: 1.1.0
   - apiVersion: v2
     appVersion: 1.0.1
@@ -1230,7 +1230,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-1.0.1/cmcc-operator-1.0.1.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-1.0.1/cmcc-operator-1.0.1.tgz
     version: 1.0.1
   - apiVersion: v2
     appVersion: 1.0.0
@@ -1240,7 +1240,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-1.0.0/cmcc-operator-1.0.0.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-1.0.0/cmcc-operator-1.0.0.tgz
     version: 1.0.0
   - apiVersion: v2
     appVersion: 0.9.10-beta.8
@@ -1250,7 +1250,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-0.9.10-beta.8/cmcc-operator-0.9.10-beta.8.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-0.9.10-beta.8/cmcc-operator-0.9.10-beta.8.tgz
     version: 0.9.10-beta.8
   - apiVersion: v2
     appVersion: 0.9.10-beta.7
@@ -1260,7 +1260,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-0.9.10-beta.7/cmcc-operator-0.9.10-beta.7.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-0.9.10-beta.7/cmcc-operator-0.9.10-beta.7.tgz
     version: 0.9.10-beta.7
   - apiVersion: v2
     appVersion: 0.9.10-beta.6
@@ -1270,7 +1270,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-0.9.10-beta.6/cmcc-operator-0.9.10-beta.6.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-0.9.10-beta.6/cmcc-operator-0.9.10-beta.6.tgz
     version: 0.9.10-beta.6
   - apiVersion: v2
     appVersion: 0.9.10-beta.5
@@ -1280,7 +1280,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-0.9.10-beta.5/cmcc-operator-0.9.10-beta.5.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-0.9.10-beta.5/cmcc-operator-0.9.10-beta.5.tgz
     version: 0.9.10-beta.5
   - apiVersion: v2
     appVersion: 0.9.10-beta.4
@@ -1290,7 +1290,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-0.9.10-beta.4/cmcc-operator-0.9.10-beta.4.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-0.9.10-beta.4/cmcc-operator-0.9.10-beta.4.tgz
     version: 0.9.10-beta.4
   - apiVersion: v2
     appVersion: 0.9.10-beta.3
@@ -1300,7 +1300,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-0.9.10-beta.3/cmcc-operator-0.9.10-beta.3.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-0.9.10-beta.3/cmcc-operator-0.9.10-beta.3.tgz
     version: 0.9.10-beta.3
   - apiVersion: v2
     appVersion: 0.9.10-beta.2
@@ -1310,7 +1310,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-0.9.10-beta.2/cmcc-operator-0.9.10-beta.2.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-0.9.10-beta.2/cmcc-operator-0.9.10-beta.2.tgz
     version: 0.9.10-beta.2
   - apiVersion: v2
     appVersion: 0.9.10-beta.1
@@ -1320,7 +1320,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-0.9.10-beta.1/cmcc-operator-0.9.10-beta.1.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-0.9.10-beta.1/cmcc-operator-0.9.10-beta.1.tgz
     version: 0.9.10-beta.1
   - apiVersion: v2
     appVersion: 0.9.9-beta.9
@@ -1330,7 +1330,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-0.9.9-beta.9/cmcc-operator-0.9.9-beta.9.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-0.9.9-beta.9/cmcc-operator-0.9.9-beta.9.tgz
     version: 0.9.9-beta.9
   - apiVersion: v2
     appVersion: 0.9.9-beta.8
@@ -1340,7 +1340,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-0.9.9-beta.8/cmcc-operator-0.9.9-beta.8.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-0.9.9-beta.8/cmcc-operator-0.9.9-beta.8.tgz
     version: 0.9.9-beta.8
   - apiVersion: v2
     appVersion: 0.9.9-beta.7
@@ -1350,7 +1350,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-0.9.9-beta.7/cmcc-operator-0.9.9-beta.7.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-0.9.9-beta.7/cmcc-operator-0.9.9-beta.7.tgz
     version: 0.9.9-beta.7
   - apiVersion: v2
     appVersion: 0.9.9-beta.6
@@ -1360,7 +1360,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-0.9.9-beta.6/cmcc-operator-0.9.9-beta.6.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-0.9.9-beta.6/cmcc-operator-0.9.9-beta.6.tgz
     version: 0.9.9-beta.6
   - apiVersion: v2
     appVersion: 0.9.9-beta.5
@@ -1370,7 +1370,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-0.9.9-beta.5/cmcc-operator-0.9.9-beta.5.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-0.9.9-beta.5/cmcc-operator-0.9.9-beta.5.tgz
     version: 0.9.9-beta.5
   - apiVersion: v2
     appVersion: 0.9.9-beta.4
@@ -1380,7 +1380,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-0.9.9-beta.4/cmcc-operator-0.9.9-beta.4.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-0.9.9-beta.4/cmcc-operator-0.9.9-beta.4.tgz
     version: 0.9.9-beta.4
   - apiVersion: v2
     appVersion: 0.9.9-beta.3
@@ -1390,7 +1390,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-0.9.9-beta.3/cmcc-operator-0.9.9-beta.3.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-0.9.9-beta.3/cmcc-operator-0.9.9-beta.3.tgz
     version: 0.9.9-beta.3
   - apiVersion: v2
     appVersion: 0.9.9-beta.2
@@ -1400,7 +1400,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-0.9.9-beta.2/cmcc-operator-0.9.9-beta.2.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-0.9.9-beta.2/cmcc-operator-0.9.9-beta.2.tgz
     version: 0.9.9-beta.2
   - apiVersion: v2
     appVersion: 0.9.9-beta.1
@@ -1410,7 +1410,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-0.9.9-beta.1/cmcc-operator-0.9.9-beta.1.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-0.9.9-beta.1/cmcc-operator-0.9.9-beta.1.tgz
     version: 0.9.9-beta.1
   - apiVersion: v2
     appVersion: 0.9.8-beta9
@@ -1420,7 +1420,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-0.9.8-beta9/cmcc-operator-0.9.8-beta9.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-0.9.8-beta9/cmcc-operator-0.9.8-beta9.tgz
     version: 0.9.8-beta9
   - apiVersion: v2
     appVersion: 0.9.8-beta8
@@ -1430,7 +1430,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-0.9.8-beta8/cmcc-operator-0.9.8-beta8.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-0.9.8-beta8/cmcc-operator-0.9.8-beta8.tgz
     version: 0.9.8-beta8
   - apiVersion: v2
     appVersion: 0.9.8-beta7
@@ -1440,7 +1440,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-0.9.8-beta7/cmcc-operator-0.9.8-beta7.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-0.9.8-beta7/cmcc-operator-0.9.8-beta7.tgz
     version: 0.9.8-beta7
   - apiVersion: v2
     appVersion: 0.9.8-beta6
@@ -1450,7 +1450,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-0.9.8-beta6/cmcc-operator-0.9.8-beta6.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-0.9.8-beta6/cmcc-operator-0.9.8-beta6.tgz
     version: 0.9.8-beta6
   - apiVersion: v2
     appVersion: 0.9.8-beta11
@@ -1460,7 +1460,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-0.9.8-beta11/cmcc-operator-0.9.8-beta11.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-0.9.8-beta11/cmcc-operator-0.9.8-beta11.tgz
     version: 0.9.8-beta11
   - apiVersion: v2
     appVersion: 0.9.8-beta10
@@ -1470,7 +1470,7 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-0.9.8-beta10/cmcc-operator-0.9.8-beta10.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-0.9.8-beta10/cmcc-operator-0.9.8-beta10.tgz
     version: 0.9.8-beta10
   - apiVersion: v2
     appVersion: 0.9.8-beta.11
@@ -1480,6 +1480,6 @@ entries:
     name: cmcc-operator
     type: application
     urls:
-    - https://github.com/T-Systems-MMS/cmcc-operator/releases/download/cmcc-operator-0.9.8-beta.11/cmcc-operator-0.9.8-beta.11.tgz
+    - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-0.9.8-beta.11/cmcc-operator-0.9.8-beta.11.tgz
     version: 0.9.8-beta.11
 generated: "2024-06-04T14:45:26.16066423Z"
