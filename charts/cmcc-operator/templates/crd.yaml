@@ -175,6 +175,13 @@ spec:
                     podSecurityContext:
                       description: Security context for a pod
                       properties:
+                        appArmorProfile:
+                          properties:
+                            localhostProfile:
+                              type: string
+                            type:
+                              type: string
+                          type: object
                         fsGroup:
                           type: integer
                         fsGroupChangePolicy:
@@ -253,6 +260,13 @@ spec:
                       properties:
                         allowPrivilegeEscalation:
                           type: boolean
+                        appArmorProfile:
+                          properties:
+                            localhostProfile:
+                              type: string
+                            type:
+                              type: string
+                          type: object
                         capabilities:
                           properties:
                             add:
@@ -398,6 +412,13 @@ spec:
                   podSecurityContext:
                     description: Default security context for a pod
                     properties:
+                      appArmorProfile:
+                        properties:
+                          localhostProfile:
+                            type: string
+                          type:
+                            type: string
+                        type: object
                       fsGroup:
                         type: integer
                       fsGroupChangePolicy:
@@ -474,6 +495,13 @@ spec:
                     properties:
                       allowPrivilegeEscalation:
                         type: boolean
+                      appArmorProfile:
+                        properties:
+                          localhostProfile:
+                            type: string
+                          type:
+                            type: string
+                        type: object
                       capabilities:
                         properties:
                           add:
