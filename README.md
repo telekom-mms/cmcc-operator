@@ -2,6 +2,14 @@
 
 [![build](https://github.com/T-Systems-MMS/cmcc-operator/actions/workflows/build.yml/badge.svg)](https://github.com/T-Systems-MMS/cmcc-operator/actions/workflows/build.yml)
 
+**Important** On June 11, 2024, this repo will move from T-Systems-MMS/cmcc-operator to Telekom-MMS/cmcc-operator. While Github will automatically redirect requests for the Git repo, the Helm repo URL has to be adjusted manually.
+
+In particular, you will need to update your Helm repo URL like this:
+```shell
+helm repo add --force-update cmcc-operator https://telekom-mms.github.io/cmcc-operator/
+helm repo update
+```
+
 ## Introduction
 
 [Kubernetes Operators](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) are specialized software packages that help manage applications and resources in a k8s cluster. This operator will create, initialize and run a [CoreMedia Content Cloud](https://www.coremedia.com) application. A custom resource definition is used to define all relevant parameters.
