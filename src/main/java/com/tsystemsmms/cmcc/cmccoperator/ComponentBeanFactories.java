@@ -12,6 +12,7 @@ package com.tsystemsmms.cmcc.cmccoperator;
 
 import com.tsystemsmms.cmcc.cmccoperator.components.corba.*;
 import com.tsystemsmms.cmcc.cmccoperator.components.generic.*;
+import com.tsystemsmms.cmcc.cmccoperator.components.job.MgmtToolsCronJobComponent;
 import com.tsystemsmms.cmcc.cmccoperator.components.job.MgmtToolsJobComponent;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
@@ -65,6 +66,12 @@ public class ComponentBeanFactories {
     @Scope(SCOPE_PROTOTYPE)
     public MgmtToolsJobComponent mgmtToolsJobComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec cs) {
         return new MgmtToolsJobComponent(kubernetesClient, targetState, cs);
+    }
+
+    @Bean("component:management-tools-cron")
+    @Scope(SCOPE_PROTOTYPE)
+    public MgmtToolsCronJobComponent mgmtToolsCronJobComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec cs) {
+        return new MgmtToolsCronJobComponent(kubernetesClient, targetState, cs);
     }
 
     @Bean("component:mongodb")

@@ -12,6 +12,7 @@ installation to be deployed. This document explains all properties and their use
 - [Custom Resource Properties Status](#custom-resource-properties-status)
 - [Custom Resource Properties Specification](#custom-resource-properties-specification)
 - [Enabling Convenience Options `with`](#enabling-convenience-options-with)
+  * [Persistent Caches `with.cachesAsPvc`](#persistent-caches-withcachesaspvc)
   * [Local database servers `with.databases`](#local-database-servers-withdatabases)
   * [Delivery Components `with.delivery`](#delivery-components-withdelivery)
   * [Management Components `with.management`](#management-components-withmanagement)
@@ -24,6 +25,7 @@ installation to be deployed. This document explains all properties and their use
 - [Running Additional Jobs](#running-additional-jobs)
   * [Running a Job During Deployment](#running-a-job-during-deployment)
   * [Running a Job After Deployment](#running-a-job-after-deployment)
+  * [Running Management Tools Commands Regularly](#running-management-tools-commands-regularly)
 - [Automatic Generation of Ingresses and Site Mappings `siteMappings`](#automatic-generation-of-ingresses-and-site-mappings-sitemappings)
   * [Site Mappings](#site-mappings)
   * [FQDN Aliases](#fqdn-aliases)
@@ -38,6 +40,7 @@ installation to be deployed. This document explains all properties and their use
   * [Component `cae`](#component-cae)
   * [Component `cae-feeder`](#component-cae-feeder)
   * [Component `content-server`](#component-content-server)
+  * [Component `management-tools-cron`](#component-management-tools-cron)
   * [Component `overview`](#component-overview)
   * [Component `elastic-worker`](#component-elastic-worker)
   * [Component `generic-client`](#component-generic-client)
@@ -88,59 +91,59 @@ The `milestone` status column shows the creation status of the installation:
 The `spec` field defines these properties to allow you to deploy a CoreMedia installation. Whenever possible, these
 properties have suitable defaults.
 
-| Property                            | Type                 | Default                                           | Description                                                                                                                                  |
-|-------------------------------------|----------------------|---------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|
-| `comment`                           | String               | ""                                                | Arbitrary comment, can be used to force an update to the resource                                                                            |
-| `components`                        | array                | []                                                | List of CoreMedia components to be created. See below for available components and their parameters                                          |
-| `clientSecretRefs`                  | map of map of object | –                                                 | Pre-existing secrets to use, see below                                                                                                       |
-| `defaults`                          | object               | –                                                 | Default values for components                                                                                                                |
-| `defaults.annotations`              | object               | –                                                 | Annotations to apply to all components' pods.                                                                                                |
-| `defaults.image`                    | object               | –                                                 | Defaults for the image specification                                                                                                         |
-| `defaults.image.registry`           | String               | ""                                                | Docker Image Registry to pull images from                                                                                                    |
-| `defaults.image.tag`                | String               | `latest`                                          | Docker Image Tag to pull images from                                                                                                         |
-| `defaults.image.pullPolicy`         | String               | `IfNotPresent`                                    | default imagePullPolicy                                                                                                                      |
-| `defaults.ingressDomain`            | String               | ""                                                | Fully qualified domain name to append to ingress host names                                                                                  |
-| `defaults.insecureDatabasePassword` | String               | ""                                                | **DO NOT SET**. See below for more information.                                                                                              |
-| `defaults.javaOpts`                 | String               | `-XX:MinRAMPercentage=75 -XX:MaxRAMPercentage=90` | For Java components, use these JVM options.                                                                                                  |
-| `defaults.liveUrlMapper`            | String               | `blueprint`                                       | Name of the URL mapper to use by default for live site mappings.                                                                             |
-| `defaults.mangementUrlMapper`       | String               | `blueprint`                                       | Name of the URL mapper to use for management apps like Studio and preview.                                                                   |
-| `defaults.namePrefix`               | String               | ""                                                | Prefix resources with this name plus '-'.                                                                                                    |
-| `defaults.podSecurityContext`       | object               | -                                                 | Default security context for a pod                                                                                                           |
-| `defaults.previewHostname`          | String               | `preview`                                         | Hostname of the preview CAE. Unless it is a fully-qualified domain name, the `namePrefix` and the `ingressDomain` will be pre- and appended. |
-| `defaults.resources`                | resources            | –                                                 | Default resource limits and requests for components. See below [Components](#components)                                                     |
-| `defaults.securityContext`          | object               | -                                                 | Default security context for containers in a pod                                                                                             |
-| `defaults.siteMappingProtocol`      | String               | `https://`                                        | Default for the protocol of site mapping. entries                                                                                            |
-| `defaults.studioHostname`           | String               | `studio`                                          | Hostname of the Studio. Unless it is a fully-qualified domain name, the `namePrefix` and the `ingressDomain` will be pre- and appended.      |
-| `defaults.volumeSize`               | object               |                                                   | Size of persistent volume claims for components. See [Components/Volume Size](#volume-size)                                                  |
-| `defaultIngressTls`                 | object               | –                                                 | Defaults for the site mapping TLS settings, see below                                                                                        |
-| `job`                               | String               | ""                                                | name of a component to run as a job, see below                                                                                               |
-| `licenseSecrets`                    | object               | –                                                 | Names of the secrets containing the license                                                                                                  |
-| `licenseSecrets.CMSLicense`         | String               | `license-cms`                                     | Name of the secret containing a `license.zip` entry with the appropriate file contents                                                       |
-| `licenseSecrets.MLSLicense`         | String               | `license-mls`                                     | Name of the secret containing a `license.zip` entry with the appropriate file contents                                                       |
-| `licenseSecrets.RLSLicense`         | String               | `license-rls`                                     | Name of the secret containing a `license.zip` entry with the appropriate file contents                                                       |
-| `siteMappings`                      | array                | –                                                 | Mappings between DNS names and site segments, see below                                                                                      |
-| `with`                              | object               | –                                                 | Optional special components and configurations                                                                                               |
-| `with.cachesAsPvc`                 | boolean              | false                                             | Use Persistent Volume Claims when creating various cache directories, instead of EmptyDirs.                                                  |
-| `with.databases`                    | boolean              | false                                             | Create both a MariaDB and MongoDB server, and schemas and secrets for all components that require them                                       |
-| `with.databasesOverride`            | object               | –                                                 | If `with.databases` is `true`, override the creation for specific kinds.                                                                     |
-| `with.databasesOverride.`*kind*     | boolean              | true                                              | When set to `false`, do not create database and secrets for *kind*. If set to true, or the entry is missing, do create them.                 |
-| `with.delivery`                     | object               | –                                                 | Create all components required for a CoreMedia delivery stage                                                                                |
-| `with.delivery.rls`                 | int                  | 0                                                 | Number of Replication Live Servers to create                                                                                                 |
-| `with.delivery.minCae`              | int                  | 0                                                 | Minimum number of CAEs                                                                                                                       |
-| `with.delivery.maxCae`              | int                  | 0                                                 | Maximum number of CAEs                                                                                                                       |
-| `with.handlerPrefixes`              | list of Strings      | resource, service-sitemap-.*, static              | URI prefixes that are not content paths but paths mapping to a handler.                                                                      |
-| `with.ingressAnnotations`           | map                  | –                                                 | Additional annotation to add to all Ingress resources                                                                                        |
-| `with.ingressSeoHandler`            | String               | `/blueprint/servlet/service/robots`               | Path to handler that will receive requests for `robots.txt` and `sitemap.xml`.                                                               |
-| `with.management`                   | boolean              | true                                              | Create all components required for a CoreMedia management stage                                                                              |
-| `with.resources`                    | boolean              | true                                              | Apply resource limits and requests to all components. Also see `defaults.resources` and  [Components](#components)                           |
-| `with.responseTimeout`              | object               |                                                   | Time in seconds the Ingress controller waits for the response from the backend                                                               |
-| `with.responseTimeout.live`         | integer              | 60                                                | Time in seconds the Ingress controller waits for the response from the Live CAEs                                                             |
-| `with.responseTimeout.preview`      | integer              | 60                                                | Time in seconds the Ingress controller waits for the response from the Preview CAE                                                           |
-| `with.responseTimeout.studio`       | integer              | 60                                                | Time in seconds the Ingress controller waits for the response from the Studio Server                                                         |
-| `with.uploadSize`                   | object               |                                                   | Maximum size of POST/PUT uploads for components (both Ingress and Spring Boot/Tomcat).                                                       |
-| `with.uploadSize.live`              | integer              | 0                                                 | Maximum size of POST/PUT uploads the ingress and live CAE will allow. 0 means do not configure.                                              |
-| `with.uploadSize.preview`           | integer              | 0                                                 | Maximum size of POST/PUT uploads the ingress and preview CAE will allow. 0 means do not configure.                                           |
-| `with.uploadSize.studio`            | integer              | 0                                                 | Maximum size of POST/PUT uploads the ingress and Studio will allow. 0 means do not configure.                                                |
+| Property                             | Type                            | Default                                           | Description                                                                                                                                  |
+|--------------------------------------|---------------------------------|---------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|
+| `comment`                            | String                          | ""                                                | Arbitrary comment, can be used to force an update to the resource                                                                            |
+| `components`                         | array                           | []                                                | List of CoreMedia components to be created. See below for available components and their parameters                                          |
+| `clientSecretRefs`                   | map of map of object            | –                                                 | Pre-existing secrets to use, see below                                                                                                       |
+| `defaults`                           | object                          | –                                                 | Default values for components                                                                                                                |
+| `defaults.annotations`               | object                          | –                                                 | Annotations to apply to all components' pods.                                                                                                |
+| `defaults.image`                     | object                          | –                                                 | Defaults for the image specification                                                                                                         |
+| `defaults.image.registry`            | String                          | ""                                                | Docker Image Registry to pull images from                                                                                                    |
+| `defaults.image.tag`                 | String                          | `latest`                                          | Docker Image Tag to pull images from                                                                                                         |
+| `defaults.image.pullPolicy`          | String                          | `IfNotPresent`                                    | default imagePullPolicy                                                                                                                      |
+| `defaults.ingressDomain`             | String                          | ""                                                | Fully qualified domain name to append to ingress host names                                                                                  |
+| `defaults.insecureDatabasePassword`  | String                          | ""                                                | **DO NOT SET**. See below for more information.                                                                                              |
+| `defaults.javaOpts`                  | String                          | `-XX:MinRAMPercentage=75 -XX:MaxRAMPercentage=90` | For Java components, use these JVM options.                                                                                                  |
+| `defaults.liveUrlMapper`             | String                          | `blueprint`                                       | Name of the URL mapper to use by default for live site mappings.                                                                             | 
+| `defaults.mangementUrlMapper`        | String                          | `blueprint`                                       | Name of the URL mapper to use for management apps like Studio and preview.                                                                   |
+| `defaults.namePrefix`                | String                          | ""                                                | Prefix resources with this name plus '-'.                                                                                                    |
+| `defaults.podSecurityContext`        | object                          | -                                                 | Default security context for a pod                                                                                                           | 
+| `defaults.previewHostname`           | String                          | `preview`                                         | Hostname of the preview CAE. Unless it is a fully-qualified domain name, the `namePrefix` and the `ingressDomain` will be pre- and appended. |
+| `defaults.resources`                 | resources                       | –                                                 | Default resource limits and requests for components. See below [Components](#components)                                                     |
+| `defaults.securityContext`           | object                          | -                                                 | Default security context for containers in a pod                                                                                             |
+| `defaults.siteMappingProtocol`       | String                          | `https://`                                        | Default for the protocol of site mapping. entries                                                                                            |
+| `defaults.studioHostname`            | String                          | `studio`                                          | Hostname of the Studio. Unless it is a fully-qualified domain name, the `namePrefix` and the `ingressDomain` will be pre- and appended.      |
+| `defaults.volumeSize`                | object                          |                                                   | Size of persistent volume claims for components. See [Components/Volume Size](#volume-size)                                                  |
+| `defaultIngressTls`                  | object                          | –                                                 | Defaults for the site mapping TLS settings, see below                                                                                        |
+| `job`                                | String                          | ""                                                | name of a component to run as a job, see below                                                                                               |
+| `licenseSecrets`                     | object                          | –                                                 | Names of the secrets containing the license                                                                                                  |
+| `licenseSecrets.CMSLicense`          | String                          | `license-cms`                                     | Name of the secret containing a `license.zip` entry with the appropriate file contents                                                       |
+| `licenseSecrets.MLSLicense`          | String                          | `license-mls`                                     | Name of the secret containing a `license.zip` entry with the appropriate file contents                                                       |
+| `licenseSecrets.RLSLicense`          | String                          | `license-rls`                                     | Name of the secret containing a `license.zip` entry with the appropriate file contents                                                       |
+| `siteMappings`                       | array                           | –                                                 | Mappings between DNS names and site segments, see below                                                                                      |
+| `with`                               | object                          | –                                                 | Optional special components and configurations                                                                                               |
+| `with.cachesAsPvc`                   | boolean                         | false                                             | Use Persistent Volume Claims when creating various cache directories, instead of EmptyDirs.                                                  |
+| `with.databases`                     | boolean                         | false                                             | Create both a MariaDB and MongoDB server, and schemas and secrets for all components that require them                                       |
+| `with.databasesOverride`             | object                          | –                                                 | If `with.databases` is `true`, override the creation for specific kinds.                                                                     |
+| `with.databasesOverride.`*kind*      | boolean                         | true                                              | When set to `false`, do not create database and secrets for *kind*. If set to true, or the entry is missing, do create them.                 |
+| `with.delivery`                      | object                          | –                                                 | Create all components required for a CoreMedia delivery stage                                                                                |
+| `with.delivery.rls`                  | int                             | 0                                                 | Number of Replication Live Servers to create                                                                                                 |
+| `with.delivery.minCae`               | int                             | 0                                                 | Minimum number of CAEs                                                                                                                       |
+| `with.delivery.maxCae`               | int                             | 0                                                 | Maximum number of CAEs                                                                                                                       |
+| `with.handlerPrefixes`               | list of Strings                 | resource, service-sitemap-.*, static              | URI prefixes that are not content paths but paths mapping to a handler.                                                                      |
+| `with.ingressAnnotations`            | map                             | –                                                 | Additional annotation to add to all Ingress resources                                                                                        |
+| `with.ingressSeoHandler`             | String                          | `/blueprint/servlet/service/robots`               | Path to handler that will receive requests for `robots.txt` and `sitemap.xml`.                                                               |
+| `with.management`                    | boolean                         | true                                              | Create all components required for a CoreMedia management stage                                                                              |
+| `with.resources`                     | boolean                         | true                                              | Apply resource limits and requests to all components. Also see `defaults.resources` and [Components](#components)                            |
+| `with.responseTimeout`               | object                          |                                                   | Time in seconds the Ingress controller waits for the response from the backend                                                               |
+| `with.responseTimeout.live`          | integer                         | 60                                                | Time in seconds the Ingress controller waits for the response from the Live CAEs                                                             |
+| `with.responseTimeout.preview`       | integer                         | 60                                                | Time in seconds the Ingress controller waits for the response from the Preview CAE                                                           |
+| `with.responseTimeout.studio`        | integer                         | 60                                                | Time in seconds the Ingress controller waits for the response from the Studio Server                                                         |
+| `with.uploadSize`                    | object                          |                                                   | Maximum size of POST/PUT uploads for components (both Ingress and Spring Boot/Tomcat).                                                       |
+| `with.uploadSize.live`               | integer                         | 0                                                 | Maximum size of POST/PUT uploads the ingress and live CAE will allow. 0 means do not configure.                                              |
+| `with.uploadSize.preview`            | integer                         | 0                                                 | Maximum size of POST/PUT uploads the ingress and preview CAE will allow. 0 means do not configure.                                           |                                             
+| `with.uploadSize.studio`             | integer                         | 0                                                 | Maximum size of POST/PUT uploads the ingress and Studio will allow. 0 means do not configure.                                                |
 
 ## Enabling Convenience Options `with`
 
@@ -434,6 +437,42 @@ kubectl patch cmcc example --type merge --patch "{\"spec\":{\"job\":\"reimport\"
 
 While the job is running, the milestone will be `RunJob`. Once the job completes, the milestone will return to `Ready`.
 
+### Running Management Tools Commands Regularly
+
+Using the `mangement-tools-cron` component type, you can configure one or more regular jobs, for example, to empty
+the recycle bin or expire old versions.
+
+The following component definition will configure a job that invokes the `cleanrecyclebin` and ´cleanversions` commands
+every day at midnight. Note that you will need to add the appropriate scripts to the management tools container image
+yourself; they do not exist in the plain Blueprint.
+
+```yaml
+components:
+  - type: management-tools-cron
+    name: cleanup
+    args:
+      - cleanrecyclebin
+      - cleanversions
+    env:
+      - name: CLEANRECYCLEBIN_BEFORE_DATE
+        value: 1 hour ago
+      - name: CLEANVERIONS_KEEP_VERSIONS_DAYS
+        value: "1"
+      - name: CLEANVERIONS_KEEP_VERSIONS_NUMBER
+        value: "1"
+      - name: CLEANVERIONS_TARGET_PATH
+        value: /
+      - name: TZ
+        value: Europe/Berlin
+    extra:
+      config: |
+        cron: "*/5 * * * *"
+        timezone: "Europe/Berlin"
+    milestone: ManagementReady
+```
+
+See [Component `management-tools-cron`](#component-management-tools-cron) for the configuration details.
+
 ## Automatic Generation of Ingresses and Site Mappings `siteMappings`
 
 The operator automatically creates ingresses for all components that need to be exposed: the Studio (combined for
@@ -495,9 +534,9 @@ site. For example, you might want your monitoring system to use a direct access 
 users access the site through a load balancer, TLS termination appliance, or a web-application firewall. Or you might
 need to configure an origin URL for your CDN to use.
 
-You can define additional hostnames with `siteMappings.fqdnAliases`. For each of these hosts, a set of Ingress
-resources will be built. You can use the empty string for an alias entry to have the operator generate a hostname, as
-described above.
+You can define additional hostnames with `siteMappings.fqdnAliases`. For each of these hosts, a set of Ingress resources
+will be built. You can use the empty string for an alias entry to have the operator generate a hostname, as described
+above.
 
 **Note** The CAE will only create URLs pointing to the FQDN of the site, so you will need to make sure that those URLs
 always work.
@@ -543,13 +582,13 @@ For example, `https://corporate.example.de/campaign` will map to `corporate-de-d
 
 On a live CAE, most URI paths map to specific content, based on the site and navigation hierarchy. However, resources
 like images, CSS, JS, or downloads are provided by specialized handlers. When transforming the URI presented by the
-client to a form the CAE understands, these need to be mapped directly to `/blueprint/servlet/...` URIs, instead of
-a site segment being mapped from the beginning of the URI, as is done with the onlylang ingress generator.
+client to a form the CAE understands, these need to be mapped directly to `/blueprint/servlet/...` URIs, instead of a
+site segment being mapped from the beginning of the URI, as is done with the onlylang ingress generator.
 
 The default list of handler prefix regular expressions ("resource", "service-sitemap-.*", "static") handles the mappings
 required for standard Blueprint handlers. If you add your own handlers, you need to add their URI prefixes to the list
-`with.handlerPrefixes`. You can be as specific as necessary; for example, if you define a handler with 
-`@Get("/foo/bar/baz")` in the CAE  application, you can add "foo/bar/baz" for just this one handler, or you can handle 
+`with.handlerPrefixes`. You can be as specific as necessary; for example, if you define a handler with
+`@Get("/foo/bar/baz")` in the CAE application, you can add "foo/bar/baz" for just this one handler, or you can handle
 multiple paths that share a common prefix by using "foo".
 
 The value for `with.handlerPrefixes` replaces the default.
@@ -557,25 +596,25 @@ The value for `with.handlerPrefixes` replaces the default.
 ### Ingress Annotations
 
 In some cases, it might be necessary to add additional annotations to the generated Ingress object. For example, to
-enable sticky sessions, the annotation `nginx.ingress.kubernetes.io/affinity: cookie` needs to be added. You can
-add these by setting `with.ingressAnnotations` to the desired annotations.
+enable sticky sessions, the annotation `nginx.ingress.kubernetes.io/affinity: cookie` needs to be added. You can add
+these by setting `with.ingressAnnotations` to the desired annotations.
 
 ```yaml
 with:
   ingressAnnotations:
-     "nginx.ingress.kubernetes.io/affinity": "cookie"
+    "nginx.ingress.kubernetes.io/affinity": "cookie"
 ```
 
 ### `robots.txt` and `sitemap.xml`
 
-In order for search engines to properly index a site, a 
-[`robots.txt`](https://en.wikipedia.org/wiki/Robots_exclusion_standard) and one or more 
+In order for search engines to properly index a site, a
+[`robots.txt`](https://en.wikipedia.org/wiki/Robots_exclusion_standard) and one or more
 [XML Sitemaps](https://en.wikipedia.org/wiki/Sitemaps) should be made available at specific URLs. The operator generates
-ingress rules for the preview and all live sites, mapping requests for `robots.txt` and `sitemap.*\.xml` to the
-value of `with.ingressSeoHandler` plus the site segment (or `preview` in case of the preview), plus the file name
-requested. You will need to supply a compatible handler in your CAE to handle requests for it.
+ingress rules for the preview and all live sites, mapping requests for `robots.txt` and `sitemap.*\.xml` to the value
+of `with.ingressSeoHandler` plus the site segment (or `preview` in case of the preview), plus the file name requested.
+You will need to supply a compatible handler in your CAE to handle requests for it.
 
-For example, the request `https://corporate.example.de/sitemap-0.xml` will be mapped to 
+For example, the request `https://corporate.example.de/sitemap-0.xml` will be mapped to
 `/blueprint/servlet/service/robots/corporate-de-de/sitemap-0.xml`.
 
 ## Components
@@ -624,6 +663,7 @@ You can disable applying resource requirements by setting `with.resources` to `f
 specifications are ignored.
 
 Example:
+
 ```yaml
 components:
   - type: cae
@@ -641,17 +681,29 @@ CPU time is limited to 2 cores by default; the preview CAE will only be allowed 
 
 #### Response Timeout
 
-The Ingress controller typically waits a specific time for the backend service to start sending a response. Once this timeout is exceeded, an error message is returned. For some applications, it might be necessary to increase that timeout. `with.responseTimeout.live`, `with.responseTimeout.preview`, and `with.responseTimeout.studio` allow specifying the desired timeout in seconds for the respective Ingress resources.
+The Ingress controller typically waits a specific time for the backend service to start sending a response. Once this
+timeout is exceeded, an error message is returned. For some applications, it might be necessary to increase that
+timeout. `with.responseTimeout.live`, `with.responseTimeout.preview`, and `with.responseTimeout.studio` allow specifying
+the desired timeout in seconds for the respective Ingress resources.
 
 #### Upload Size
 
-Spring, Tomcat, and the ingress controller have default values for the size of uploads (POST and PUT requests). By configuring `with.uploadSize` for live CAEs, the preview CAE, and the Studio server, these can be adjusted. The value is given in MB, so a value of `10` will result in a limit of 10485760 bytes. The operator will configure the ingress resources as well as setting the appropriate properties for Spring Boot. For both the CAE and the Studio, it might be necessary to configure additional properties or settings documents. Please see the CoreMedia documentation.
+Spring, Tomcat, and the ingress controller have default values for the size of uploads (POST and PUT requests). By
+configuring `with.uploadSize` for live CAEs, the preview CAE, and the Studio server, these can be adjusted. The value is
+given in MB, so a value of `10` will result in a limit of 10485760 bytes. The operator will configure the ingress
+resources as well as setting the appropriate properties for Spring Boot. For both the CAE and the Studio, it might be
+necessary to configure additional properties or settings documents. Please see the CoreMedia documentation.
 
 #### Volume Size
 
-Some components require persistent storage, for example most UAPI clients, the database servers, or Solr. Using `volumeSize`, you can customize the amount of space the PVCs and PVs are created with. **Note** the operator does not know how to resize a volume. If you need to change the size of a volume after it has been created, you will need to employ standard Kubernetes mechanisms to do so.
+Some components require persistent storage, for example most UAPI clients, the database servers, or Solr.
+Using `volumeSize`, you can customize the amount of space the PVCs and PVs are created with. **Note** the operator does
+not know how to resize a volume. If you need to change the size of a volume after it has been created, you will need to
+employ standard Kubernetes mechanisms to do so.
 
-For the transformed BLOB and UAPI BLOB caches, the size is also used to configure a limit on the size of the caches. The limit is set to 90% of the volume size, which should allow for the overhead needed to manage the cache. The properties set are `com.coremedia.transform.blobCache.size` and `repository.blob-cache-size`.
+For the transformed BLOB and UAPI BLOB caches, the size is also used to configure a limit on the size of the caches. The
+limit is set to 90% of the volume size, which should allow for the overhead needed to manage the cache. The properties
+set are `com.coremedia.transform.blobCache.size` and `repository.blob-cache-size`.
 
 | Property                          | Type     | Default | Description                                                  |
 |-----------------------------------|----------|---------|--------------------------------------------------------------|
@@ -661,9 +713,13 @@ For the transformed BLOB and UAPI BLOB caches, the size is also used to configur
 
 #### Security Context
 
-The operator configures components with defaults for certain [Kubernetes Security Context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/) properties.
+The operator configures components with defaults for
+certain [Kubernetes Security Context](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/)
+properties.
 
-You can override these defaults on a global level (`defaults.podSecurityContext` and `defaults.securityContext`, or on a per-component basis (`podSecurityContext` and `securityContext` in the component properties)). The operator will deep-merge entries, using first the built-in default, then the `defaults.` values, then the component-specific values.
+You can override these defaults on a global level (`defaults.podSecurityContext` and `defaults.securityContext`, or on a
+per-component basis (`podSecurityContext` and `securityContext` in the component properties)). The operator will
+deep-merge entries, using first the built-in default, then the `defaults.` values, then the component-specific values.
 
 **Pod Security Context Defaults**
 
@@ -733,6 +789,20 @@ and `replication-live-server` for an `rls`. Note that if you need to configure m
 names yourself.
 
 The database names are `management`, `master`, and `replication`.
+
+### Component `management-tools-cron`
+
+Add this type of component to run management tools commands regularly. You specify which of the scripts to run with `args`, and when to run them with `cron` and `timezone`.
+
+If you want to run different commands on separate schedules, add them as separate cron job components.
+
+Note that you might need to add your own scripts to the management tools image to fully make use of the cron job facility.
+
+| Property                | Type            | Default    | Description                                                                                                             |
+|-------------------------|-----------------|------------|-------------------------------------------------------------------------------------------------------------------------|
+| `args`                  | list of Strings | ""         | List of the entrypoint scripts to run. No default.                                                                      |
+| `extra.config.cron`     | String | "0 0 0 * +" | When to execute the job. Default is every day at midnight local time of the k8s cluster.                                |
+| `extra.config.timezone` | String | ""         | The time zone of the time specification. By default, this is the local time of the cluster. Use "Europe/Berlin" format. |
 
 ### Component `overview`
 
@@ -824,7 +894,7 @@ follower instances are created that replicate the leader automatically.
 The operator will automatically create the `live` core in the followers, by executing the core admin API request, as
 documented in the Search Manual.
 
-If you add your own cores to the Solr config, you will need to tell the operator about them, using the 
+If you add your own cores to the Solr config, you will need to tell the operator about them, using the
 `extra.coresToReplicate` map. For example, if you're using a core for product data, that definition could like:
 
 ```yaml
@@ -835,8 +905,8 @@ components:
         products: pimdata
 ```
 
-This defines the core `products` to use the schema definition `pimdata`. Due to the way `extra` is parsed, you will 
-need to provide the map as a YAML string (note the pipe character after the key). Also note that you will need to provide the 
+This defines the core `products` to use the schema definition `pimdata`. Due to the way `extra` is parsed, you will need
+to provide the map as a YAML string (note the pipe character after the key). Also note that you will need to provide the
 appropriate Solr config in your Solr image. The operator has one default entry `live`/`cae` that is always present.
 
 #### Solr Services
@@ -887,7 +957,8 @@ the milestone will be advanced.
 
 #### Security Context
 
-Due to the way the container image is built, this container needs to run with a read-write root file system, and the component sets that as a default.
+Due to the way the container image is built, this container needs to run with a read-write root file system, and the
+component sets that as a default.
 
 ### Component `user-changes`
 
