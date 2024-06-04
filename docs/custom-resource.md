@@ -442,7 +442,7 @@ While the job is running, the milestone will be `RunJob`. Once the job completes
 Using the `mangement-tools-cron` component type, you can configure one or more regular jobs, for example, to empty
 the recycle bin or expire old versions.
 
-The following component definition will configure a job that invokes the `cleanrecyclebin` and ´cleanversions` commands
+The following component definition will configure a job that invokes the `cleanrecyclebin` and `cleanversions` commands
 every day at midnight. Note that you will need to add the appropriate scripts to the management tools container image
 yourself; they do not exist in the plain Blueprint.
 
