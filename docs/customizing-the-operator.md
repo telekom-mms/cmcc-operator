@@ -49,6 +49,6 @@ Finally, the package `com.tsystemsmms.cmcc.cmccoperator.resource` contains class
 ## Build and deploy the operator locally
 
 ```shell
-./gradlew build jibDockerBuild -Djib.to.image=ghcr.io/t-systems-mms/cmcc-operator/cmcc-operator -Djib.to.tag=v1.11.1 -Djib.from.platforms=linux/arm64
+./gradlew build jibDockerBuild -Djib.to.image=ghcr.io/telekom-mms/cmcc-operator/cmcc-operator -Djib.to.tag=v1.11.1 -Djib.from.platforms=linux/arm64
 helm upgrade --install --create-namespace --namespace cmcc-operator cmcc-operator ./charts/cmcc-operator --set cmcc.ingressbuilder=onlylang --set image.tag=v1.11.1
 ```

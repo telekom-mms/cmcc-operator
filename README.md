@@ -2,7 +2,7 @@
 
 [![build](https://github.com/Telekom-MMS/cmcc-operator/actions/workflows/build.yml/badge.svg)](https://github.com/Telekom-MMS/cmcc-operator/actions/workflows/build.yml)
 
-**Important** On June 11, 2024, this repo will move from T-Systems-MMS/cmcc-operator to Telekom-MMS/cmcc-operator. While Github will automatically redirect requests for the Git repo, the Helm repo URL has to be adjusted manually.
+**Important** Since June 4, 2024, this repo has moved from T-Systems-MMS/cmcc-operator to Telekom-MMS/cmcc-operator. While Github will automatically redirect requests for the Git repo, the Helm repo URL has to be adjusted manually.
 
 In particular, you will need to update your Helm repo URL like this:
 ```shell
@@ -22,7 +22,7 @@ helm repo update
 * [Installing the Operator](#preparing-your-cluster-and-installing-the-operator)
 * [Using the Operator to create a CoreMedia installation](#using-the-operator): quick start
 * [Customizing the CMCC Operator](docs/customizing-the-operator.md): information for developers
-* [ghcr.io/t-systems-mms/cmcc-operator/cmcc-operator](https://github.com/Telekom-MMS/cmcc-operator/pkgs/container/cmcc-operator%2Fcmcc-operator) Docker Image
+* [ghcr.io/telekom-mms/cmcc-operator/cmcc-operator](https://github.com/Telekom-MMS/cmcc-operator/pkgs/container/cmcc-operator%2Fcmcc-operator) Docker Image
 * [Cluster Roles and Rights](docs/cluster-roles.md) that the operator requires.
 
 ## Table of Contents

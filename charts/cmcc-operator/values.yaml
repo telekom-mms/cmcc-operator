@@ -12,7 +12,7 @@ cmcc:
   useCrd: true
 
 image:
-  repository: ghcr.io/t-systems-mms/cmcc-operator/cmcc-operator
+  repository: ghcr.io/telekom-mms/cmcc-operator/cmcc-operator
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: ""
