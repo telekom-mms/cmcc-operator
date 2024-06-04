@@ -323,7 +323,7 @@ public abstract class AbstractComponent implements Component {
             .withMetadata(getResourceMetadataForName(name))
             .withSpec(new PersistentVolumeClaimSpecBuilder()
                     .withAccessModes("ReadWriteOnce")
-                    .withResources(new ResourceRequirementsBuilder()
+                    .withResources(new VolumeResourceRequirementsBuilder()
                             .withRequests(Map.of("storage", size))
                             .build())
                     .withStorageClassName(sc)
