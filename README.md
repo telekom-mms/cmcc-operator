@@ -133,7 +133,7 @@ The [Helm chart cmcc-operator](charts/cmcc-operator) can be used to install and 
 
 ```console
 $ helm repo add cmcc-operator https://t-systems-mms.github.io/cmcc-operator/
-$ helm upgrade --install --create-namespace --namespace cmcc-operator cmcc-operator charts/cmcc-operator
+$ helm upgrade --install --create-namespace --namespace cmcc-operator cmcc-operator cmcc-operator/cmcc-operator
 ```
 
 ### Installing the Operator Manually
