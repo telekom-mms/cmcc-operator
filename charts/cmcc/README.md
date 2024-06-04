@@ -1,6 +1,6 @@
 # CoreMedia Content Cloud
 
-This helm chart creates a custom resource for the [CoreMedia Content Cloud Operator](https://github.com/T-Systems-MMS/cmcc-operator), configures and manages a [CoreMedia Content Cloud](https://www.coremedia.com/) deployment based on the configuration in that resource.
+This helm chart creates a custom resource for the [CoreMedia Content Cloud Operator](https://github.com/Telekom-MMS/cmcc-operator), configures and manages a [CoreMedia Content Cloud](https://www.coremedia.com/) deployment based on the configuration in that resource.
 
 ## TL;DR
 
@@ -11,7 +11,7 @@ $ helm upgrade --install my-release cmcc-operator/cmcc --values my-values.yaml
 
 ## Introduction
 
-The [CoreMedia Content Cloud Operator](https://github.com/T-Systems-MMS/cmcc-operator) provides an easy to use way to
+The [CoreMedia Content Cloud Operator](https://github.com/Telekom-MMS/cmcc-operator) provides an easy to use way to
 manage deployments of [CoreMedia Content Cloud](https://www.coremedia.com/). This Helm chart  helps managing the custom resource or config map to manage an individual deployment.
 
 ## Prerequisites
@@ -45,7 +45,7 @@ The command removes all the Kubernetes components associated with the chart and 
 
 | Name               | Description                                                                                                                                                                              | Value                                |
 |--------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------|
-| `cmcc`             | The contents of the custom resource. See [Custom Resource CoreMediaContentClouds](https://github.com/T-Systems-MMS/cmcc-operator/blob/main/docs/custom-resource.md) for more information | –                                    |
+| `cmcc`             | The contents of the custom resource. See [Custom Resource CoreMediaContentClouds](https://github.com/Telekom-MMS/cmcc-operator/blob/main/docs/custom-resource.md) for more information | –                                    |
 | `fullnameOverride` | Overrides the full name of components, which is used for the deployment, clusterrole and clusterrolemapping, and the service account.                                                    | the chart name plus the release name |
 | `nameOverride`     | Overrides the short name. Used for the selector labels.                                                                                                                                  | the chart name                       |
 | `useConfigMap`     | Instead of creating a custom resource with the deployment description, use a config map.                                                                                                 | the chart name                       |

@@ -754,7 +754,7 @@ The default image for this component is `blob-server`. You can override the defa
         tag: "2201.1"
 ```
 
-See [github.com/T-Systems-MMS/cmcc-blob-server](https://github.com/T-Systems-MMS/cmcc-blob-server) for an example on how
+See [github.com/Telekom-MMS/cmcc-blob-server](https://github.com/Telekom-MMS/cmcc-blob-server) for an example on how
 to create a suitable Docker image.
 
 ### Component `content-feeder`

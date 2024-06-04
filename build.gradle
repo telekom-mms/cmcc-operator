@@ -100,11 +100,11 @@ jib {
     container {
         labels = [
                 "org.opencontainers.image.description"  : "A Kubernetes operator that installs and configures a CoreMedia Content Cloud installation in a cluster.",
-                "org.opencontainers.image.documentation": "https://github.com/T-Systems-MMS/cmcc-operator",
+                "org.opencontainers.image.documentation": "https://github.com/Telekom-MMS/cmcc-operator",
                 "org.opencontainers.image.licenses"     : "Apache-2.0",
-                "org.opencontainers.image.source"       : "https://github.com/T-Systems-MMS/cmcc-operator",
+                "org.opencontainers.image.source"       : "https://github.com/Telekom-MMS/cmcc-operator",
                 "org.opencontainers.image.title"        : "CoreMedia Content Cloud Kubernetes Operator",
-                "org.opencontainers.image.url"          : "https://github.com/T-Systems-MMS/cmcc-operator",
+                "org.opencontainers.image.url"          : "https://github.com/Telekom-MMS/cmcc-operator",
                 "org.opencontainers.image.vendor"       : "T-Systems Multimedia Solutions GmbH"
         ]
         user = 1000

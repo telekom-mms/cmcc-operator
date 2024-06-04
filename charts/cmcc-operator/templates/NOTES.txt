@@ -1,4 +1,4 @@
 The CoreMedia Content Cloud Operator has been installed and should be ready to manage installations shortly.
 
-See https://github.com/T-Systems-MMS/cmcc-operator for general information on how to deploy a CoreMedia application
+See https://github.com/Telekom-MMS/cmcc-operator for general information on how to deploy a CoreMedia application
 stack by adding a custom resource to your Kubernetes cluster, and the configuration options available.
