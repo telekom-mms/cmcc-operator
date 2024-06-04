@@ -67,6 +67,7 @@ rules:
     resources:
       - deployments
       - configmaps
+      - cronjobs
       - jobs
       - pods
       - persistentvolumeclaims
