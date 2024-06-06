@@ -132,7 +132,7 @@ If you're using [k3d](https://k3d.io/) as a cluster, your Docker install will ne
 The [Helm chart cmcc-operator](charts/cmcc-operator) can be used to install and configure the operator.
 
 ```console
-$ helm repo add cmcc-operator https://t-systems-mms.github.io/cmcc-operator/
+$ helm repo add cmcc-operator https://telekom-mms.github.io/cmcc-operator/
 $ helm upgrade --install --create-namespace --namespace cmcc-operator cmcc-operator cmcc-operator/cmcc-operator
 ```
 
@@ -191,7 +191,7 @@ The license secrets need to be created in the same namespace you plan to install
 The [Helm chart cmcc](charts/cmcc) can be used to create a deployment for CoreMedia Content Cloud. See the documentation there for information on how to supply the necessary values to Helm.
 
 ````shell
-$ helm repo add cmcc-operator https://t-systems-mms.github.io/cmcc-operator/
+$ helm repo add cmcc-operator https://telekom-mms.github.io/cmcc-operator/
 $ helm upgrade --install my-release cmcc-operator/cmcc --values my-values.yaml
 ````
 

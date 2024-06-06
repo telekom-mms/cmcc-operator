@@ -7,7 +7,7 @@ operator; an accompanying chart helps managing the custom resource or config map
 ## TL;DR
 
 ```console
-$ helm repo add cmcc-operator https://t-systems-mms.github.io/cmcc-operator/
+$ helm repo add cmcc-operator https://telekom-mms.github.io/cmcc-operator/
 $ helm upgrade --install --create-namespace --namespace cmcc-operator cmcc-operator cmcc-operator/cmcc-operator
 ```
 
