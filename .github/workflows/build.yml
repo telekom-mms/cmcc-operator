@@ -17,8 +17,8 @@ jobs:
           java-version: 17
           distribution: adopt
           cache: gradle
-      - name: build
+      - name: setup gradle
         uses: gradle/actions/setup-gradle@v3
-        with:
-          arguments: build test --scan
+      - name: build
+        run: ./gradlew build test --scan
 

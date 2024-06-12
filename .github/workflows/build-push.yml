@@ -18,11 +18,11 @@ jobs:
         uses: ASzc/change-string-case-action@v6
         with:
           string: ${{ github.repository }}/cmcc-operator
-      - name: push
+      - name: setup gradle
         uses: gradle/actions/setup-gradle@v3
-        with:
-          arguments: >
-            build test jib 
+      - name: build nad push
+        run: >
+          ./gradlew build test jib 
             -Djib.to.image=ghcr.io/${{ steps.repository.outputs.lowercase }}:${{github.ref_name}}
             -Djib.to.tags=${{github.ref_name}},latest
             -Djib.to.auth.username=${{ github.actor }}
