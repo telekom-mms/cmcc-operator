@@ -18,10 +18,7 @@ import io.fabric8.kubernetes.api.model.SecurityContext;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Data
 public class ComponentSpec {
@@ -81,6 +78,18 @@ public class ComponentSpec {
     this.kind = that.kind;
     this.name = that.name;
     this.update(that);
+  }
+
+  /**
+   * Get the value of an entry in the extra hash.
+   *
+   * @param key name of the entry
+   * @return value of the entry, or Optional.empty
+   */
+  public Optional<String> getExtra(String key) {
+    if (extra == null)
+      return Optional.empty();
+    return Optional.ofNullable(extra.get(key));
   }
 
   public void update(ComponentSpec that) {

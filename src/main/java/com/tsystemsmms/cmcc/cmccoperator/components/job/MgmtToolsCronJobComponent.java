@@ -38,10 +38,12 @@ public class MgmtToolsCronJobComponent extends SpringBootComponent implements Ha
   public static final String EXTRA_CONFIG = "config";
 
   long activeDeadlineSeconds = 30 * 60L;
-  private MgmtCronJobConfig mgmtCronJobConfig = null;
+  String cron = "0 0 * * *";
+  String timezone = "";
 
   public MgmtToolsCronJobComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec componentSpec) {
     super(kubernetesClient, targetState, componentSpec, "management-tools");
+    updateConfig();
   }
 
   @Override
@@ -52,18 +54,32 @@ public class MgmtToolsCronJobComponent extends SpringBootComponent implements Ha
   @Override
   public Component updateComponentSpec(ComponentSpec newCs) {
     super.updateComponentSpec(newCs);
-    if (mgmtCronJobConfig != null)
-      mgmtCronJobConfig = getMgmtCronJobConfigFromExtra();
+    updateConfig();
     return this;
   }
 
+  private void updateConfig() {
+    var extraConfig = getComponentSpec().getExtra(EXTRA_CONFIG);
+    if (extraConfig.isPresent()) {
+      Yaml yaml = new Yaml(new Constructor(MgmtCronJobConfig.class));
+      MgmtCronJobConfig config = yaml.load(extraConfig.get());
+      cron = config.getCron();
+      timezone = config.getTimezone();
+    }
+    getComponentSpec().getExtra("activeDeadlineSeconds")
+            .ifPresent(v -> activeDeadlineSeconds = Long.parseLong(v));
+    getComponentSpec().getExtra("cron")
+            .ifPresent(v -> cron = v);
+    getComponentSpec().getExtra("timezone")
+            .ifPresent(v -> timezone = v);
+  }
+
   private CronJob buildJob() {
-    getMgmtCronJobConfig();
     return new CronJobBuilder()
             .withMetadata(getResourceMetadata())
             .withSpec(new CronJobSpecBuilder()
-                    .withSchedule(mgmtCronJobConfig.cron)
-                    .withTimeZone(mgmtCronJobConfig.timezone)
+                    .withSchedule(cron)
+                    .withTimeZone(timezone)
                     .withFailedJobsHistoryLimit(3)
                     .withSuccessfulJobsHistoryLimit(1)
                     .withJobTemplate(new JobTemplateSpecBuilder()
@@ -154,18 +170,13 @@ public class MgmtToolsCronJobComponent extends SpringBootComponent implements Ha
     return Optional.of(Boolean.TRUE);
   }
 
-  private MgmtCronJobConfig  getMgmtCronJobConfigFromExtra() {
+  private Optional<MgmtCronJobConfig> getMgmtCronJobConfigFromExtra() {
     Yaml yaml = new Yaml(new Constructor(MgmtCronJobConfig.class));
     if (getComponentSpec().getExtra() == null || !getComponentSpec().getExtra().containsKey(EXTRA_CONFIG))
-      throw new CustomResourceConfigError("Must specify " + EXTRA_CONFIG + " with job parameters for job \"" + getSpecName() + "\"");
-    return yaml.load(getComponentSpec().getExtra().get(EXTRA_CONFIG));
+      return Optional.empty();
+    return Optional.of(yaml.load(getComponentSpec().getExtra().get(EXTRA_CONFIG)));
   }
 
-  private MgmtCronJobConfig getMgmtCronJobConfig() {
-    if (mgmtCronJobConfig == null)
-      mgmtCronJobConfig = getMgmtCronJobConfigFromExtra();
-    return mgmtCronJobConfig;
-  }
 
   @Override
   public String getUapiClientDefaultUsername() {

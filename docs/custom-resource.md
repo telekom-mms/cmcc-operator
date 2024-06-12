@@ -456,18 +456,18 @@ components:
     env:
       - name: CLEANRECYCLEBIN_BEFORE_DATE
         value: 1 hour ago
-      - name: CLEANVERIONS_KEEP_VERSIONS_DAYS
+      - name: CLEANVERSIONS_KEEP_VERSIONS_DAYS
         value: "1"
-      - name: CLEANVERIONS_KEEP_VERSIONS_NUMBER
+      - name: CLEANVERSIONS_KEEP_VERSIONS_NUMBER
         value: "1"
-      - name: CLEANVERIONS_TARGET_PATH
+      - name: CLEANVERSIONS_TARGET_PATH
         value: /
       - name: TZ
         value: Europe/Berlin
     extra:
-      config: |
-        cron: "*/5 * * * *"
-        timezone: "Europe/Berlin"
+      activeDeadlineSeconds: "3600"
+      cron: "*/5 * * * *"
+      timezone: "Europe/Berlin"
     milestone: ManagementReady
 ```
 
@@ -798,11 +798,12 @@ If you want to run different commands on separate schedules, add them as separat
 
 Note that you might need to add your own scripts to the management tools image to fully make use of the cron job facility.
 
-| Property                | Type            | Default    | Description                                                                                                             |
-|-------------------------|-----------------|------------|-------------------------------------------------------------------------------------------------------------------------|
-| `args`                  | list of Strings | ""         | List of the entrypoint scripts to run. No default.                                                                      |
-| `extra.config.cron`     | String | "0 0 0 * +" | When to execute the job. Default is every day at midnight local time of the k8s cluster.                                |
-| `extra.config.timezone` | String | ""         | The time zone of the time specification. By default, this is the local time of the cluster. Use "Europe/Berlin" format. |
+| Property                      | Type            | Default     | Description                                                                                                             |
+|-------------------------------|-----------------|-------------|-------------------------------------------------------------------------------------------------------------------------|
+| `args`                        | list of Strings | ""          | List of the entrypoint scripts to run. No default.                                                                      |
+| `extra.activeDeadlineSeconds` | String          | "1800"      | How long to run the job before k8s considers it stuck and kills it.                                                     |
+| `extra.cron`                  | String          | "0 0 * * *" | When to execute the job. Default is every day at midnight local time of the k8s cluster.                                |
+| `extra.timezone`              | String          | ""          | The time zone of the time specification. By default, this is the local time of the cluster. Use "Europe/Berlin" format. |
 
 ### Component `overview`
 
