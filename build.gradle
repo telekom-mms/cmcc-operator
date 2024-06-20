@@ -31,21 +31,21 @@ compileJava {
 }
 
 dependencies {
-    implementation 'org.springframework.boot:spring-boot-starter:3.3.0'
+    implementation 'org.springframework.boot:spring-boot-starter:3.3.1'
 //    developmentOnly 'org.springframework.boot:spring-boot-devtools:3.2.0'
-    implementation 'org.springframework.boot:spring-boot-starter-actuator:3.3.0'
-    implementation 'org.springframework.boot:spring-boot-starter-web:3.3.0'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator:3.3.1'
+    implementation 'org.springframework.boot:spring-boot-starter-web:3.3.1'
     implementation 'io.javaoperatorsdk:operator-framework-spring-boot-starter:5.5.0'
     implementation 'org.bouncycastle:bcpkix-jdk15on:1.70'
     // required for the fabric8 k8s client to grok k3d certificates
-    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor:3.3.0'
+    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor:3.3.1'
     compileOnly 'org.projectlombok:lombok'
     testCompileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
     annotationProcessor 'io.fabric8:crd-generator-apt:6.13.0'
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-    testImplementation 'org.springframework.boot:spring-boot-starter-test:3.3.0'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test:3.3.1'
     testImplementation 'io.javaoperatorsdk:operator-framework-spring-boot-starter-test:5.5.0'
 }
 
