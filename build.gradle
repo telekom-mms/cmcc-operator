@@ -43,7 +43,7 @@ dependencies {
     testCompileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
     annotationProcessor 'io.fabric8:crd-generator-apt:6.13.0'
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.3'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     testImplementation 'org.springframework.boot:spring-boot-starter-test:3.3.0'
     testImplementation 'io.javaoperatorsdk:operator-framework-spring-boot-starter-test:5.5.0'
