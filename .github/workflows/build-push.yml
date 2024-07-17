@@ -25,11 +25,7 @@ jobs:
           echo gradlew build test jib -Djib.to.image=ghcr.io/${{ steps.repository.outputs.lowercase }}:${{github.ref_name}} -Djib.to.tags=${{github.ref_name}},latest -Djib.to.auth.username=${{ github.actor }} -Djib.to.auth.password=${{ github.token }}
       - name: build and push
         run: >
-          ./gradlew build test jib 
-            -Djib.to.image=ghcr.io/${{ steps.repository.outputs.lowercase }}:${{github.ref_name}}
-            -Djib.to.tags=${{github.ref_name}},latest
-            -Djib.to.auth.username=${{ github.actor }}
-            -Djib.to.auth.password=${{ github.token }}
+          ./gradlew build test jib -Djib.to.image=ghcr.io/${{ steps.repository.outputs.lowercase }}:${{github.ref_name}} -Djib.to.tags=${{github.ref_name}},latest -Djib.to.auth.username=${{ github.actor }} -Djib.to.auth.password=${{ github.token }}
 
   release:
     runs-on: ubuntu-latest
