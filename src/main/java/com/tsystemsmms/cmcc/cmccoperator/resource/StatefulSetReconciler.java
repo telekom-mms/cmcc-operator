@@ -33,8 +33,6 @@ public class StatefulSetReconciler implements Reconciler {
       existing.edit(r ->
               new StatefulSetBuilder(r).editOrNewSpec()
                       .withMinReadySeconds(spec.getMinReadySeconds())
-//                      .withPersistentVolumeClaimRetentionPolicy(spec.getPersistentVolumeClaimRetentionPolicy()) // do not use because of feature gate?
-                      .withVolumeClaimTemplates(spec.getVolumeClaimTemplates())
                       .withReplicas(spec.getReplicas())
                       .withTemplate(spec.getTemplate())
                       .withUpdateStrategy(spec.getUpdateStrategy())
