@@ -44,6 +44,9 @@ public class UserChangesComponent extends CorbaComponent implements HasMongoDBCl
     public List<HasMetadata> buildResources() {
         List<HasMetadata> resources = new LinkedList<>();
         resources.add(buildStatefulSet());
+        if (getCmcc().getSpec().getWith().getJsonLogging()) {
+            resources.add(buildLoggingConfigMap());
+        }
         return resources;
     }
 

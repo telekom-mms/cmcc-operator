@@ -18,11 +18,11 @@ import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedList;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.concatOptional;
@@ -57,11 +57,11 @@ public abstract class AbstractUrlMappingBuilder implements UrlMappingBuilder {
   }
 
   public String liveName(String site, String name, String... more) {
-    return concatOptional(Stream.concat(Stream.of(getDefaults().getNamePrefix(), "live", site, name), Arrays.stream(more)).toList());
+    return concatOptional(Stream.concat(Stream.of(getDefaults().getNamePrefix(), "live", getDefaults().getNameSuffix(), site, name), Arrays.stream(more)).toList());
   }
 
   public String previewName(String name) {
-    return concatOptional(getDefaults().getNamePrefix(), "preview", name);
+    return concatOptional(getDefaults().getNamePrefix(), "preview", getDefaults().getNameSuffix(), name);
   }
 
 
@@ -69,15 +69,20 @@ public abstract class AbstractUrlMappingBuilder implements UrlMappingBuilder {
   public Collection<? extends HasMetadata> buildPreviewResources() {
     LinkedList<HasMetadata> ingresses = new LinkedList<>();
     String fqdn = getTargetState().getPreviewHostname();
-    String segment = getSpec().getSiteMappings().stream().findAny().orElseThrow().getPrimarySegment();
+    SiteMapping siteMapping = getSpec().getSiteMappings().stream().findAny().orElseThrow();
+
     IngressTls tls = targetState.getCmcc().getSpec().getDefaultIngressTls();
     int uploadSize = getInt(getTargetState().getCmcc().getSpec().getWith().getUploadSize().getPreview());
     int responseTimeout = getInt(getTargetState().getCmcc().getSpec().getWith().getResponseTimeout().getPreview());
 
-    ingresses.addAll(ingressBuilderFactory.builder(targetState, previewName("home"), fqdn, tls)
-            .responseTimeout(responseTimeout)
-            .uploadSize(uploadSize)
-            .pathExact("/", serviceName).redirect("/" + segment).build());
+    if (StringUtils.isEmpty(siteMapping.getPrimarySegment()) || !siteMapping.getPrimarySegmentRedirect()) {
+      log.debug("Skipping home page root ingress (primary segment: {})", siteMapping.getPrimarySegment());
+    } else {
+      ingresses.addAll(ingressBuilderFactory.builder(targetState, previewName("home"), fqdn, tls)
+              .responseTimeout(responseTimeout)
+              .uploadSize(uploadSize)
+              .pathExact("/", serviceName).redirect("/" + siteMapping.getPrimarySegment()).build());
+    }
     ingresses.addAll(ingressBuilderFactory.builder(targetState, previewName("blueprint"), fqdn, tls)
             .responseTimeout(responseTimeout)
             .uploadSize(uploadSize)
@@ -104,18 +109,28 @@ public abstract class AbstractUrlMappingBuilder implements UrlMappingBuilder {
 
   @Override
   public Collection<? extends HasMetadata> buildStudioResources() {
+    LinkedList<HasMetadata> ingresses = new LinkedList<>();
+
     IngressTls tls = targetState.getCmcc().getSpec().getDefaultIngressTls();
     int responseTimeout = getInt(getTargetState().getCmcc().getSpec().getWith().getResponseTimeout().getPreview());
     int uploadSize = getInt(getTargetState().getCmcc().getSpec().getWith().getUploadSize().getStudio());
 
-    return ingressBuilderFactory.builder(targetState, concatOptional(getDefaults().getNamePrefix(), "studio"), getTargetState().getStudioHostname(), tls)
+    ingresses.addAll(ingressBuilderFactory.builder(targetState, concatOptional(getDefaults().getNamePrefix(), "studio", getDefaults().getNameSuffix()), getTargetState().getStudioHostname(), tls)
             .pathPrefix("/", getTargetState().getServiceNameFor("studio-client"))
             .pathPrefix("/api", serviceName)
             .pathPrefix("/login", serviceName)
             .pathPrefix("/logout", serviceName)
-            .pathPrefix("/cspInfo.html", serviceName)
+            .pathPattern("/cspInfo.html", serviceName) // needs to be ImplemetationSpecific: "." is not allowed on prefix and exact
             .responseTimeout(responseTimeout)
             .uploadSize(uploadSize)
-            .build();
+            .build());
+
+    ingresses.addAll(ingressBuilderFactory.builder(targetState, concatOptional(getDefaults().getNamePrefix(), "studio-rest", getDefaults().getNameSuffix()), getTargetState().getStudioHostname(), tls)
+            .pathPattern("/rest/(.*)", serviceName).rewrite("/$1")
+            .responseTimeout(responseTimeout)
+            .uploadSize(uploadSize)
+            .build());
+
+    return ingresses;
   }
 }

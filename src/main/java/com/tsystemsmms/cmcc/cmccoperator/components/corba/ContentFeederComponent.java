@@ -12,25 +12,27 @@ package com.tsystemsmms.cmcc.cmccoperator.components.corba;
 
 import com.tsystemsmms.cmcc.cmccoperator.components.HasMongoDBClient;
 import com.tsystemsmms.cmcc.cmccoperator.components.HasSolrClient;
+import com.tsystemsmms.cmcc.cmccoperator.components.generic.SolrComponent;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
+import com.tsystemsmms.cmcc.cmccoperator.targetstate.CustomResourceConfigError;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 import com.tsystemsmms.cmcc.cmccoperator.utils.EnvVarSet;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.util.UriComponentsBuilder;
 
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-import static com.tsystemsmms.cmcc.cmccoperator.components.HasSolrClient.SOLR_CLIENT_SECRET_REF_KIND;
+import static com.tsystemsmms.cmcc.cmccoperator.components.corba.ContentServerComponent.*;
 import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.concatOptional;
 
 @Slf4j
 public class ContentFeederComponent extends CorbaComponent implements HasMongoDBClient, HasSolrClient {
+    public static final String CONTENT_FEEDER = "content-feeder";
 
     public ContentFeederComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec componentSpec) {
-        super(kubernetesClient, targetState, componentSpec, "content-feeder");
+        super(kubernetesClient, targetState, componentSpec, CONTENT_FEEDER);
         setDefaultSchemas(Map.of(
                 MONGODB_CLIENT_SECRET_REF_KIND, "blueprint",
                 SOLR_CLIENT_SECRET_REF_KIND, HasSolrClient.getSolrClientSecretRefName("studio", SOLR_CLIENT_SERVER_LEADER),
@@ -46,9 +48,25 @@ public class ContentFeederComponent extends CorbaComponent implements HasMongoDB
     }
 
     @Override
+    protected PodAffinity getPodAffinity() {
+        var affinityRules = new LinkedList<WeightedPodAffinityTerm>();
+
+        affinityRules.add(createAffinityToComponent(CONTENT_SERVER, KIND_CMS, 25));
+        affinityRules.add(createAffinityToComponent(SolrComponent.SOLR, SolrComponent.KIND_LEADER, 25));
+
+        return new PodAffinityBuilder()
+                .withPreferredDuringSchedulingIgnoredDuringExecution(affinityRules.stream().filter(Objects::nonNull).toList())
+                .build();
+    }
+
+    @Override
     public List<HasMetadata> buildResources() {
         List<HasMetadata> resources = new LinkedList<>();
         resources.add(buildStatefulSet());
+        if (Boolean.TRUE.equals(getCmcc().getSpec().getWith().getJsonLogging())) {
+            resources.add(buildLoggingConfigMap());
+        }
+        resetFeederIfNeeded();
         return resources;
     }
 
@@ -60,5 +78,59 @@ public class ContentFeederComponent extends CorbaComponent implements HasMongoDB
         env.addAll(getSolrEnvVars("content"));
 
         return env;
+    }
+
+    protected void resetFeederIfNeeded() {
+        String name = getTargetState().getResourceNameFor(this);
+        String flagName = concatOptional("generation", name);
+        String specGeneration = Optional.ofNullable(getComponentSpec().getExtra().get("generation")).orElse("");
+        if (!getTargetState().getFlag(flagName, "").equals(specGeneration)) {
+            if (!getState().isReady().orElse(false)) {
+                return;
+            }
+            try {
+                resetFeeder();
+            } catch (Exception e) {
+                log.warn("[{}] Error resetting feeder: {}", getTargetState().getContextForLogging(), name, e);
+            }
+            if (!getTargetState().isUpgrading()) {
+                getTargetState().restartStatefulSet(name);
+            }
+            getTargetState().setFlag(flagName, specGeneration);
+        }
+
+    }
+
+    /**
+     * Reset the Content Feeder.
+     */
+    public void resetFeeder() {
+        var pod = getTargetState().getKubernetesClient().pods()
+                .inNamespace(getNamespace())
+                .withLabels(getSelectorLabels())
+                .resources()
+                .findFirst().get();
+
+        String stopUrl = UriComponentsBuilder.fromUriString("http://feeder:feeder@localhost/admin")
+                .port(getContainerPorts().stream().filter(x -> x.getName().equals("ior")).findFirst().get().getContainerPort())
+                .queryParam("action", "stop")
+                .toUriString();
+
+        log.debug("[{}] Stopping Content feeder pod {}, using {}", getTargetState().getContextForLogging(), pod.get().getMetadata().getName(), stopUrl);
+        var result = this.executeWebRequest(pod, stopUrl);
+        if (result.exitCode != 0 || result.output == null || !result.output.contains("stop command was sent to the feeder")) {
+            throw new CustomResourceConfigError("Unable to stop content feeder on pod \"\": " + result.output);
+        }
+
+        String resetUrl = UriComponentsBuilder.fromUriString("http://feeder:feeder@localhost/admin")
+                .port(getContainerPorts().stream().filter(x -> x.getName().equals("ior")).findFirst().get().getContainerPort())
+                .queryParam("action", "clearCollection")
+                .toUriString();
+
+        log.debug("[{}] Resetting Content feeder pod {}, using {}", getTargetState().getContextForLogging(), pod.get().getMetadata().getName(), resetUrl);
+        result = this.executeWebRequest(pod, resetUrl);
+        if (result.exitCode != 0 || result.output == null || !result.output.contains("index was cleared")) {
+            throw new CustomResourceConfigError("Unable to stop content feeder on pod \"\": " + result.output);
+        }
     }
 }

@@ -17,8 +17,7 @@ import com.tsystemsmms.cmcc.cmccoperator.utils.SpringProperties;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.client.KubernetesClient;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public abstract class SpringBootComponent extends AbstractComponent {
 
@@ -30,6 +29,9 @@ public abstract class SpringBootComponent extends AbstractComponent {
   public EnvVarSet getEnvVars() {
     EnvVarSet env = super.getEnvVars();
     env.addAll(SpringProperties.builder().properties(getSpringBootProperties()).toEnvVars());
+    if (getCmcc().getSpec().getWith().getJsonLogging()) {
+      env.add(new EnvVarBuilder().withName("LOGGING_CONFIG").withValue("/coremedia/logging-config.xml").build());
+    }
     return env;
   }
 
@@ -42,6 +44,34 @@ public abstract class SpringBootComponent extends AbstractComponent {
     return new HashMap<>(Map.of(
             "management.health.probes.enabled", "true" // enable support for k8s compatible probe endpoints
     ));
+  }
+
+  @Override
+  public List<Volume> getVolumes() {
+    LinkedList<Volume> volumes = new LinkedList<>(super.getVolumes());
+    if (getCmcc().getSpec().getWith().getJsonLogging()) {
+      volumes.add(new VolumeBuilder()
+              .withName("logging-config")
+              .withConfigMap(new ConfigMapVolumeSourceBuilder()
+                      .withName("logging-config")
+                      .withOptional()
+                      .build())
+              .build());
+    }
+    return volumes;
+  }
+
+  @Override
+  public List<VolumeMount> getVolumeMounts() {
+    LinkedList<VolumeMount> volumes = new LinkedList<>(super.getVolumeMounts());
+    if (getCmcc().getSpec().getWith().getJsonLogging()) {
+      volumes.add(new VolumeMountBuilder()
+              .withName("logging-config")
+              .withMountPath("/coremedia/logging-config.xml")
+              .withSubPath("logback-spring.xml")
+              .build());
+    }
+    return volumes;
   }
 
   /**
@@ -69,10 +99,12 @@ public abstract class SpringBootComponent extends AbstractComponent {
    * @return probe definition
    */
   public Probe getStartupProbe() {
+    var interval = 10;
+    var timeout = Optional.ofNullable(getComponentSpec().getTimeouts().getStartup()).orElse(600);
     return new ProbeBuilder()
-            .withPeriodSeconds(10)
-            .withFailureThreshold(60)
-            .withTimeoutSeconds(10)
+            .withPeriodSeconds(interval)
+            .withTimeoutSeconds(interval)
+            .withFailureThreshold(timeout / interval)
             .withHttpGet(new HTTPGetActionBuilder()
                     .withPath("/actuator/health/readiness")
                     .withPort(new IntOrString("management"))
@@ -86,10 +118,12 @@ public abstract class SpringBootComponent extends AbstractComponent {
    * @return probe definition
    */
   public Probe getLivenessProbe() {
+    var interval = 10;
+    var timeout = Optional.ofNullable(getComponentSpec().getTimeouts().getLive()).orElse(200);
     return new ProbeBuilder()
-            .withPeriodSeconds(10)
-            .withFailureThreshold(20)
-            .withTimeoutSeconds(10)
+            .withPeriodSeconds(interval)
+            .withTimeoutSeconds(interval)
+            .withFailureThreshold(timeout / interval)
             .withHttpGet(new HTTPGetActionBuilder()
                     .withPath("/actuator/health/liveness")
                     .withPort(new IntOrString("management"))
@@ -103,10 +137,12 @@ public abstract class SpringBootComponent extends AbstractComponent {
    * @return probe definition
    */
   public Probe getReadinessProbe() {
+    var interval = 5;
+    var timeout = Optional.ofNullable(getComponentSpec().getTimeouts().getReady()).orElse(100);
     return new ProbeBuilder()
-            .withPeriodSeconds(10)
-            .withFailureThreshold(10)
-            .withTimeoutSeconds(10)
+            .withPeriodSeconds(interval)
+            .withTimeoutSeconds(interval)
+            .withFailureThreshold(timeout / interval)
             .withHttpGet(new HTTPGetActionBuilder()
                     .withPath("/actuator/health/readiness")
                     .withPort(new IntOrString("management"))

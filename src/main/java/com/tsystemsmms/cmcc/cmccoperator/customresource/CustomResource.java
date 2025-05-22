@@ -14,12 +14,12 @@ import com.tsystemsmms.cmcc.cmccoperator.crds.CoreMediaContentCloudSpec;
 import com.tsystemsmms.cmcc.cmccoperator.crds.CoreMediaContentCloudStatus;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 
-import static org.springframework.beans.BeanUtils.copyProperties;
-
 /**
  * Holds the custom resource. We need this abstraction to be able to either use the CRD or a ConfigMap.
  */
 public interface CustomResource {
+
+    String getVersion();
 
     String getApiVersion();
 

@@ -21,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 
 import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.EnvVarSimple;
 
@@ -83,9 +84,12 @@ public class BlobsComponent extends AbstractComponent implements HasService {
      * @return probe definition
      */
     public Probe getStartupProbe() {
+        var interval = 10;
+        var timeout = Optional.ofNullable(getComponentSpec().getTimeouts().getStartup()).orElse(300);
         return new ProbeBuilder()
-                .withPeriodSeconds(10)
-                .withFailureThreshold(30)
+                .withPeriodSeconds(interval)
+                .withTimeoutSeconds(interval)
+                .withFailureThreshold(timeout / interval)
                 .withHttpGet(new HTTPGetActionBuilder()
                         .withPath("/")
                         .withPort(new IntOrString("http"))

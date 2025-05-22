@@ -23,7 +23,7 @@ import java.util.*;
  */
 public class KubernetesUtils {
     // see https://github.com/fabric8io/kubernetes-client/issues/887#issuecomment-940988916
-    public static final List<Class<? extends HasMetadata>> ALL_KUBERNETES_RESOURCE_TYPES = Arrays.asList(
+    protected static final List<Class<? extends HasMetadata>> ALL_KUBERNETES_RESOURCE_TYPES = Arrays.asList(
             ConfigMap.class,
             Ingress.class,
             Job.class,
@@ -31,6 +31,15 @@ public class KubernetesUtils {
             Secret.class,
             Service.class,
             StatefulSet.class);
+
+    public static <T extends HasMetadata> List<T> getAllResourcesMatchingLabels(KubernetesClient kubernetesClient, String namespace, Map<String, String> labels, Class<T> resourceType) {
+        return kubernetesClient.resources(resourceType).inNamespace(namespace).withLabels(labels)
+                .list()
+                .getItems()
+                .stream()
+                .filter(resourceType::isInstance)
+                .toList();
+    }
 
     public static List<HasMetadata> getAllResourcesMatchingLabels(KubernetesClient kubernetesClient, String namespace, Map<String, String> labels) {
         List<HasMetadata> results = new LinkedList<>();
@@ -42,15 +51,16 @@ public class KubernetesUtils {
 
     public static boolean isMetadataEqual(HasMetadata a, HasMetadata b) {
         ObjectMeta am = a.getMetadata();
-        ObjectMeta bm = a.getMetadata();
+        ObjectMeta bm = b.getMetadata();
         return am.getNamespace().equals(bm.getNamespace())
                 && am.getName().equals(bm.getName())
                 && a.getKind().equals(b.getKind())
+                && am.getLabels().equals(bm.getLabels())
                 && a.getApiVersion().equals(b.getApiVersion());
     }
 
     public static boolean isMetadataUnequal(HasMetadata a, HasMetadata b) {
-        return isMetadataEqual(a, b);
+        return !isMetadataEqual(a, b);
     }
 
     public static boolean isMetadataContains(Collection<HasMetadata> c, HasMetadata b) {

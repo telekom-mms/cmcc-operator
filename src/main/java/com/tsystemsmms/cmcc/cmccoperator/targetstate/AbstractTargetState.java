@@ -12,19 +12,16 @@ package com.tsystemsmms.cmcc.cmccoperator.targetstate;
 
 import com.tsystemsmms.cmcc.cmccoperator.components.Component;
 import com.tsystemsmms.cmcc.cmccoperator.components.ComponentCollection;
+import com.tsystemsmms.cmcc.cmccoperator.components.ComponentState;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ClientSecretRef;
 import com.tsystemsmms.cmcc.cmccoperator.crds.Milestone;
-import com.tsystemsmms.cmcc.cmccoperator.crds.SiteMapping;
 import com.tsystemsmms.cmcc.cmccoperator.customresource.CustomResource;
 import com.tsystemsmms.cmcc.cmccoperator.ingress.UrlMappingBuilderFactory;
 import com.tsystemsmms.cmcc.cmccoperator.resource.ResourceReconcilerManager;
 import com.tsystemsmms.cmcc.cmccoperator.utils.RandomString;
-import com.tsystemsmms.cmcc.cmccoperator.utils.Utils;
 import com.tsystemsmms.cmcc.cmccoperator.utils.YamlMapper;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
-import io.fabric8.kubernetes.api.model.apps.StatefulSetStatus;
-import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -66,7 +63,7 @@ public abstract class AbstractTargetState implements TargetState {
 
   final Map<String, Map<String, ClientSecret>> clientSecrets = new HashMap<>();
 
-  public AbstractTargetState(BeanFactory beanFactory,
+  protected AbstractTargetState(BeanFactory beanFactory,
                              KubernetesClient kubernetesClient,
                              ResourceNamingProviderFactory resourceNamingProviderFactory,
                              ResourceReconcilerManager resourceReconcilerManager,
@@ -78,52 +75,76 @@ public abstract class AbstractTargetState implements TargetState {
     }
     this.kubernetesClient = kubernetesClient;
     this.cmcc = cmcc;
-    componentCollection = new ComponentCollection(beanFactory, kubernetesClient, this);
+    this.componentCollection = new ComponentCollection(beanFactory, kubernetesClient, this);
     this.resourceNamingProvider = resourceNamingProviderFactory.instance(this);
     this.resourceReconcilerManager = resourceReconcilerManager;
     this.urlMappingBuilderFactories = urlMappingBuilderFactories;
     this.yamlMapper = yamlMapper;
 
     String urlMapperName = getCmcc().getSpec().getDefaults().getManagementUrlMapper();
-    managementUrlMappingBuilderFactory = urlMappingBuilderFactories.get(urlMapperName);
-    if (managementUrlMappingBuilderFactory == null)
+    this.managementUrlMappingBuilderFactory = urlMappingBuilderFactories.get(urlMapperName);
+    if (managementUrlMappingBuilderFactory == null) {
       throw new CustomResourceConfigError("Unable to find URL Mapper \"" + urlMapperName + "\"");
-
+    }
   }
 
   /**
    * Check if all components are ready, and if so, advance to the next milestone.
    */
   public void advanceToNextMilestoneOnComponentsReady() {
-    int active = 0;
-    int ready = 0;
-    TreeSet<String> stillWaiting = new TreeSet<>();
+    int active = 0; // counting those, that are somehow relevant (sts should be deployed, particular state is ignored)
+    int sleeping = 0; // means: no problems, sts may still be scaled to 0
+    int ready = 0; // means: no problems, sts is scaled to > 1 and reached green state
+    TreeMap<String, ComponentState> stillWaiting = new TreeMap<>();
 
     for (Component component : componentCollection.getComponents()) {
-      if (component.isReady().isPresent()) {
+      var state = component.getState();
+      if (state.isRelevant()) {
         active++;
-        if (!component.isReady().get()) {
-          stillWaiting.add(component.getBaseResourceName());
+        if (state.isWaiting()) {
+          stillWaiting.put(component.getBaseResourceName(), state);
         } else {
-          ready++;
+          if (component.getCurrentReplicas() > 0) {
+            ready++;
+          } else {
+            sleeping++;
+          }
         }
       }
     }
-    if (ready == active) {
+    var sleepingString = sleeping > 0 ? " (+" + sleeping + " sleeping)" : "";
+    if (stillWaiting.size() == 0) {
       if (cmcc.getStatus().getMilestone() != cmcc.getStatus().getMilestone().getNext()) {
+        log.info("[{}] Waiting for components, {} ready{}: Advancing to milestone {}", getContextForLogging(),
+                ready,
+                sleepingString,
+                getCmcc().getStatus().getMilestone().getNext());
         cmcc.getStatus().setMilestone(cmcc.getStatus().getMilestone().getNext());
-        log.info("[{}] Waiting for components, all {} ready: Advancing to milestone {}", getContextForLogging(), active, getCmcc().getStatus().getMilestone());
       }
     } else {
       if (cmcc.getStatus().getMilestone() == Milestone.Ready) {
         log.info("We were ready, but now some components have become unavailable. Stepping back to {}", Milestone.Healing);
         cmcc.getStatus().setMilestone(Milestone.Healing);
       }
-      log.info("[{}] Waiting for components, {} of {} ready: still waiting for {}", getContextForLogging(),
+      var waitingEntries = stillWaiting.entrySet().stream().map(stringComponentStateEntry -> waitingEntryToString(stringComponentStateEntry)).toList();
+      log.info("[{}] Waiting for components, {} of {} ready{}: still waiting for {}", getContextForLogging(),
               ready,
-              active,
-              String.join(", ", stillWaiting));
+              active - sleeping,
+              sleepingString,
+              String.join(", ", waitingEntries));
     }
+  }
+
+  private static String waitingEntryToString(Map.Entry<String, ComponentState> entry) {
+    return  entry.getKey().toString() + ":" + switch(entry.getValue()) {
+      case Ready -> "✅";
+      case NotApplicable -> "❎";
+      case WaitingForDeployment -> "⌛📦";
+      case ResourceNeedsUpdate -> "⌛🔧";
+      case WaitingForShutdown -> "️⏳🛑";
+      case WaitingForReadiness -> "⏳✅";
+      case WaitingForCompletion -> "⌛✅";
+    };
   }
 
   @Override
@@ -136,14 +157,26 @@ public abstract class AbstractTargetState implements TargetState {
     Set<HasMetadata> changedResources = builtResources.stream().filter(r -> isMetadataContains(existingResources, r)).collect(Collectors.toSet());
     Set<HasMetadata> abandonedResources = existingResources.stream().filter(r -> !isMetadataContains(builtResources, r)).collect(Collectors.toSet());
 
-    log.debug("[{}] Updating dependent resources: {} new, {} updated, {} abandoned resources",
+    abandonedResources = abandonedResources.stream().filter(r -> mayBeRemoved(r, builtResources)).collect(Collectors.toSet());
+
+    log.debug("[{}] Updating dependent resources: {} new, {} updated, {} abandoned resources {}",
             getContextForLogging(),
-            newResources.size(), changedResources.size(), abandonedResources.size());
+            newResources.size(), changedResources.size(), abandonedResources.size(), abandonedResources.stream().map(x -> x.getMetadata().getName()).toList());
 
     abandonedResources.forEach(r -> getKubernetesClient().resource(r).withPropagationPolicy(DeletionPropagation.BACKGROUND).delete());
 
     KubernetesList list = new KubernetesListBuilder().withItems(builtResources).build();
     getResourceReconcilerManager().createPatchUpdate(getCmcc().getMetadata().getNamespace(), list);
+  }
+
+  private boolean mayBeRemoved(HasMetadata resource, List<HasMetadata> builtResources) {
+    if (resource instanceof PersistentVolumeClaim pvc &&
+            builtResources.stream().filter(StatefulSet.class::isInstance)
+              .anyMatch(x -> x.getMetadata().getLabels().equals(pvc.getMetadata().getLabels()))) {
+      return false;
+    }
+
+    return true;
   }
 
   @Override
@@ -159,7 +192,6 @@ public abstract class AbstractTargetState implements TargetState {
 
     resources.addAll(buildComponentResources());
     resources.addAll(buildExtraResources());
-    resources.addAll(buildIngressResources());
 
     return resources;
   }
@@ -209,7 +241,7 @@ public abstract class AbstractTargetState implements TargetState {
     advanceToNextMilestoneOnComponentsReady();
 
     if (!getCmcc().getStatus().getMilestone().equals(previousMilestone)) {
-      onMilestoneReached();
+      onMilestoneReached(previousMilestone);
     }
 
     return previousMilestone.equals(getCmcc().getStatus().getMilestone());
@@ -268,39 +300,10 @@ public abstract class AbstractTargetState implements TargetState {
     return resources;
   }
 
-  /**
-   * Build ingress resources.
-   *
-   * @return list of resources
-   */
-  public LinkedList<HasMetadata> buildIngressResources() {
-    final LinkedList<HasMetadata> resources = new LinkedList<>();
-
-    Optional<Component> previewCae = componentCollection.getOfTypeAndKind("cae", "preview");
-    if (previewCae.isPresent() && Milestone.compareTo(previewCae.get().getComponentSpec().getMilestone(), getCmcc().getStatus().getMilestone()) <= 0) {
-      resources.addAll(managementUrlMappingBuilderFactory.instance(this, getServiceNameFor("cae", "preview")).buildPreviewResources());
-    }
-
-    Optional<Component> liveCae = componentCollection.getOfTypeAndKind("cae", "live");
-    if (liveCae.isPresent() && Milestone.compareTo(liveCae.get().getComponentSpec().getMilestone(), getCmcc().getStatus().getMilestone()) <= 0) {
-      String defaultUrlMapperName = getCmcc().getSpec().getDefaults().getManagementUrlMapper();
-      for (SiteMapping siteMapping : getCmcc().getSpec().getSiteMappings()) {
-        String urlMapperName = Utils.defaultString(siteMapping.getUrlMapper(), defaultUrlMapperName);
-        UrlMappingBuilderFactory urlMappingBuilderFactory = urlMappingBuilderFactories.get(urlMapperName);
-        if (urlMappingBuilderFactory == null)
-          throw new CustomResourceConfigError("Unable to find URL Mapper \"" + urlMapperName + "\" for site mapping \"" + siteMapping + "\"");
-        resources.addAll(urlMappingBuilderFactory.instance(this, getServiceNameFor("cae", "live")).buildLiveResources(siteMapping));
-      }
-    }
-
-    return resources;
-  }
-
-
   @Override
   public String getContextForLogging() {
     return getCmcc().getMetadata().getNamespace() + "/"
-            + concatOptional(getCmcc().getSpec().getDefaults().getNamePrefix(), getCmcc().getMetadata().getName()
+            + concatOptional(getCmcc().getSpec().getDefaults().getNamePrefix(), getCmcc().getMetadata().getName(), getCmcc().getSpec().getDefaults().getNameSuffix()
             + "@" + getCmcc().getStatus().getMilestone());
   }
 
@@ -421,30 +424,6 @@ public abstract class AbstractTargetState implements TargetState {
     return getResourceMetadataFor(getResourceNameFor(component, additional));
   }
 
-
-  @Override
-  public boolean isJobReady(String name) {
-    Job job = kubernetesClient.batch().v1().jobs().inNamespace(cmcc.getMetadata().getNamespace()).withName(name).get();
-
-    if (job == null)
-      return false;
-
-    return job.getStatus() != null && job.getStatus().getSucceeded() != null && job.getStatus().getSucceeded() > 0;
-  }
-
-  @Override
-  public boolean isStatefulSetReady(String name) {
-    StatefulSet sts = kubernetesClient.apps().statefulSets().inNamespace(getCmcc().getMetadata().getNamespace()).withName(name).get();
-
-    if (sts == null)
-      return false;
-
-    StatefulSetStatus status = sts.getStatus();
-    if (status.getReplicas() == null || status.getReadyReplicas() == null)
-      return false;
-    return status.getReplicas() > 0 && status.getReadyReplicas().equals(status.getReplicas());
-  }
-
   @Override
   public boolean isWeOwnThis(HasMetadata resource) {
     OwnerReference us = getOurOwnerReference();
@@ -478,7 +457,7 @@ public abstract class AbstractTargetState implements TargetState {
   /**
    * Called when a new milestone has been reached.
    */
-  public void onMilestoneReached() {
+  public void onMilestoneReached(Milestone previousMilestone) {
   }
 
   /**

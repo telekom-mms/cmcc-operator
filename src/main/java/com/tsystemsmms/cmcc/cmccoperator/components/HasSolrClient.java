@@ -19,8 +19,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.EnvVarSimple;
-import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.concatOptional;
+import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.*;
 
 /**
  * A component that uses a Solr client to connect to a Solr server.
@@ -68,7 +67,6 @@ public interface HasSolrClient extends Component {
         return concatOptional(collection, server);
     }
 
-
     /**
      * Creates a set of environment variables suitable for this component.
      *
@@ -85,12 +83,24 @@ public interface HasSolrClient extends Component {
                     csr.toEnvVar("SOLR_URL", csr.getUrlKey()),
                     csr.toEnvVar("SOLR_" + component.toUpperCase() + "_COLLECTION", csr.getSchemaKey())
             ));
+            if (getTargetState().getCmcc().getSpec().getWith().isSolrBasicAuthEnabled()) {
+                env.addAll(List.of(
+                        EnvVarSimple("SOLR_USERNAME", "solr"),
+                        EnvVarSecret("SOLR_PASSWORD",  "solr-pw", "solr_pw")
+                ));
+            }
         } else {
             SolrCoordinates c = new SolrCoordinates(getSolrClientDefaultCollection(), getTargetState());
             env.addAll(List.of(
                     EnvVarSimple("SOLR_URL", c.url),
                     EnvVarSimple("SOLR_" + component.toUpperCase() + "_COLLECTION", c.collection)
             ));
+            if (getTargetState().getCmcc().getSpec().getWith().isSolrBasicAuthEnabled()) {
+                env.addAll(List.of(
+                        EnvVarSimple("SOLR_USERNAME", "solr"),
+                        EnvVarSecret("SOLR_PASSWORD",  "solr-pw", "solr_pw")
+                ));
+            }
         }
         return env;
     }

@@ -21,7 +21,7 @@ import org.springframework.beans.factory.BeanFactory;
 
 import java.util.*;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Manage a collection of components. Includes a factory method for components that uses the ComponentBeanFactories and the type from the ComponentSpec.
@@ -49,8 +49,9 @@ public class ComponentCollection {
     Component c = components.get(cr);
     if (c == null) {
       c = createComponentByComponentSpec(componentSpec);
-      if (componentSpec.getMilestone() == null)
-        componentSpec.setMilestone(Milestone.ManagementReady);
+      if (componentSpec.getMilestone() == null) {
+        c.getComponentSpec().setMilestone(Milestone.DeliveryServicesReady);
+      }
       components.put(cr, c);
     } else {
       c.updateComponentSpec(componentSpec);
@@ -65,6 +66,14 @@ public class ComponentCollection {
    */
   public void addAll(Collection<ComponentSpec> specs) {
     specs.forEach(this::add);
+  }
+
+  public Stream<Component> findAllOfType(String type) {
+    return components.values().stream().filter(c -> c.getComponentSpec().getType().equals(type));
+  }
+
+  public Stream<Component> findAllOfTypeAndKind(String type, String kind) {
+    return components.values().stream().filter(c -> c.getComponentSpec().getType().equals(type) && c.getComponentSpec().getKind().equals(kind));
   }
 
   public Optional<Component> getOfTypeAndKind(String type, String kind) {
@@ -94,8 +103,8 @@ public class ComponentCollection {
   @SuppressWarnings("unchecked")
   public <T> List<T> getAllImplementing(Class<T> clazz) {
     return (List<T>) components.values().stream()
-            .filter(c -> c.getClass().isAssignableFrom(clazz))
-            .collect(Collectors.toList());
+            .filter(clazz::isInstance)
+            .toList();
   }
 
   /**
@@ -138,8 +147,8 @@ public class ComponentCollection {
     Optional<Component> component = getComponents().stream().filter(p).findAny();
     if (component.isEmpty())
       throw new IllegalArgumentException("not found");
-    if (component.get() instanceof HasJdbcClient) {
-      return (HasJdbcClient) component.get();
+    if (component.get() instanceof HasJdbcClient hasJdbcClient) {
+      return hasJdbcClient;
     } else {
       throw new IllegalArgumentException("exists but does not implement HasService");
     }
@@ -158,8 +167,8 @@ public class ComponentCollection {
     Optional<Component> component = getComponents().stream().filter(p).findAny();
     if (component.isEmpty())
       throw new NoSuchComponentException(null, "not found");
-    if (component.get() instanceof HasService) {
-      return (HasService) component.get();
+    if (component.get() instanceof HasService hasService) {
+      return hasService;
     } else {
       throw new NoSuchComponentException(null, "exists but does not implement HasService");
     }
@@ -257,9 +266,9 @@ public class ComponentCollection {
 
   @Data
   public static class ComponentReference {
-    final private String type;
-    final private String kind;
-    final private String name;
+    private final String type;
+    private final String kind;
+    private final String name;
 
     public ComponentReference(ComponentSpec cs) {
       this.type = cs.getType();

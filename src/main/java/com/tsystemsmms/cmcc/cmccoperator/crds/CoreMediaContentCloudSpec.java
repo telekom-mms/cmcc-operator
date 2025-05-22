@@ -11,12 +11,18 @@
 package com.tsystemsmms.cmcc.cmccoperator.crds;
 
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
+import io.fabric8.generator.annotation.Default;
+import io.fabric8.kubernetes.api.model.IntOrString;
+import io.fabric8.kubernetes.model.annotation.SpecReplicas;
 import lombok.Data;
 
 import java.util.*;
 
 @Data
 public class CoreMediaContentCloudSpec {
+    @JsonPropertyDescription("The version of the whole CMCC system. Ideally semantic versioning.")
+    String version;
+
     @JsonPropertyDescription("An arbitrary comment; can be used to force an update to the object")
     String comment;
 
@@ -43,4 +49,12 @@ public class CoreMediaContentCloudSpec {
 
     @JsonPropertyDescription("Run this job component once from Ready")
     String job = "";
+
+    @SpecReplicas
+    @JsonPropertyDescription("Scaling property for the whole CMCC resource (usually # of CAEs)")
+    IntOrString scaling = new IntOrString(-1);
+
+    @JsonPropertyDescription("Target for the scaling property. Default CAE.")
+    @Default(value = "cae")
+    ScalingTarget scalingTarget = ScalingTarget.cae; // or headless
 }

@@ -19,14 +19,16 @@ import com.tsystemsmms.cmcc.cmccoperator.utils.EnvVarSet;
 import com.tsystemsmms.cmcc.cmccoperator.utils.Utils;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.Constructor;
 
 import java.util.LinkedList;
 import java.util.List;
 
+import static com.tsystemsmms.cmcc.cmccoperator.components.corba.ContentServerComponent.*;
+import static com.tsystemsmms.cmcc.cmccoperator.components.corba.ContentServerComponent.CONTENT_SERVER;
 import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.EnvVarSecret;
 import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.EnvVarSimple;
 
@@ -51,8 +53,13 @@ public class MgmtToolsJobComponent extends JobComponent implements HasUapiClient
     @Override
     public Component updateComponentSpec(ComponentSpec newCs) {
         super.updateComponentSpec(newCs);
-        if (importJob != null)
+        if (importJob != null) {
             importJob = getImportJobFromExtra();
+            activeDeadlineSeconds = importJob.getActiveDeadlineSeconds();
+        }
+
+        log.debug("[{}] Import job active deadline {} sec.", getTargetState().getContextForLogging(), activeDeadlineSeconds);
+
         return this;
     }
 
@@ -63,7 +70,7 @@ public class MgmtToolsJobComponent extends JobComponent implements HasUapiClient
         env.add(EnvVarSimple("JAVA_HEAP", ""));
         env.add(EnvVarSimple("JAVA_OPTS", getCmcc().getSpec().getDefaults().getJavaOpts()));
 
-        env.add(EnvVarSimple("CAP_CLIENT_SERVER_IOR_URL", getTargetState().getServiceUrlFor("content-server", "cms")));
+        env.add(EnvVarSimple("CAP_CLIENT_SERVER_IOR_URL", getTargetState().getServiceUrlFor(CONTENT_SERVER, KIND_CMS)));
         env.add(EnvVarSimple("DEV_MASTER_CAP_CLIENT_SERVER_IOR_URL", getTargetState().getServiceUrlFor("content-server", "mls")));
         env.add(EnvVarSimple("DEV_MANAGEMENT_CAP_CLIENT_SERVER_IOR_URL", getTargetState().getServiceUrlFor("content-server", "cms")));
 
@@ -121,6 +128,10 @@ public class MgmtToolsJobComponent extends JobComponent implements HasUapiClient
     public List<Volume> getVolumes() {
         LinkedList<Volume> volumes = new LinkedList<>(super.getVolumes());
 
+        if (getImportJob().isNoVolumes()) {
+            return volumes;
+        }
+
         if (!getImportJob().getContentUsersThemesPvc().isBlank()) {
             volumes.add(new VolumeBuilder()
                     .withName(CONTENT_USERS_FRONTEND_VOLUME)
@@ -149,6 +160,10 @@ public class MgmtToolsJobComponent extends JobComponent implements HasUapiClient
     public List<VolumeMount> getVolumeMounts() {
         LinkedList<VolumeMount> volumeMounts = new LinkedList<>(super.getVolumeMounts());
 
+        if (getImportJob().isNoVolumes()) {
+            return volumeMounts;
+        }
+
         if (!getImportJob().getContentUsersThemesPvc().isBlank()) {
             volumeMounts.add(new VolumeMountBuilder()
                     .withName(CONTENT_USERS_FRONTEND_VOLUME)
@@ -163,10 +178,6 @@ public class MgmtToolsJobComponent extends JobComponent implements HasUapiClient
                 .withName("coremedia-import")
                 .withMountPath("/coremedia/import")
                 .build());
-//        volumeMounts.add(new VolumeMountBuilder()
-//                .withName("coremedia-tools-properties")
-//                .withMountPath("/coremedia/tools/properties/corem")
-//                .build());
 
         return volumeMounts;
     }
@@ -182,7 +193,7 @@ public class MgmtToolsJobComponent extends JobComponent implements HasUapiClient
     }
 
     private ImportJob getImportJobFromExtra() {
-        Yaml yaml = new Yaml(new Constructor(ImportJob.class));
+        Yaml yaml = new Yaml(new Constructor(ImportJob.class, new LoaderOptions()));
         if (getComponentSpec().getExtra() == null || !getComponentSpec().getExtra().containsKey(EXTRA_CONFIG))
             throw new CustomResourceConfigError("Must specify " + EXTRA_CONFIG + " with job parameters for job \"" + getSpecName() + "\"");
         return yaml.load(getComponentSpec().getExtra().get(EXTRA_CONFIG));

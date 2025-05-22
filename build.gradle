@@ -1,10 +1,23 @@
-import java.nio.charset.StandardCharsets
+import io.fabric8.crdv2.generator.CRDGenerator
+import io.fabric8.crd.generator.collector.CustomResourceCollector
+import java.nio.file.Files
+import org.gradle.api.internal.tasks.JvmConstants;
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath("io.fabric8:crd-generator-api-v2:7.1.0")
+        classpath("io.fabric8:crd-generator-collector:7.1.0")
+    }
+}
 
 plugins {
-    id 'org.springframework.boot' version '2.7.18'
-    id 'io.spring.dependency-management' version '1.1.6'
+    id 'org.springframework.boot' version '3.4.4'
+    id 'io.spring.dependency-management' version '1.1.7'
     id 'java'
-    id 'com.google.cloud.tools.jib' version '3.4.3'
+    id 'com.google.cloud.tools.jib' version '3.4.5'
 }
 
 group = 'com.tsystemsmms'
@@ -31,49 +44,95 @@ compileJava {
 }
 
 dependencies {
-    implementation 'org.springframework.boot:spring-boot-starter:3.3.2'
-//    developmentOnly 'org.springframework.boot:spring-boot-devtools:3.2.0'
-    implementation 'org.springframework.boot:spring-boot-starter-actuator:3.3.2'
-    implementation 'org.springframework.boot:spring-boot-starter-web:3.3.2'
-    implementation 'io.javaoperatorsdk:operator-framework-spring-boot-starter:5.5.0'
-    implementation 'org.bouncycastle:bcpkix-jdk15on:1.70'
+    // developmentOnly 'org.springframework.boot:spring-boot-devtools:3.2.0'
+
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'io.javaoperatorsdk:operator-framework-spring-boot-starter:6.0.1'
+    implementation 'org.bouncycastle:bcpkix-jdk18on:1.80'
+
     // required for the fabric8 k8s client to grok k3d certificates
-    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor:3.3.2'
+    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+
+    // Lombok + CRD Generation
     compileOnly 'org.projectlombok:lombok'
     testCompileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
-    annotationProcessor 'io.fabric8:crd-generator-apt:6.13.1'
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.3'
+    compileOnly 'io.fabric8:crd-generator-apt:7.1.0'
+
+    // Test
+    testImplementation 'org.hamcrest:hamcrest'
+    testImplementation 'org.hamcrest:java-hamcrest:2.0.0.0'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.12.2'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-    testImplementation 'org.springframework.boot:spring-boot-starter-test:3.3.2'
-    testImplementation 'io.javaoperatorsdk:operator-framework-spring-boot-starter-test:5.5.0'
+    testImplementation 'io.javaoperatorsdk:operator-framework-spring-boot-starter-test:6.0.1'
 }
 
 tasks.named('test') {
     useJUnitPlatform()
 }
 
-task copyCrd(type: Copy) {
-    from('build/classes/java/main/META-INF/fabric8/coremediacontentclouds.cmcc.tsystemsmms.com-v1.yml') {
+def crdToCopy = copySpec {
+    from('build/resources/main/coremediacontentclouds.cmcc.tsystemsmms.com-v1.yml') {
         rename '.*', 'cmcc-crd.yaml'
     }
-    into 'k8s'
 }
 
-def updateHelmCharCrd = tasks.register('updateHelmCharCrd') {
-    inputs.files('build/classes/java/main/META-INF/fabric8/coremediacontentclouds.cmcc.tsystemsmms.com-v1.yml')
-    outputs.files('charts/cmcc-operator/templates/crd.yaml')
+// The following is a workaround for the missing gradle plugin in CRD generator V2
+// see https://github.com/fabric8io/kubernetes-client/blob/main/doc/CRD-generator.md
+// and https://github.com/fabric8io/kubernetes-client/blob/main/crd-generator/gradle/README.md
+tasks.register("generateCrds") {
+    description = "Generate CRDs from compiled custom resource classes"
+    group = "crd"
+
+    var sourceSet = project.sourceSets["main"]
+    var compileClasspathElements = sourceSet.compileClasspath.collect { it.absolutePath }
+
+    var outputClassesDirs = sourceSet.output.classesDirs
+    var classpathElements = outputClassesDirs.collect { it.absolutePath }
+    classpathElements.addAll(compileClasspathElements)
+
+    var filesToScan = (outputClassesDirs.toList()).flatten()
+    var outputDir = sourceSet.output.resourcesDir
+
     doLast {
-        outputs.files.singleFile.withOutputStream { out ->
-            out.write('{{- if .Values.cmcc.useCrd }}\n'.getBytes(StandardCharsets.UTF_8))
-            for ( file in inputs.files ) file.withInputStream { out << it << '\n' }
-            out.write('{{- end }}\n'.getBytes(StandardCharsets.UTF_8))
+        Files.createDirectories(outputDir.toPath())
+
+        var collector = new CustomResourceCollector()
+                .withParentClassLoader(Thread.currentThread().contextClassLoader)
+                .withClasspathElements(classpathElements)
+                .withFilesToScan(filesToScan)
+
+        var crdGenerator = new CRDGenerator()
+                .customResourceClasses(collector.findCustomResourceClasses())
+                .inOutputDir(outputDir)
+
+        var crdGenerationInfo = crdGenerator.detailedGenerate()
+
+        crdGenerationInfo.getCRDDetailsPerNameAndVersion()
+                .entrySet()
+                .forEach {
+                    println("Generated CRD $it.key:")
+                    it.value.entrySet().forEach { println(" $it.key -> ${it.value.filePath}") }
+                }
+    }
+}
+
+tasks.register("copyCrd") {
+    ['k8s', 'charts/cmcc-operator/crds', 'src/test/resources'].each { dest ->
+        copy {
+            with crdToCopy
+            into dest
         }
     }
 }
 
+tasks.named(JvmConstants.CLASSES_TASK_NAME) {
+    finalizedBy("generateCrds")
+}
+
+copyCrd.dependsOn(generateCrds)
 build.finalizedBy(copyCrd)
-build.finalizedBy(updateHelmCharCrd)
 
 if (hasProperty('buildScan')) {
     buildScan {

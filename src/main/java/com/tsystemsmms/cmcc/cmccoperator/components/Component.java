@@ -19,7 +19,6 @@ import io.fabric8.kubernetes.api.model.ObjectMeta;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 public interface Component {
   /**
@@ -104,6 +103,13 @@ public interface Component {
   Map<String, String> getSelectorLabels();
 
   /**
+   * The specification for the POD template of this component.
+   *
+   * @return the specification (including a cmcc version label if available)
+   */
+  Map<String, String> getPodLabels();
+
+  /**
    * Returns the target state this component is built from. Typically injected when the component is created.
    *
    * @return target state
@@ -118,14 +124,28 @@ public interface Component {
   boolean isBuildResources();
 
   /**
+   * For the statefulset of this component, how many replicas should be built?
+   * Should normally not be needed, instead see method below
+   *
+   * @return int number of replicas
+   */
+  int getReplicas();
+
+  /**
+   * For the statefulset of this component, how many replicas should be built *in this control loop* ?
+   * The component takes into consideration the current Milestone, active upgrade path, etc.
+   *
+   * @return int 1 or more if the component needs it (0 if not yet appropriate, i.e. due to the current milestone)
+   */
+  int getCurrentReplicas();
+
+  /**
    * Has this component started successfully? The target state might use this to decided when to move on to the next
    * milestone.
-   * <p>
-   * If the component is not active at the current milestone, return Optional.empty();
    *
    * @return true if component has started successfully
    */
-  Optional<Boolean> isReady();
+  ComponentState getState();
 
   /**
    * Called by the target state to trigger any callbacks to get references to required resource, like

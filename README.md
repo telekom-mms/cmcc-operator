@@ -74,6 +74,7 @@ The operator:
 * can create random passwords for all components and configures the components to use them (MariaDB, MongoDB, and
   UAPI/Corba). You can override any or all secrets for these usernames and password.
 * configures Solr clustering by specifying the number of replicas to create.
+* configures Solr BASIC Auth for solr leader, follower and clients if it is enabled.
 * configures zero or more Replication Live Servers to provide redundancy in the delivery/live stage.
 * supports CoreMedia Content Cloud 11.
 
@@ -105,16 +106,27 @@ In order for users to be able to access the CoreMedia websites, you will need to
 
 If you don't have a domain handy for a development setup, for example on your local machine, you can use a DNS service like [nip.io](https://nip.io) or [sslip.io](https://sslip.io). This allows you to configure `defaults.ingressDomain: 127.0.0.1.nip.io`.
 
-All host names are built from three components: the `defaults.namePrefix`, the component name/site mapping name, and the `defaults.ingressDomain`. See below for [Site Mappings](docs/custom-resource.md#site-mappings). Examples:
+All host names are built by the following components: 
+- `defaults.namePrefix`
+- `defaults.nameSuffix`
+- `defaults.namePrefixForIngressDomain`
+- `defaults.nameSuffixForIngressDomain`
+- the `defaults.ingressDomain`
 
-| namePrefix | component/site | ingressDomain    | Resulting URL                         |
-|------------|----------------|------------------|---------------------------------------|
-| –          | overview       | 127.0.0.1.nip.io | https://overview.127.0.0.1.nip.io     |
-| –          | studio         | 127.0.0.1.nip.io | https://studio.127.0.0.1.nip.io       |
-| –          | corporate      | 127.0.0.1.nip.io | https://corporate.127.0.0.1.nip.io    |
-| dev        | overview       | k8s.example.com  | https://dev-overview.k8s.example.com  |
-| dev        | studio         | k8s.example.com  | https://dev-studio.k8s.example.com    |
-| dev        | corporate      | k8s.example.com  | https://dev-corporate.k8s.example.com |
+As the `namePrefix` and the `nameSuffix` are used also for the container-names, what is not always wanted, it is possible to use `namePrefixForIngressDomain` and `nameSuffixForIngressDomain` instead. Both of them are only used to build the DNS name.
+
+If `namePrefix` and `namePrefixForIngressDomain` are used, `namePrefixForIngressDomain` overrides `namePrefix` to build the DNS name. But only the `namePrefix` and the `nameSuffix` are used to create the container name.  
+
+See below for [Site Mappings](docs/custom-resource.md#site-mappings). Examples:
+
+| namePrefix | namePrefixForIngressDomain | component/site | ingressDomain    | nameSuffix | nameSuffixForIngressDomain | Resulting URL                               |
+|------------|----------------------------|----------------|------------------|------------|----------------------------|---------------------------------------------|
+| –          | -                          | overview       | 127.0.0.1.nip.io | -          | -                          | https://overview.127.0.0.1.nip.io           |
+| –          | -                          | studio         | 127.0.0.1.nip.io | -          | -                          | https://studio.127.0.0.1.nip.io             |
+| –          | dev2                       | corporate      | 127.0.0.1.nip.io | -          | sb2                        | https://dev2-corporate-sb2.127.0.0.1.nip.io |
+| dev        | -                          | overview       | k8s.example.com  | sb         | -                          | https://dev-overview-sb.k8s.example.com     |
+| dev        | -                          | studio         | k8s.example.com  | sb         | -                          | https://dev-studio-sb.k8s.example.com       |
+| dev        | dev2                       | corporate      | k8s.example.com  | sb         | sb2                        | https://de2-corporate-sb2.k8s.example.com   |
 
 
 ### Using Docker Desktop
@@ -132,7 +144,7 @@ If you're using [k3d](https://k3d.io/) as a cluster, your Docker install will ne
 The [Helm chart cmcc-operator](charts/cmcc-operator) can be used to install and configure the operator.
 
 ```console
-$ helm repo add cmcc-operator https://telekom-mms.github.io/cmcc-operator/
+$ helm repo add cmcc-operator https://t-systems-mms.github.io/cmcc-operator/
 $ helm upgrade --install --create-namespace --namespace cmcc-operator cmcc-operator cmcc-operator/cmcc-operator
 ```
 
@@ -191,7 +203,7 @@ The license secrets need to be created in the same namespace you plan to install
 The [Helm chart cmcc](charts/cmcc) can be used to create a deployment for CoreMedia Content Cloud. See the documentation there for information on how to supply the necessary values to Helm.
 
 ````shell
-$ helm repo add cmcc-operator https://telekom-mms.github.io/cmcc-operator/
+$ helm repo add cmcc-operator https://t-systems-mms.github.io/cmcc-operator/
 $ helm upgrade --install my-release cmcc-operator/cmcc --values my-values.yaml
 ````
 

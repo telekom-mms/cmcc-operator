@@ -15,6 +15,7 @@ import com.tsystemsmms.cmcc.cmccoperator.crds.SiteMapping;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.Collection;
 import java.util.LinkedList;
@@ -22,6 +23,7 @@ import java.util.List;
 
 import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.concatOptional;
 import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.getInt;
+import static org.apache.commons.lang3.StringUtils.isEmpty;
 
 /**
  * Implements the URL rewriting for the standard Blueprint link scheme, where the site segment is always the first part
@@ -55,25 +57,44 @@ public class BlueprintUrlMappingBuilder extends AbstractUrlMappingBuilder {
     List<String> fqdns = new LinkedList<>(List.of(siteMapping.getFqdn()));
     fqdns.addAll(siteMapping.getFqdnAliases());
 
-    for (String fqdn : fqdns) {
+
+    for (int i = 0; i < fqdns.size(); i++) {
+      var fqdn = fqdns.get(i);
       if (fqdn.isBlank())
-        fqdn = concatOptional(getDefaults().getNamePrefix(), site) + "." + getDefaults().getIngressDomain();
-      ingresses.addAll(ingressBuilderFactory.builder(targetState, liveName(site, "home"), fqdn, tls)
-              .responseTimeout(responseTimeout)
-              .uploadSize(uploadSize)
-              .pathExact("/", serviceName).redirect("/" + siteMapping.getPrimarySegment()).build());
-      ingresses.addAll(ingressBuilderFactory.builder(targetState, liveName(site, "blueprint"), fqdn, tls)
+        fqdn = concatOptional(
+                isEmpty(getDefaults().getNamePrefixForIngressDomain()) ? getDefaults().getNamePrefix() : getDefaults().getNamePrefixForIngressDomain(),
+                site,
+                isEmpty(getDefaults().getNameSuffixForIngressDomain()) ? getDefaults().getNameSuffix() : getDefaults().getNameSuffixForIngressDomain()
+        ) + "." + getDefaults().getIngressDomain();
+
+      if (StringUtils.isEmpty(siteMapping.getPrimarySegment()) || !siteMapping.getPrimarySegmentRedirect()) {
+        log.debug("Skipping home page root ingress (primary segment: {})", siteMapping.getPrimarySegment());
+      } else {
+        ingresses.addAll(ingressBuilderFactory.builder(targetState, liveName(site, "home", (i > 0 ? ""+i : "")), fqdn, tls)
+                .responseTimeout(responseTimeout)
+                .uploadSize(uploadSize)
+                .pathExact("/", serviceName)
+                .redirect("/" + siteMapping.getPrimarySegment()).build());
+      }
+      ingresses.addAll(ingressBuilderFactory.builder(targetState, liveName(site, "blueprint", (i > 0 ? ""+i : "")), fqdn, tls)
               .responseTimeout(responseTimeout)
               .uploadSize(uploadSize)
               .pathPrefix("/blueprint", serviceName).build());
-      ingresses.addAll(ingressBuilderFactory.builder(targetState, liveName(site, "all"), fqdn, tls)
+      ingresses.addAll(ingressBuilderFactory.builder(targetState, liveName(site, "all", (i > 0 ? ""+i : "")), fqdn, tls)
               .responseTimeout(responseTimeout)
               .uploadSize(uploadSize)
-              .pathPattern("/(.*)", serviceName).rewrite("/blueprint/servlet/$1").build());
-      ingresses.addAll(ingressBuilderFactory.builder(targetState, liveName(site, "seo"), fqdn, tls)
-              .responseTimeout(responseTimeout)
-              .uploadSize(uploadSize)
-              .pathPattern("/(robots\\.txt|sitemap.*\\.xml)", serviceName).rewrite(getTargetState().getCmcc().getSpec().getWith().getIngressSeoHandler() + "/" + siteMapping.getPrimarySegment() + "/$1").build());
+              .pathPattern("/(.*)", serviceName)
+              .rewrite("/blueprint/servlet/$1").build());
+
+      if (StringUtils.isEmpty(siteMapping.getPrimarySegment())) {
+        log.debug("Skipping SEO ingress, primary segment empty");
+      } else {
+        ingresses.addAll(ingressBuilderFactory.builder(targetState, liveName(site, "seo", (i > 0 ? ""+i : "")), fqdn, tls)
+                .responseTimeout(responseTimeout)
+                .uploadSize(uploadSize)
+                .pathPattern("/(robots\\.txt|sitemap.*\\.xml)", serviceName)
+                .rewrite(getTargetState().getCmcc().getSpec().getWith().getIngressSeoHandler() + "/" + siteMapping.getPrimarySegment()).build());
+      }
     }
 
     return ingresses;
@@ -82,7 +103,11 @@ public class BlueprintUrlMappingBuilder extends AbstractUrlMappingBuilder {
   @Override
   public String buildLiveUrl(SiteMapping siteMapping, String segment) {
     String site = siteMapping.getHostname();
-    String fqdn = concatOptional(getDefaults().getNamePrefix(), site) + "." + getDefaults().getIngressDomain();
+    String fqdn = concatOptional(
+            isEmpty(getDefaults().getNamePrefixForIngressDomain()) ? getDefaults().getNamePrefix() : getDefaults().getNamePrefixForIngressDomain(),
+            site,
+            isEmpty(getDefaults().getNameSuffixForIngressDomain()) ? getDefaults().getNameSuffix() : getDefaults().getNameSuffixForIngressDomain()
+    ) + "." + getDefaults().getIngressDomain();
 
     if (!siteMapping.getFqdn().isBlank())
       fqdn = siteMapping.getFqdn();

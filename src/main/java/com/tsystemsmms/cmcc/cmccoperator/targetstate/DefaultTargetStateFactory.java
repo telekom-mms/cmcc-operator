@@ -17,19 +17,20 @@ import com.tsystemsmms.cmcc.cmccoperator.utils.YamlMapper;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import org.springframework.beans.factory.BeanFactory;
 
-import java.util.List;
 import java.util.Map;
+
+import static org.apache.commons.lang3.StringUtils.isEmpty;
 
 /**
  * Create a DefaultTargetState based on a CustomResource custom resource.
  */
 public class DefaultTargetStateFactory implements TargetStateFactory {
-    private final BeanFactory beanFactory;
-    private final KubernetesClient kubernetesClient;
-    private final ResourceNamingProviderFactory resourceNamingProviderFactory;
-    private final ResourceReconcilerManager resourceReconcilerManager;
-    private final Map<String, UrlMappingBuilderFactory> urlMappingBuilderFactories;
-    private final YamlMapper yamlMapper;
+    protected final BeanFactory beanFactory;
+    protected final KubernetesClient kubernetesClient;
+    protected final ResourceNamingProviderFactory resourceNamingProviderFactory;
+    protected final ResourceReconcilerManager resourceReconcilerManager;
+    protected final Map<String, UrlMappingBuilderFactory> urlMappingBuilderFactories;
+    protected final YamlMapper yamlMapper;
 
     public DefaultTargetStateFactory(BeanFactory beanFactory,
                                      KubernetesClient kubernetesClient,
@@ -47,6 +48,15 @@ public class DefaultTargetStateFactory implements TargetStateFactory {
 
     @Override
     public TargetState buildTargetState(CustomResource cmcc) {
+        if (!isEmpty(cmcc.getVersion())) {
+            return new VersioningTargetState(beanFactory,
+                    kubernetesClient,
+                    resourceNamingProviderFactory,
+                    resourceReconcilerManager,
+                    urlMappingBuilderFactories,
+                    yamlMapper,
+                    cmcc);
+        }
         return new DefaultTargetState(beanFactory,
                 kubernetesClient,
                 resourceNamingProviderFactory,

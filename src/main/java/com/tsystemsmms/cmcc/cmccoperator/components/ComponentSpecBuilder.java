@@ -31,7 +31,7 @@ public class ComponentSpecBuilder {
      */
     private ComponentSpecBuilder() {
         componentSpec = new ComponentSpec();
-        componentSpec.setMilestone(Milestone.ManagementReady);
+        componentSpec.setMilestone(Milestone.DeliveryServicesReady);
     }
 
     /**
