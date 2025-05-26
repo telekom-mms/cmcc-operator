@@ -2,6 +2,14 @@
 
 [![build](https://github.com/Telekom-MMS/cmcc-operator/actions/workflows/build.yml/badge.svg)](https://github.com/Telekom-MMS/cmcc-operator/actions/workflows/build.yml)
 
+
+**!!! ATTENTION - Version 2 - Breaking changes !!!**
+
+**Important** Since May 26, 2025 
+The new version V2 is incompatible with previous releases. Therefore we removed support for v1 CRD objects in this release. That means that in order to use the latest version of the operator you need to upgrade your existing CRDs to v2. The easiest way to do this is to uninstall (helm uninstall) all CMCCs, remove the CRD and to re-install your operator and CMCCs again.
+
+Find details on how to migrate (also how to migrate without redeployment) see [Migration Guide](migrateToV2).
+
 **Important** Since June 4, 2024, this repo has moved from T-Systems-MMS/cmcc-operator to Telekom-MMS/cmcc-operator. While Github will automatically redirect requests for the Git repo, the Helm repo URL has to be adjusted manually.
 
 In particular, you will need to update your Helm repo URL like this:
@@ -14,6 +22,7 @@ helm repo update
 
 [Kubernetes Operators](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) are specialized software packages that help manage applications and resources in a k8s cluster. This operator will create, initialize and run a [CoreMedia Content Cloud](https://www.coremedia.com) application. A custom resource definition is used to define all relevant parameters.
 
+
 ## Quick Links
 
 * [Helm chart cmcc-operator](charts/cmcc-operator) to install the operator
@@ -21,6 +30,7 @@ helm repo update
 * [Configuring provisioning through the CoreMediaContentClouds custom resource](docs/custom-resource.md): complete description of all options
 * [Installing the Operator](#preparing-your-cluster-and-installing-the-operator)
 * [Using the Operator to create a CoreMedia installation](#using-the-operator): quick start
+* [Zero-Downtime Deployments](docs/zero-downtime-deployments.md): What is that? How?
 * [Customizing the CMCC Operator](docs/customizing-the-operator.md): information for developers
 * [ghcr.io/telekom-mms/cmcc-operator/cmcc-operator](https://github.com/Telekom-MMS/cmcc-operator/pkgs/container/cmcc-operator%2Fcmcc-operator) Docker Image
 * [Cluster Roles and Rights](docs/cluster-roles.md) that the operator requires.
@@ -59,14 +69,14 @@ The operator:
 
 * manages the creation and updating of all the Kubernetes resources required to run CoreMedia Content Cloud. Care has
   been taken to have sensible defaults for all parameters wherever possible.
+* manages the "version upgrade" of a CMCC deployment ensuring a [Zero-Downtime Deployment](docs/zero-downtime-deployments.md)
 * can create a fresh installation from scratch, creating MariaDB and MongoDB database servers, and initialize the
   necessary database schemas and secrets, suitable for a development environment. For production, persistence should be
   provided, for example by using cloud services, or using other operators to provision databases.
 * can deploy against existing databases, using pre-existing secrets provided.
 * can use a custom resource definition or a config map to supply the values. This makes it possible to use the operator
   even on clusters where you cannot install cluster-wide resources.
-* deploys the CoreMedia Content Cloud components step by step. This ensures that components that require other
-  components are only started when the dependencies have been initialized successfully.
+* deploys the CoreMedia Content Cloud components step by step. This ensures that components that require other components are only started when the dependencies have been initialized successfully.
 * imports test users and contents initially.
 * run additional jobs, for example to re-import content into a running installation.
 * configures the live CAE deployment with the desired number of replicas.
@@ -76,12 +86,11 @@ The operator:
 * configures Solr clustering by specifying the number of replicas to create.
 * configures Solr BASIC Auth for solr leader, follower and clients if it is enabled.
 * configures zero or more Replication Live Servers to provide redundancy in the delivery/live stage.
-* supports CoreMedia Content Cloud 11.
+* supports CoreMedia Content Cloud 12.
 
 Planned features include:
 * Support for Traefik ingress controller and its resource types (in addition to the [kubernetes/ingress-nginx](https://github.com/kubernetes/ingress-nginx)).
 * Admission webhook that verifies consistency of the custom resource, and can migrate between CRD versions.
-* Configuring a horizontal pod autoscaler for the live CAEs.
 
 ## Preparing Your Cluster and Installing the Operator
 
