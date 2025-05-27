@@ -30,7 +30,7 @@ helm repo update
 * [Configuring provisioning through the CoreMediaContentClouds custom resource](docs/custom-resource.md): complete description of all options
 * [Installing the Operator](#preparing-your-cluster-and-installing-the-operator)
 * [Using the Operator to create a CoreMedia installation](#using-the-operator): quick start
-* [Zero-Downtime Deployments](docs/zero-downtime-deployments.md): What is that? How?
+* [Upgrade-Path / Zero-Downtime Deployments](docs/upgrade-path.md): What is that? How?
 * [Customizing the CMCC Operator](docs/customizing-the-operator.md): information for developers
 * [ghcr.io/telekom-mms/cmcc-operator/cmcc-operator](https://github.com/Telekom-MMS/cmcc-operator/pkgs/container/cmcc-operator%2Fcmcc-operator) Docker Image
 * [Cluster Roles and Rights](docs/cluster-roles.md) that the operator requires.

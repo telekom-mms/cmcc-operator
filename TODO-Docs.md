@@ -1,0 +1,18 @@
+ToDo in docs
+ - Scaling
+   - RLS coupling to CAE/Headless
+   - Autoscaling
+ - Milestones
+ - Mongo DB 6
+ - Feeder Reset
+ - Custom Resource
+   - Status Properties
+   - RLS Extra Code Blueprint: no
+ - Components
+   - Affinities
+   - Restart CMS/MLS
+   - Mongo DB
+   - JSON Logging
+   - Headless
+   - Solr kind
+   - Probes

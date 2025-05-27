@@ -61,17 +61,22 @@ installation to be deployed. This document explains all properties and their use
 
 The `status` property of the custom resource has these fields:
 
-| Property         | Type   | Description                                                            |
-|------------------|--------|------------------------------------------------------------------------|
-| `milestone`      | enum   | Which milestone has been reached in configuring all components         |
-| `error`          | String | A one-line error message, or empty string                              |
-| `errorMessage`   | String | A longer error message (if any)                                        |
-| `job`            | String | The name of the job component currently executing, or an empty string. |
-| `ownedResources` | String | Used internally by the operator to keep track of created resources.    |
+| Property          | Type   | Overview | Description                                                                |
+|-------------------|--------|----------|----------------------------------------------------------------------------|
+| `milestone`       | enum   | yes      | Which milestone has been reached in configuring all components             |
+| `currentVersion`  | String | yes      | A string denoting the currently running "version" of the CMCC instance     |
+| `targetVersion`   | String |          | A "version" of the CMCC instance that it is currently upgrading to         |
+| `error`           | String | yes      | A one-line error message, or empty string                                  |
+| `errorMessage`    | String |          | A longer error message (if any)                                            |
+| `job`             | String |          | The name of the job component currently executing, or an empty string      |
+| `scaling`         | int    |          | Used internally by the operator to keep track of the current scaling value |
+| `scalingMessage`  | String | yes      | Textual representation of current scaling setup                            |
+| `scalingSelector` | String |          | Used internally to indicate the labels targeted by autoscaler metrics      |
 
 The `milestone` status column shows the creation status of the installation:
 
-1. `Created`: The initial databases are being created (if requested by `with.databases`)
+1. `DeploymentStarted`: The deployment has just started. If it is the first time then initial databases are being 
+   created (if requested by `with.databases`). Otherwise, it is a version upgrade run (see [Upgrade Path](upgrade-path.md)). 
 2. `DatabasesReady`: The databases are running, all schemas have been created. The core management components are being
    started (CMS, MLS).
 3. `ContentserverInitialized`: The Content Management Server and the Master Live Server have started for the first time.
@@ -80,11 +85,13 @@ The `milestone` status column shows the creation status of the installation:
 4. `ContentserverReady`: The Content Management Server and the Master Live Server are running.
 5. `ManagementReady`: The core management components are running. All remaining component are being started, including
    the content import.
-6. `Ready`: The content import has completed, all components are up and running.
-7. `Healing`: The milestone was `Ready`, but at least one of the components became unhealthy. Once all components are
+6. `DeliveryServicesReady`: The necessary services for frontend (RLS, Solr Followers, Live Feeders, etc.) are running. 
+   All remaining components are being started, i.e. CAEs, Headless.
+7. `Ready`: The content import has completed, all components are up and running.
+8. `Healing`: The milestone was `Ready`, but at least one of the components became unhealthy. Once all components are
    running again, the milestone will become `Ready` again.
-8. `RunJob`: a job is currently executing. The milestone will reach `Ready` again after it has finished.
-9. `Never`: Special state that will never be reached, can be used on components to define them, but have the operator
+9. `RunJob`: a job is currently executing. The milestone will reach `Ready` again after it has finished.
+10. `Never`: Special state that will never be reached, can be used on components to define them, but have the operator
    never create the resources for them. See below [Running Additional Jobs](#running-additional-jobs).
 
 ## Custom Resource Properties Specification
@@ -193,13 +200,9 @@ operator currently cannot create additional database schemas for any new RLS, an
 the Master Live Server to any new RLS. If you want to increase the number of RLS after initial setup, you would need to
 take care of that manually.
 
-**Note**: to enable this functionality, code will need to be added to the apps/content-server component in your
-Blueprint workspace that pick the correct database properties from the list of all properties based on the stateful set
-index. An example will be provided in a separate repository.
-
-**Future functionality**: When `with.delivery.minCae` is set to a value smaller than `with.delivery.maxCae`, a
-horizontal pod autoscaler will be configured that will scale the number of CAEs from the minimum to the maximum amount
-based on the CPU load of the CAEs.
+**Note**: When `with.delivery.minCae` is set to a value smaller than `with.delivery.maxCae`, a
+horizontal pod autoscaler can be configured that will scale the number of CAEs from the minimum to the maximum amount
+based on the CPU load of the CAEs. See [Scaling](scaling.md) for details.
 
 #### Example: development setup with one Live CAE
 
@@ -210,10 +213,13 @@ connected to the Master Live Server.
 
 `with.delivery.rls=2`, `with.delivery.minCae=2`, `with.delivery.maxCae=0` will create two RLS and two CAEs.
 
-#### Example: two RLS with auto scaling (future functionality)
+#### Example: two RLS with auto scaling
 
 `with.delivery.rls=2`, `with.delivery.minCae=1`, `with.delivery.maxCae=10` will create two RLS and one CAE. A horizontal
 pod autoscaler will be set up that will scale the number of CAEs to up to 10.
+
+**BEWARE:** The operator will always distribute the CAEs evenly on all available RLSs. At a certain point it may make 
+be necessary to provide more RLSs in order for the CAEs to work properly. 
 
 ### Management Components `with.management`
 
@@ -996,11 +1002,16 @@ to run on port 80; the environment variable NGINX_PORT is set to enable that.
 
 ### Component `solr`
 
-#### Leaders and Followers
+The CAE type has two kinds: `leader` and `follower`.
 
-The Solr component creates one or more Solr instances, controlled by the `extra.replicas` property.
-With `extra.replicas=1`, a single Solr leader instance is created. With `extra.replicas=2` or higher, one or more
-follower instances are created that replicate the leader automatically.
+#### Leader
+
+The Solr leader component creates one instance only, it should not be configured to more than 1 
+by the `extra.replicas` property.
+
+#### Follower
+
+The Solr follower component creates one or more Solr instances, controlled by the `extra.replicas` property.
 
 #### Cores in the Followers
 
@@ -1026,9 +1037,11 @@ appropriate Solr config in your Solr image. The operator has one default entry `
 
 The operator creates two services for Solr:
 
-* `solr-follower`, which maps to the leader and all followers, suitable for any component that only wants to query the
-  index, and
+* `solr-follower`, which maps to all followers, suitable for any component that only wants to query the index, and
 * `solr-leader` that maps to just the leader, suitable for components that need to update an index.
+
+**Note:** The follower service may have a version suffix (if version is set on the CMCC). During an upgrade there may
+be two services connecting to a follower matching the denoted version.
 
 ### Component `studio-client`
 
