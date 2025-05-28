@@ -8,6 +8,11 @@
 **Important** Since May 26, 2025 
 The new version V2 is incompatible with previous releases. Therefore we removed support for v1 CRD objects in this release. That means that in order to use the latest version of the operator you need to upgrade your existing CRDs to v2. The easiest way to do this is to uninstall (helm uninstall) all CMCCs, remove the CRD and to re-install your operator and CMCCs again.
 
+Please also note that in terms of CRD handling we switched to the HELM 3 approach with these consequences
+- CRD files are now located in the subdirectory `crds` of a chart
+- CRDs are deployed together with the operator ONLY when there does not yet exist a similarly named CRD
+- Therefore, CRDs are NOT UPDATED when the operator is upgraded (even when deployed with `helm upgrade`)
+
 Find details on how to migrate (also how to migrate without redeployment) see [Migration Guide](migrateToV2).
 
 **Important** Since June 4, 2024, this repo has moved from T-Systems-MMS/cmcc-operator to Telekom-MMS/cmcc-operator. While Github will automatically redirect requests for the Git repo, the Helm repo URL has to be adjusted manually.
