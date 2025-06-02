@@ -142,11 +142,15 @@ properties have suitable defaults.
 | `with.delivery.rls`                   | int                  | 0                                                 | Number of Replication Live Servers to create                                                                                                                                                                               |
 | `with.delivery.minCae`                | int                  | 0                                                 | Minimum number of CAEs                                                                                                                                                                                                     |
 | `with.delivery.maxCae`                | int                  | 0                                                 | Maximum number of CAEs                                                                                                                                                                                                     |
+| `with.delivery.minHeadless`           | int                  | 0                                                 | Minimum number of Headless replicas                                                                                                                                                                                        |
+| `with.delivery.maxHeadless`           | int                  | 0                                                 | Maximum number of Headless replicas                                                                                                                                                                                        |
 | `with.handlerPrefixes`                | list of Strings      | resource, service-sitemap-.*, static              | URI prefixes that are not content paths but paths mapping to a handler.                                                                                                                                                    |
 | `with.ingressAnnotations`             | map                  | –                                                 | Additional annotation to add to all Ingress resources                                                                                                                                                                      |
 | `with.ingressSeoHandler`              | String               | `/blueprint/servlet/service/robots`               | Path to handler that will receive requests for `robots.txt` and `sitemap.xml`.                                                                                                                                             |
+| `with.jsonLogging`                    | boolean              | false                                             | Activate JSON logging. Only for supported components.                                                                                                                                                                      |
 | `with.management`                     | boolean              | true                                              | Create all components required for a CoreMedia management stage                                                                                                                                                            |
 | `with.resources`                      | boolean              | true                                              | Apply resource limits and requests to all components. Also see `defaults.resources` and [Components](#components)                                                                                                          |
+| `with.restartContentServer`           | boolean              | true                                              | Do restart CMS/MLS when reaching Milestone ContentServerReady.                                                                                                                                                             |
 | `with.solrBasicAuthEnabled`           | boolean              | false                                             | If Solr Basic authentication is enabled                                                                                                                                                                                    |
 | `with.responseTimeout`                | object               |                                                   | Time in seconds the Ingress controller waits for the response from the backend                                                                                                                                             |
 | `with.responseTimeout.live`           | integer              | 60                                                | Time in seconds the Ingress controller waits for the response from the Live CAEs                                                                                                                                           |
@@ -220,6 +224,11 @@ pod autoscaler will be set up that will scale the number of CAEs to up to 10.
 
 **BEWARE:** The operator will always distribute the CAEs evenly on all available RLSs. At a certain point it may make 
 be necessary to provide more RLSs in order for the CAEs to work properly. 
+
+### JSON Logging `with.jsonLogging`
+
+Structured logging is getting more and more adopted. You can activate JSON logging for most of the components by setting 
+this field to `true`. It will be applied for all Spring Boot and Solr components.
 
 ### Management Components `with.management`
 
@@ -495,6 +504,43 @@ clientSecretRef:
       passwordKey: password
 ...
 ```
+
+## Affinities `affinites`
+
+For the general concept see (K8s docu)[https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/].
+
+Every component can be configured with custom affinity rules. The field `affinity` has the same format as the corresponding Pod spec field `affinity`. It can therefore contain both `podAffinity` and `podAntiAffinity` rules.
+
+There is also the `with` option `.spec.with.defaultAffinityRules` that applies some very simple and rudimentary default affinities (by default with scope `kubernetes.io/hostname`) as follows:
+ - CMS
+   - attracted to MLS and MySQL
+ - MLS
+   - attracted to CMS
+ - RLS 
+   - repelling other RLSs instances
+   - repelling MLS
+   - repelling CMS
+ - CAE Feeder
+   - attracted to Solr Leader
+   - Preview: attracted to CMS
+   - Live: attracted to MLS
+ - Content Feeder
+   - attracted to CMS
+   - attracted to Solr Leader
+ - Live CAE / Headless
+   - repelling CMS
+ - Solr
+   - repelling other Solr instances
+
+Usually you will want to define more complex rules suitable for your specific setup.
+
+## Timeouts / Probes `timeouts`
+
+The field `timeouts` allows for defining the Probe timeouts for any component. The timeout for the 3 different probes 
+(`readiness`, `startup` and `liveness`) can be set here. 
+
+Internally the parameters`period` (interval between probe runs) and `timeout` (this is the timeout for a single probe 
+run) is 10s (5s for Readiness). The k8s parameter `failureThreshold` is calculated (timeout divided by interval).
 
 ## Running Additional Jobs
 
@@ -909,6 +955,14 @@ names yourself.
 
 The database names are `management`, `master`, and `replication`.
 
+By default the CMS/MLS are restarted right after the initcms Import Job run has finished (when Milestone ContentServerReady has been reached). You can disable this behaviour with the spec-property `with.restartContentServer=false`.
+
+### Component `headless`
+
+This component behaves quite similar to the CAE component. It has two kinds: `preview` and `live`. The default image as well as the name are `headless-preview` and `headless-live`, respectively.
+
+The Solr collection is `preview` and `live`, respectively.
+
 ### Component `management-tools-cron`
 
 Add this type of component to run management tools commands regularly. You specify which of the scripts to run with `args`, and when to run them with `cron` and `timezone`.
@@ -988,7 +1042,9 @@ beforehand. Most of its base configuration can be set in the component's `extra`
 ### Component `mongodb`
 
 If `with.databases` is enabled, the operator creates a MongoDB instance and the necessary secrets for the components to
-access it.
+access it. 
+
+It defaults to a version 6 or higher. If you need to work with Mongo DB 5 you need to set within the field `extra` of the mongodb component: `version: 5.0`
 
 ### Component `mysql`
 
@@ -1006,8 +1062,7 @@ The CAE type has two kinds: `leader` and `follower`.
 
 #### Leader
 
-The Solr leader component creates one instance only, it should not be configured to more than 1 
-by the `extra.replicas` property.
+The Solr leader component creates one instance only, it should not be configured to more than 1 by the `extra.replicas` property.
 
 #### Follower
 

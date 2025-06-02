@@ -39,6 +39,13 @@ stateDiagram-v2
 ```
 (for this diagram to work in IntelliJ, install [this](https://www.jetbrains.com/guide/go/tips/mermaid-js-support-in-markdown/))
 
+## Feeder "Generation"
+
+Every feeder component has a field "generation" which denotes the idea of a version of the index structure. As soon as
+this field changes the Operator will mark that Feeder to be reset / re-indexed.
+
+That allows to distinguish between deployments the do / do NOT need a feeder reset. See [Best Practices](#best-practices) below.
+
 ## Zero-Downtime-Deployments
 
 **Note:** This feature only works when working with at least 2 RLS instances and at least 2 CAE instances. See [Scaling](scaling.md) for details.
@@ -66,6 +73,52 @@ stateDiagram-v2
     DeliveryServicesReady --> Ready : Upgrade CAE/Headless<br/>Keep CAEs/Headless connected to RLS #0 untouched
     Ready --> Healing : Upgrade<br/> remaining RLS,<br/>Solr-Follower and<br/> CAE/Headless
     Healing --> Ready : Upgrade finished<br/>Set "currentVersion"<br/>Clear "targetVersion"
-
 ```
 (for this diagram to work in IntelliJ, install [this](https://www.jetbrains.com/guide/go/tips/mermaid-js-support-in-markdown/))
+
+# Best Practices
+
+## Keep current version by default
+
+It has proven valuable to have your deployment pipeline jobs **keep the current version** by default. 
+
+That avoids accidentally switching away from versioning (effectively disabling Upgrade-path) or re-deploying all 
+components causing unwanted downtimes.
+
+Approach:
+ - In every deployment: Use the given version string OR determine the currently running version as a fallback
+
+Example: The following script ensures that the env variable CMCC_VERSION always has such a "correct" value
+```shell
+  export CMCC_VERSION=${CMCC_VERSION:=$(kubectl get cmcc $RELEASE_NAME -n $NAMESPACE -o jsonpath="{.spec.version}")}
+  echo CMCC_VERSION=${CMCC_VERSION}
+```
+Afterwards you can use that variable in the command line that is running your HELM deployment. This way you make sure
+that **every deployment run** has a version.
+
+Example:
+```shell
+helm upgrade --install my-release cmcc-operator/cmcc --values my-values.yaml --set cmcc-version=${CMCC_VERSION}
+```
+
+## Keep the feeder generation by default
+
+This is the same idea as the "version" above. Make sure you keep the current generation value for all feeders unless
+explicitly specified otherwise.
+
+Example: The following script ensures that all Feeder Generation the env variables have a "correct" value
+```shell
+  - export STUDIO_FEEDER_GENERATION=${STUDIO_FEEDER_GENERATION:=$(kubectl get cmcc $RELEASE_NAME -n $NAMESPACE -o jsonpath="{.spec.components[?(@.type == 'content-feeder')].extra.generation}")}
+  - echo STUDIO_FEEDER_GENERATION=${STUDIO_FEEDER_GENERATION}
+  - export PREVIEW_FEEDER_GENERATION=${PREVIEW_FEEDER_GENERATION:=$(kubectl get cmcc $RELEASE_NAME -n $NAMESPACE -o jsonpath="{.spec}" | jq -r '.components[] | select(.type == "cae-feeder" and .kind == "preview" and .name != "bas-feeder") | .extra.generation // ""')}
+  - echo PREVIEW_FEEDER_GENERATION=${PREVIEW_FEEDER_GENERATION}
+  - export LIVE_FEEDER_GENERATION=${LIVE_FEEDER_GENERATION:=$(kubectl get cmcc $RELEASE_NAME -n $NAMESPACE -o jsonpath="{.spec}" | jq -r '.components[] | select(.type == "cae-feeder" and .kind == "live" and .name != "bas-feeder") | .extra.generation // ""')}
+  - echo LIVE_FEEDER_GENERATION=${LIVE_FEEDER_GENERATION}
+```
+Afterwards you can use these variables in the command line that is running your HELM deployment. This way you make sure
+that **every deployment run** has all the Feeder Generations set.
+
+Example:
+```shell
+helm upgrade --install my-release cmcc-operator/cmcc --values my-values.yaml --set barmerCmcc.studioFeederGeneration=${STUDIO_FEEDER_GENERATION} --set barmerCmcc.previewFeederGeneration=${PREVIEW_FEEDER_GENERATION} --set barmerCmcc.basFeederGeneration=${LIVE_FEEDER_GENERATION}
+```

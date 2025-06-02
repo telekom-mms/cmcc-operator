@@ -8,6 +8,14 @@
 **Important** Since May 26, 2025 
 The new version V2 is incompatible with previous releases. Therefore we removed support for v1 CRD objects in this release. That means that in order to use the latest version of the operator you need to upgrade your existing CRDs to v2. The easiest way to do this is to uninstall (helm uninstall) all CMCCs, remove the CRD and to re-install your operator and CMCCs again.
 
+Important changes:
+ - Versioning and [Upgrade path](docs/upgrade-path.md)
+ - [Scaling](docs/scaling.md)
+ - Mongo DB 7 (as default)
+ - JSON - structured logging
+ - Headless components
+ - Several additional 
+
 Please also note that in terms of CRD handling we switched to the HELM 3 approach with these consequences
 - CRD files are now located in the subdirectory `crds` of a chart
 - CRDs are deployed together with the operator ONLY when there does not yet exist a similarly named CRD

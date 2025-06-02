@@ -56,7 +56,7 @@ These steps ensure that all owner references and other related data are referrin
 
 ##### owner references
 
-In order to list and fix all owner references install [kubectl-check-ownerreferences](https://github.com/kubernetes-sigs/kubectl-check-ownerreferences) on your local machine. It allows finding "invalid" owner references.
+In order to list and fix all owner references installed [kubectl-check-ownerreferences](https://github.com/kubernetes-sigs/kubectl-check-ownerreferences) on your local machine. It allows finding "invalid" owner references.
 
 In order to fix the owner references go into the directory of this README (or make sure you have the file `./fix-owners.sh` in your current PATH) and do this:
 
