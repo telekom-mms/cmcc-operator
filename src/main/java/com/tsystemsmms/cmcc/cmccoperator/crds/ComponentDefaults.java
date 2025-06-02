@@ -91,7 +91,7 @@ public class ComponentDefaults {
     private String studioHostname = "studio";
 
     @JsonPropertyDescription("Default topology string to be used for PodAffinity rules")
-    private String affinityTopology = "affinityTopology";
+    private String affinityTopology = "kubernetes.io/hostname";
 
     @JsonPropertyDescription("List of servlets the CAE serves")
     private List<String> servletNames = List.of("action", "assets", "blob", "dynamic", "preview", "resource", "service", "static");
