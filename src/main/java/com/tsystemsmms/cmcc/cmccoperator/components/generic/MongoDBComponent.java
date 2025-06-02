@@ -96,13 +96,13 @@ public class MongoDBComponent extends AbstractComponent implements HasService {
                 .withSuccessThreshold(1)
                 .withTimeoutSeconds(5);
 
-        if (isMongo6()) {
+        if (isMongo5()) {
             result.withExec(new ExecActionBuilder()
-                    .withCommand("bash", "-ec", "mongosh $TLS_OPTIONS --eval 'db.hello().isWritablePrimary || db.hello().secondary' | grep -q 'true'")
+                    .withCommand("bash", "-ec", "mongo --disableImplicitSessions $TLS_OPTIONS --eval 'db.hello().isWritablePrimary || db.hello().secondary' | grep -q 'true'")
                     .build());
         } else {
             result.withExec(new ExecActionBuilder()
-                    .withCommand("bash", "-ec", "mongo --disableImplicitSessions $TLS_OPTIONS --eval 'db.hello().isWritablePrimary || db.hello().secondary' | grep -q 'true'")
+                    .withCommand("bash", "-ec", "mongosh $TLS_OPTIONS --eval 'db.hello().isWritablePrimary || db.hello().secondary' | grep -q 'true'")
                     .build());
         }
 
@@ -118,13 +118,13 @@ public class MongoDBComponent extends AbstractComponent implements HasService {
                 .withSuccessThreshold(1)
                 .withTimeoutSeconds(5);
 
-        if (isMongo6()) {
+        if (isMongo5()) {
             result.withExec(new ExecActionBuilder()
-                    .withCommand("/bin/bash", "-ec", "mongosh --quiet \"$(hostname --ip-address || echo '127.0.0.1')/test\" --eval 'quit(db.runCommand({ ping: 1 }).ok ? 0 : 2)' || exit 1")
+                    .withCommand("mongo", "--disableImplicitSessions", "--eval", "db.adminCommand('ping')")
                     .build());
         } else {
             result.withExec(new ExecActionBuilder()
-                    .withCommand("mongo", "--disableImplicitSessions", "--eval", "db.adminCommand('ping')")
+                    .withCommand("/bin/bash", "-ec", "mongosh --quiet \"$(hostname --ip-address || echo '127.0.0.1')/test\" --eval 'quit(db.runCommand({ ping: 1 }).ok ? 0 : 2)' || exit 1")
                     .build());
         }
 
@@ -138,7 +138,7 @@ public class MongoDBComponent extends AbstractComponent implements HasService {
 
     @Override
     public ImageSpec getDefaultImage() {
-        return new ImageSpec("docker.io/library/mongo:5.0");
+        return new ImageSpec("docker.io/library/mongo:7.0");
     }
 
     @Override
@@ -205,9 +205,9 @@ public class MongoDBComponent extends AbstractComponent implements HasService {
                 .build());
     }
 
-    boolean isMongo6() {
+    boolean isMongo5() {
         var version = getComponentSpec().getExtra().get("version");
-        return !StringUtils.isEmpty(version) && version.equals("6.0");
+        return !StringUtils.isEmpty(version) && version.equals("5.0");
     }
 
     public static Map<String, String> createUsersFromClientSecrets(TargetState targetState) {
@@ -234,11 +234,6 @@ public class MongoDBComponent extends AbstractComponent implements HasService {
             if (MONGODB_ROOT_USERNAME.equals(data.get(DEFAULT_USERNAME_KEY)))
                 continue;
             // we would like to give client only rights to a specific database, but CM requires the right to create multiple databases (or somehow know which DBs will be created; the list is undocumented, however.
-//            createUsersJs.append(format("db = db.getSiblingDB('{}');\ndb.createUser({user: '{}', pwd: '{}', roles: ['readWrite', 'dbAdmin']});\n",
-//                    data.get(DEFAULT_SCHEMA_KEY),
-//                    data.get(DEFAULT_USERNAME_KEY),
-//                    data.get(DEFAULT_PASSWORD_KEY)
-//            ));
             createUsersJs.append(format("db.createUser({user: '{}', pwd: '{}', roles: ['root']});\n",
                     data.get(DEFAULT_USERNAME_KEY),
                     data.get(DEFAULT_PASSWORD_KEY)
