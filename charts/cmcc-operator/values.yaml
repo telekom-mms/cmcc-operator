@@ -10,12 +10,24 @@ cmcc:
   # Watch for CoreMediaContentClouds custom resources to control deployment of CoreMedia instances. Also controls if
   # the CRD is installed.
   useCrd: true
+  # Configure the Operator to log in json format
+  jsonLogging: false
+  scope:
+    namespace:
+      include: []
+      exclude: []
 
 image:
   repository: ghcr.io/telekom-mms/cmcc-operator/cmcc-operator
   pullPolicy: IfNotPresent
-  # Overrides the image tag whose default is the chart appVersion.
-  tag: ""
+
+# Overrides the image tag whose default is the chart appVersion.
+# the following rules apply for the image tag (taken from here https://github.com/helm/helm/issues/3141#issuecomment-2417672797):
+# - When values are explicitly specified, those values will always be used.
+# - When rendering the chart from the source repository, the version will default to latest.
+# - When rendering the chart from a helm package tarball when you did not specify --version, the version will default to latest.
+# - When rendering a packaged chart that you did specify a version for, the version will default to the same as the version of the chart.
+#  tag: "latest"
 
 imagePullSecrets: []
 nameOverride: ""

@@ -11,6 +11,7 @@
 package com.tsystemsmms.cmcc.cmccoperator.components.job;
 
 import com.tsystemsmms.cmcc.cmccoperator.components.Component;
+import com.tsystemsmms.cmcc.cmccoperator.components.ComponentState;
 import com.tsystemsmms.cmcc.cmccoperator.components.HasUapiClient;
 import com.tsystemsmms.cmcc.cmccoperator.components.SpringBootComponent;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
@@ -21,13 +22,12 @@ import com.tsystemsmms.cmcc.cmccoperator.utils.Utils;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.batch.v1.*;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.Constructor;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.EnvVarSimple;
 
@@ -38,12 +38,10 @@ public class MgmtToolsCronJobComponent extends SpringBootComponent implements Ha
   public static final String EXTRA_CONFIG = "config";
 
   long activeDeadlineSeconds = 30 * 60L;
-  String cron = "0 0 * * *";
-  String timezone = "";
+  private MgmtCronJobConfig mgmtCronJobConfig = null;
 
   public MgmtToolsCronJobComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec componentSpec) {
     super(kubernetesClient, targetState, componentSpec, "management-tools");
-    updateConfig();
   }
 
   @Override
@@ -54,32 +52,19 @@ public class MgmtToolsCronJobComponent extends SpringBootComponent implements Ha
   @Override
   public Component updateComponentSpec(ComponentSpec newCs) {
     super.updateComponentSpec(newCs);
-    updateConfig();
+    if (mgmtCronJobConfig != null) {
+      mgmtCronJobConfig = getMgmtCronJobConfigFromExtra();
+    }
     return this;
   }
 
-  private void updateConfig() {
-    var extraConfig = getComponentSpec().getExtra(EXTRA_CONFIG);
-    if (extraConfig.isPresent()) {
-      Yaml yaml = new Yaml(new Constructor(MgmtCronJobConfig.class));
-      MgmtCronJobConfig config = yaml.load(extraConfig.get());
-      cron = config.getCron();
-      timezone = config.getTimezone();
-    }
-    getComponentSpec().getExtra("activeDeadlineSeconds")
-            .ifPresent(v -> activeDeadlineSeconds = Long.parseLong(v));
-    getComponentSpec().getExtra("cron")
-            .ifPresent(v -> cron = v);
-    getComponentSpec().getExtra("timezone")
-            .ifPresent(v -> timezone = v);
-  }
-
   private CronJob buildJob() {
+    getMgmtCronJobConfig();
     return new CronJobBuilder()
             .withMetadata(getResourceMetadata())
             .withSpec(new CronJobSpecBuilder()
-                    .withSchedule(cron)
-                    .withTimeZone(timezone)
+                    .withSchedule(mgmtCronJobConfig.cron)
+                    .withTimeZone(mgmtCronJobConfig.timezone)
                     .withFailedJobsHistoryLimit(3)
                     .withSuccessfulJobsHistoryLimit(1)
                     .withJobTemplate(new JobTemplateSpecBuilder()
@@ -91,7 +76,7 @@ public class MgmtToolsCronJobComponent extends SpringBootComponent implements Ha
                                     .withTemplate(new PodTemplateSpecBuilder()
                                             .withMetadata(new ObjectMetaBuilder()
                                                     .withAnnotations(getAnnotations())
-                                                    .withLabels(getSelectorLabels())
+                                                    .withLabels(getPodLabels())
                                                     .build())
                                             .withSpec(new PodSpecBuilder()
                                                     .withRestartPolicy("Never")
@@ -155,8 +140,8 @@ public class MgmtToolsCronJobComponent extends SpringBootComponent implements Ha
   }
 
   @Override
-  public HashMap<String, String> getSelectorLabels() {
-    HashMap<String, String> labels = super.getSelectorLabels();
+  public Map<String, String> getSelectorLabels() {
+    Map<String, String> labels = super.getSelectorLabels();
     labels.putAll(getJobLabels());
     return labels;
   }
@@ -165,18 +150,24 @@ public class MgmtToolsCronJobComponent extends SpringBootComponent implements Ha
     return Map.of("cmcc.tsystemsmms.com/cronjob", MgmtToolsCronJobComponent.class.getSimpleName().replaceAll("Component$", ""));
   }
 
-  public Optional<Boolean> isReady() {
+  public ComponentState getState() {
     // Once the object has been created, it is ready. Any execution failures are not tracked by the operator.
-    return Optional.of(Boolean.TRUE);
+    return ComponentState.Ready;
   }
 
-  private Optional<MgmtCronJobConfig> getMgmtCronJobConfigFromExtra() {
-    Yaml yaml = new Yaml(new Constructor(MgmtCronJobConfig.class));
+  private MgmtCronJobConfig  getMgmtCronJobConfigFromExtra() {
+    Yaml yaml = new Yaml(new Constructor(MgmtCronJobConfig.class, new LoaderOptions()));
     if (getComponentSpec().getExtra() == null || !getComponentSpec().getExtra().containsKey(EXTRA_CONFIG))
-      return Optional.empty();
-    return Optional.of(yaml.load(getComponentSpec().getExtra().get(EXTRA_CONFIG)));
+      throw new CustomResourceConfigError("Must specify " + EXTRA_CONFIG + " with job parameters for job \"" + getSpecName() + "\"");
+    return yaml.load(getComponentSpec().getExtra().get(EXTRA_CONFIG));
   }
 
+  private MgmtCronJobConfig getMgmtCronJobConfig() {
+    if (mgmtCronJobConfig == null) {
+      mgmtCronJobConfig = getMgmtCronJobConfigFromExtra();
+    }
+    return mgmtCronJobConfig;
+  }
 
   @Override
   public String getUapiClientDefaultUsername() {

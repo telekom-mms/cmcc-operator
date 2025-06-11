@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class MilestoneTest {
     @Test
     public void nextMilestoneTest() {
-        assertEquals(Milestone.DatabasesReady, Milestone.Created.getNext());
+        assertEquals(Milestone.DatabasesReady, Milestone.DeploymentStarted.getNext());
         assertEquals(Milestone.Ready, Milestone.Ready.getNext());
         assertEquals(Milestone.Ready, Milestone.RunJob.getNext());
         assertEquals(Milestone.Never, Milestone.Never.getNext());

@@ -41,6 +41,12 @@ public class ImportJob {
     @JsonPropertyDescription("Force re-import of themes")
     boolean forceThemeImport = false;
 
+    @JsonPropertyDescription("Use no volumes at all. Take everything from the image fs")
+    boolean noVolumes = false;
+
+    @JsonPropertyDescription("Override for 'active deadline' in seconds, default: 30 min.")
+    long activeDeadlineSeconds = 30 * 60L;
+
     @JsonPropertyDescription("List of tasks (entrypoint scripts) to be run by management-tools")
     List<String> tasks = Collections.emptyList();
 

@@ -15,11 +15,12 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @JsonFormat(shape = JsonFormat.Shape.STRING)
 public enum Milestone {
-    Created,
+    DeploymentStarted,
     DatabasesReady,
     ContentServerInitialized,
     ContentServerReady,
     ManagementReady,
+    DeliveryServicesReady,
     Ready,
     RunJob,
     Healing,

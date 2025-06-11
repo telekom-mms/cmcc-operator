@@ -1,4 +1,4 @@
-apiVersion: cmcc.tsystemsmms.com/v1
+apiVersion: cmcc.tsystemsmms.com/v2
 kind: CoreMediaContentCloud
 metadata:
   name: example

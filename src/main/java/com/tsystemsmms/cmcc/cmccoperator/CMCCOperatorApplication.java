@@ -13,15 +13,18 @@ package com.tsystemsmms.cmcc.cmccoperator;
 import com.tsystemsmms.cmcc.cmccoperator.ingress.*;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.*;
 import com.tsystemsmms.cmcc.cmccoperator.resource.ResourceReconcilerManager;
+import com.tsystemsmms.cmcc.cmccoperator.utils.NamespaceFilter;
 import com.tsystemsmms.cmcc.cmccoperator.utils.YamlMapper;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.javaoperatorsdk.operator.springboot.starter.OperatorConfigurationProperties;
+import io.javaoperatorsdk.operator.springboot.starter.ReconcilerProperties;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -34,10 +37,20 @@ public class CMCCOperatorApplication {
   @ConditionalOnProperty(value = "cmcc.useCrd", havingValue = "true", matchIfMissing = true)
   public CoreMediaContentCloudReconciler coreMediaContentCloudReconciler(
           @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection") KubernetesClient kubernetesClient,
-          TargetStateFactory targetStateFactory) {
+          TargetStateFactory targetStateFactory,
+          NamespaceFilter<HasMetadata> namespaceFilter,
+          OperatorConfigurationProperties configuration) {
+
+    if (!NamespaceFilter.getNamespaceIncludes().isEmpty()) {
+      var props = new ReconcilerProperties();
+      props.setNamespaces(NamespaceFilter.getNamespaceIncludes());
+      configuration.setReconcilers(Map.of(CoreMediaContentCloudReconciler.class.getSimpleName(), props));
+    }
+
     return new CoreMediaContentCloudReconciler(
             kubernetesClient,
-            targetStateFactory);
+            targetStateFactory,
+            namespaceFilter);
   }
 
   @Bean
@@ -45,11 +58,13 @@ public class CMCCOperatorApplication {
   public CmccConfigMapReconciler cmccConfigMapReconciler(
           KubernetesClient kubernetesClient,
           TargetStateFactory targetStateFactory,
-          YamlMapper yamlMapper) {
+          YamlMapper yamlMapper,
+          NamespaceFilter<HasMetadata> namespaceFilter) {
     return new CmccConfigMapReconciler(
             kubernetesClient,
             targetStateFactory,
-            yamlMapper);
+            yamlMapper,
+            namespaceFilter);
   }
 
   @Bean
@@ -65,6 +80,11 @@ public class CMCCOperatorApplication {
   @Bean
   public UrlMappingBuilderFactory blueprintIngressGeneratorFactory(IngressBuilderFactory ingressBuilderFactory) {
     return new BlueprintUrlMappingBuilderFactory(ingressBuilderFactory);
+  }
+
+  @Bean
+  public UrlMappingBuilderFactory headlessIngressGeneratorFactory(IngressBuilderFactory ingressBuilderFactory) {
+    return new HeadlessUrlMappingBuilderFactory(ingressBuilderFactory);
   }
 
   @Bean

@@ -13,23 +13,33 @@ package com.tsystemsmms.cmcc.cmccoperator.components;
 import com.tsystemsmms.cmcc.cmccoperator.crds.*;
 import com.tsystemsmms.cmcc.cmccoperator.customresource.CustomResource;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
+import com.tsystemsmms.cmcc.cmccoperator.targetstate.VersioningTargetState;
 import com.tsystemsmms.cmcc.cmccoperator.utils.EnvVarSet;
+import com.tsystemsmms.cmcc.cmccoperator.utils.SimpleExecListener;
 import com.tsystemsmms.cmcc.cmccoperator.utils.Utils;
 import io.fabric8.kubernetes.api.model.*;
-import io.fabric8.kubernetes.api.model.apps.StatefulSet;
-import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
-import io.fabric8.kubernetes.api.model.apps.StatefulSetSpecBuilder;
+import io.fabric8.kubernetes.api.model.apps.*;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.dsl.ExecWatch;
+import io.fabric8.kubernetes.client.dsl.PodResource;
+import io.fabric8.kubernetes.client.readiness.Readiness;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.ClassPathResource;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.function.Function;
 
-import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.concatOptional;
-import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.defaultString;
+import static com.tsystemsmms.cmcc.cmccoperator.crds.Milestone.Ready;
+import static com.tsystemsmms.cmcc.cmccoperator.crds.Milestone.compareTo;
+import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.*;
+import static org.apache.commons.lang3.StringUtils.isEmpty;
 
 @Slf4j
 public abstract class AbstractComponent implements Component {
@@ -46,6 +56,9 @@ public abstract class AbstractComponent implements Component {
   @Getter
   @Setter
   String imageRepository;
+  @Getter
+  @Setter
+  private int replicas = 1;
 
   @Getter
   final Map<String, String> schemas = new HashMap<>();
@@ -62,7 +75,21 @@ public abstract class AbstractComponent implements Component {
 
   @Override
   public boolean isBuildResources() {
-    return Milestone.compareTo(getCmcc().getStatus().getMilestone(), getComponentSpec().getMilestone()) >= 0;
+    return Milestone.compareTo(Milestone.Never, getComponentSpec().getMilestone()) != 0;
+  }
+
+  @Override
+  public int getCurrentReplicas() {
+    return Milestone.compareTo(getCmcc().getStatus().getMilestone(), getComponentSpec().getMilestone()) >= 0 ?
+            getReplicas() :
+            0;
+  }
+
+  public VersioningTargetState getVersioningTargetState() {
+    if (targetState instanceof VersioningTargetState state) {
+      return state;
+    }
+    return null;
   }
 
   @Override
@@ -135,20 +162,20 @@ public abstract class AbstractComponent implements Component {
     ImageSpec spec = new ImageSpec();
 
     spec.setRegistry(defaultString(
-            componentDefault.getRegistry(),
             csImage.getRegistry(),
+            componentDefault.getRegistry(),
             defaultImage.getRegistry(),
             "coremedia"
     ));
     spec.setRepository(defaultString(
-            componentDefault.getRepository(),
             csImage.getRepository(),
+            componentDefault.getRepository(),
             defaultImage.getRepository(),
             imageRepository
     ));
     spec.setTag(defaultString(
-            componentDefault.getTag(),
             csImage.getTag(),
+            componentDefault.getTag(),
             defaultImage.getTag(),
             "latest"
     ));
@@ -187,10 +214,13 @@ public abstract class AbstractComponent implements Component {
    *
    * @return list of labels
    */
-  public HashMap<String, String> getSelectorLabels() {
+  public Map<String, String> getSelectorLabels() {
     HashMap<String, String> labels = getTargetState().getSelectorLabels();
-    labels.put("cmcc.tsystemsmms.com/type", componentSpec.getType());
     labels.put("cmcc.tsystemsmms.com/name", getTargetState().getResourceNameFor(this));
+    labels.put("cmcc.tsystemsmms.com/type", getComponentSpec().getType());
+    if (!isEmpty(getComponentSpec().getKind())) {
+      labels.put("cmcc.tsystemsmms.com/kind", getComponentSpec().getKind());
+    }
     return labels;
   }
 
@@ -199,11 +229,37 @@ public abstract class AbstractComponent implements Component {
    *
    * @return list of labels
    */
-  public HashMap<String, String> getSelectorLabels(String... extra) {
+  public Map<String, String> getSelectorLabelsWithVersion() {
+    HashMap<String, String> labels = getTargetState().getSelectorLabelsWithVersion();
+    labels.putAll(getSelectorLabels());
+    return labels;
+  }
+
+  /**
+   * Get a set of labels suitable to distinguish pods, services, etc. of this component from others.
+   *
+   * @return list of labels
+   */
+  public Map<String, String> getSelectorLabels(String... extra) {
     HashMap<String, String> labels = getTargetState().getSelectorLabels();
     labels.put("cmcc.tsystemsmms.com/type", componentSpec.getType());
     labels.put("cmcc.tsystemsmms.com/name", getTargetState().getResourceNameFor(this, extra));
     return labels;
+  }
+
+  /**
+   * Get a set of labels suitable to distinguish pods, services, etc. of this component from others.
+   *
+   * @return list of labels
+   */
+  public Map<String, String> getSelectorLabelsWithVersion(String... extra) {
+    HashMap<String, String> labels = getTargetState().getSelectorLabelsWithVersion();
+    labels.putAll(getSelectorLabels(extra));
+    return labels;
+  }
+
+  public Map<String, String> getPodLabels() {
+    return getSelectorLabelsWithVersion();
   }
 
   /**
@@ -224,13 +280,8 @@ public abstract class AbstractComponent implements Component {
     return Collections.emptyList();
   }
 
-  /**
-   * Create the StatefulSet for reconciliation.
-   *
-   * @return the created StatefulSet.
-   */
-  public StatefulSet buildStatefulSet() {
-    return buildStatefulSet(1);
+  protected String getServiceName() {
+    return getTargetState().getServiceNameFor(this);
   }
 
   /**
@@ -238,31 +289,139 @@ public abstract class AbstractComponent implements Component {
    *
    * @return the created StatefulSet.
    */
+  public StatefulSet buildStatefulSet() {
+    return buildStatefulSet(getCurrentReplicas());
+  }
+
+  /**
+   * Create the StatefulSet for reconciliation with the given replicas.
+   *
+   * @return the created StatefulSet.
+   */
   public StatefulSet buildStatefulSet(int replicas) {
+    return buildStatefulSet(replicas, 0);
+  }
+
+  /**
+   * Create the StatefulSet for reconciliation with the given replicas and env vars.
+   *
+   * @return the created StatefulSet.
+   */
+  public StatefulSet buildStatefulSet(int replicas, EnvVarSet env) {
+    return buildStatefulSet(replicas, env, 0);
+  }
+
+  /**
+   * Create the StatefulSet for reconciliation with the given replicas and setting the partition of its UpdateStrategy.
+   *
+   * @return the created StatefulSet.
+   */
+  public StatefulSet buildStatefulSet(int replicas, int partition) {
+    EnvVarSet env = getEnvVars();
+    env.addAll(getComponentSpec().getEnv());
+    return buildStatefulSet(replicas, env, partition);
+  }
+
+  /**
+   * Create the StatefulSet for reconciliation with the given replicas and setting the partition of its UpdateStrategy.
+   * Also overrides the given version in pod labels (if param is not null).
+   *
+   * @return the created StatefulSet.
+   */
+  public StatefulSet buildStatefulSet(int replicas, EnvVarSet env, int partition) {
     return new StatefulSetBuilder()
             .withMetadata(getResourceMetadata())
             .withSpec(new StatefulSetSpecBuilder()
                     .withReplicas(replicas)
-                    .withServiceName(getTargetState().getServiceNameFor(this))
+                    .withServiceName(getServiceName())
                     .withSelector(new LabelSelectorBuilder()
                             .withMatchLabels(getSelectorLabels())
                             .build())
                     .withTemplate(new PodTemplateSpecBuilder()
                             .withMetadata(new ObjectMetaBuilder()
                                     .withAnnotations(getAnnotations())
-                                    .withLabels(getSelectorLabels())
+                                    .withLabels(getPodLabels())
                                     .build())
                             .withSpec(new PodSpecBuilder()
-                                    .withContainers(buildContainers())
+                                    .withContainers(buildContainers(env))
                                     .withInitContainers(getInitContainers())
                                     .withSecurityContext(getPodSecurityContext())
                                     .withTerminationGracePeriodSeconds(getTerminationGracePeriodSeconds())
                                     .withVolumes(getVolumes())
+                                    .withAffinity(getAffinity())
                                     .build())
                             .build())
                     .withVolumeClaimTemplates(getVolumeClaims())
+                    .withPodManagementPolicy("Parallel")
+                    .withUpdateStrategy(getUpdateStrategy(partition))
                     .build())
             .build();
+  }
+
+  protected StatefulSetUpdateStrategy getUpdateStrategy(int partition) {
+    return new StatefulSetUpdateStrategyBuilder().withRollingUpdate(
+            new RollingUpdateStatefulSetStrategyBuilder()
+                    .withPartition(partition)
+                    // currently alpha, https://kubernetes.io/docs/reference/command-line-tools-reference/feature-gates/
+                    // needs the feature flag MaxUnavailableStatefulSet
+                    .withMaxUnavailable(new IntOrString("100%"))
+                    .build())
+            .build();
+  }
+
+  protected Affinity getAffinity() {
+    Affinity affinity = getComponentSpec().getAffinity();
+    if (affinity == null && getCmcc().getSpec().getWith().getDefaultAffinityRules()) {
+      PodAffinity podAffinity = getPodAffinity();
+      PodAntiAffinity podAntiAffinity = getPodAntiAffinity();
+      NodeAffinity nodeAffinity = getNodeAffinity();
+      if (null != podAffinity || null != podAntiAffinity || null != nodeAffinity) {
+        return new AffinityBuilder()
+                .withPodAffinity(podAffinity)
+                .withPodAntiAffinity(podAntiAffinity)
+                .withNodeAffinity(nodeAffinity)
+                .build();
+      }
+    }
+    affinity = handleLabelReferences(affinity);
+    return affinity;
+  }
+
+  protected NodeAffinity getNodeAffinity() {
+    return null;
+  }
+
+  protected PodAntiAffinity getPodAntiAffinity() {
+    return null;
+  }
+
+  protected PodAffinity getPodAffinity() {
+    return null;
+  }
+
+  protected WeightedPodAffinityTerm createAffinityToComponent(String type, String kind, int weight) {
+    var component = getTargetState().getComponentCollection().findAllOfTypeAndKind(type, kind).findFirst().orElse(null);
+    return createAffinityToComponent(component, weight);
+  }
+
+  protected WeightedPodAffinityTerm createAffinityToComponent(String type, int weight) {
+    var component = getTargetState().getComponentCollection().findAllOfType(type).findFirst().orElse(null);
+    return createAffinityToComponent(component, weight);
+  }
+
+  protected WeightedPodAffinityTerm createAffinityToComponent(Component component, int weight) {
+    if (component != null) {
+      return new WeightedPodAffinityTermBuilder()
+              .withPodAffinityTerm(new PodAffinityTermBuilder()
+                      .withLabelSelector(new LabelSelectorBuilder()
+                              .withMatchLabels(component.getSelectorLabels())
+                              .build())
+                      .withTopologyKey(getSpec().getDefaults().getAffinityTopology())
+                      .build())
+              .withWeight(weight)
+              .build();
+    }
+    return null;
   }
 
   public long getTerminationGracePeriodSeconds() {
@@ -270,10 +429,14 @@ public abstract class AbstractComponent implements Component {
   }
 
   public List<Container> buildContainers() {
-    LinkedList<Container> containers = new LinkedList<>();
-    ResourceRequirements resourceRequirements = getSpec().getWith().getResources() ? ResourceMgmt.withDefaults(getDefaults().getResources(), getResourceManagement()).getResources() : new ResourceRequirements();
     EnvVarSet env = getEnvVars();
     env.addAll(getComponentSpec().getEnv());
+    return buildContainers(env);
+  }
+
+  public List<Container> buildContainers(EnvVarSet env) {
+    LinkedList<Container> containers = new LinkedList<>();
+    ResourceRequirements resourceRequirements = getSpec().getWith().getResources() ? ResourceMgmt.withDefaults(getDefaults().getResources(), getResourceManagement()).getResources() : new ResourceRequirements();
 
     containers.add(new ContainerBuilder()
             .withName(specName)
@@ -288,37 +451,21 @@ public abstract class AbstractComponent implements Component {
             .withStartupProbe(getStartupProbe())
             .withLivenessProbe(getLivenessProbe())
             .withReadinessProbe(getReadinessProbe())
+            .withLifecycle(new LifecycleBuilder().withPreStop(getLifecyclePreStop()).build())
             .build());
 
     return containers;
   }
 
-  public List<Container> buildContainersWithEnv(EnvVarSet env) {
-    LinkedList<Container> containers = new LinkedList<>();
-    ResourceRequirements resourceRequirements = getSpec().getWith().getResources() ? ResourceMgmt.withDefaults(getDefaults().getResources(), getResourceManagement()).getResources() : new ResourceRequirements();
-
-    containers.add(new ContainerBuilder()
-            .withName(specName)
-            .withImage(getImage())
-            .withImagePullPolicy(getImagePullPolicy())
-            .withResources(resourceRequirements)
-            .withSecurityContext(getSecurityContext())
-            .withPorts(getContainerPorts())
-            .withArgs(getComponentSpec().getArgs())
-            .withEnv(env.toList())
-            .withVolumeMounts(getVolumeMounts())
-            .withStartupProbe(getStartupProbe())
-            .withLivenessProbe(getLivenessProbe())
-            .withReadinessProbe(getReadinessProbe())
-            .build());
-
-    return containers;
+  protected LifecycleHandler getLifecyclePreStop() {
+    return null;
   }
 
   public PersistentVolumeClaim getPersistentVolumeClaim(String name, Quantity size) {
     String sc = getDefaults().getStorageClass();
-    if (sc.isEmpty())
+    if (sc.isEmpty()) {
       sc = null;
+    }
     return new PersistentVolumeClaimBuilder()
             .withMetadata(getResourceMetadataForName(name))
             .withSpec(new PersistentVolumeClaimSpecBuilder()
@@ -331,20 +478,43 @@ public abstract class AbstractComponent implements Component {
             .build();
   }
 
+  /**
+   * @return the version info "resource-name-ready" (no dots, spaces, etc.).
+   */
+  protected String getVersionSuffix() {
+    return getVersionSuffix(null);
+  }
+
+  /**
+   * @return the version info "resource-name-ready" (no dots, spaces, etc.).
+   */
+  protected String getVersionSuffix(String version) {
+    if (!targetState.isVersioning()) {
+      return "";
+    }
+
+    version = version == null ? getTargetState().getVersion() : version;
+
+    return version
+            .replace('.', '-')
+            .replace(' ', '_');
+  }
 
   public EnvVarSet getEnvVars() {
-    return new EnvVarSet();
+    EnvVarSet env = new EnvVarSet();
+    env.addAll(getCmcc().getSpec().getDefaults().getEnv());
+    return env;
   }
 
   public List<Container> getInitContainers() {
     return new LinkedList<>();
   }
 
-  abstract public Probe getStartupProbe();
+  public abstract Probe getStartupProbe();
 
-  abstract public Probe getLivenessProbe();
+  public abstract Probe getLivenessProbe();
 
-  abstract public Probe getReadinessProbe();
+  public abstract Probe getReadinessProbe();
 
   /**
    * Defines volumes for the main pod.
@@ -352,16 +522,20 @@ public abstract class AbstractComponent implements Component {
    * @return list of volumes
    */
   public List<Volume> getVolumes() {
-    return List.of(
-            new VolumeBuilder()
+    List<Volume> volumes = new LinkedList<>();
+
+    volumes.add(new VolumeBuilder()
                     .withName("tmp")
                     .withEmptyDir(new EmptyDirVolumeSource())
-                    .build(),
-            new VolumeBuilder()
+                    .build());
+    volumes.add(new VolumeBuilder()
                     .withName("var-tmp")
                     .withEmptyDir(new EmptyDirVolumeSource())
-                    .build()
-    );
+                    .build());
+
+    volumes.addAll(getComponentSpec().getVolumes());
+
+    return volumes;
   }
 
   /**
@@ -380,16 +554,20 @@ public abstract class AbstractComponent implements Component {
    * @return list of volume mounts
    */
   public List<VolumeMount> getVolumeMounts() {
-    return List.of(
-            new VolumeMountBuilder()
-                    .withName("tmp")
-                    .withMountPath("/tmp")
-                    .build(),
-            new VolumeMountBuilder()
-                    .withName("var-tmp")
-                    .withMountPath("/var/tmp")
-                    .build()
-    );
+    List<VolumeMount> volumeMounts = new LinkedList<>();
+
+    volumeMounts.add(new VolumeMountBuilder()
+            .withName("tmp")
+            .withMountPath("/tmp")
+            .build());
+    volumeMounts.add(new VolumeMountBuilder()
+            .withName("var-tmp")
+            .withMountPath("/var/tmp")
+            .build());
+
+    volumeMounts.addAll(getComponentSpec().getVolumeMounts());
+
+    return volumeMounts;
   }
 
   /**
@@ -464,12 +642,69 @@ public abstract class AbstractComponent implements Component {
     return 1_000L;
   }
 
-
   @Override
-  public Optional<Boolean> isReady() {
-    if (Milestone.compareTo(getCmcc().getStatus().getMilestone(), getComponentSpec().getMilestone()) < 0)
-      return Optional.empty();
-    return Optional.of(getTargetState().isStatefulSetReady(getTargetState().getResourceNameFor(this)));
+  public ComponentState getState() {
+    if (getComponentSpec().getMilestone() == Milestone.Never) {
+      return ComponentState.NotApplicable;
+    }
+
+    return this.getStatefulSetState();
+  }
+
+  protected ComponentState getStatefulSetState() {
+    return getStatefulSetState(getTargetState().getResourceNameFor(this));
+  }
+
+  protected ComponentState getStatefulSetState(String name) {
+    var stsResource = kubernetesClient.apps().statefulSets().inNamespace(getCmcc().getMetadata().getNamespace()).withName(name);
+
+    // isReady also implies get(), ergo: check get() first
+    var sts = stsResource.get();
+    if (sts == null) {
+      return ComponentState.NotApplicable;
+    }
+
+    if (!Readiness.getInstance().isReady(sts)) { // similar to stsResource.isReady() but saves a REST call
+      return ComponentState.WaitingForReadiness;
+    }
+
+    return getStatefulSetState(sts);
+  }
+
+  protected ComponentState getStatefulSetState(StatefulSet sts) {
+    var status = sts.getStatus();
+    var spec = sts.getSpec();
+
+    if (status == null) {
+      if (getCurrentReplicas() > 0) {
+        return ComponentState.WaitingForReadiness;
+      } else {
+        return ComponentState.WaitingForDeployment;
+      }
+    }
+
+    if (status.getReplicas() == null) {
+      if (getCurrentReplicas() > 0) {
+        return ComponentState.WaitingForReadiness;
+      } else {
+        return ComponentState.NotApplicable;
+      }
+    }
+
+    var specReplicas = spec.getReplicas() == null ? 0 : spec.getReplicas();
+    var stsReplicas = status.getReplicas() == null ? 0 : status.getReplicas();
+    var stsReadyReplicas = status.getReadyReplicas() == null ? 0 : status.getReadyReplicas();
+
+    if (specReplicas != getCurrentReplicas()) {
+      return ComponentState.ResourceNeedsUpdate;
+    }
+    if (specReplicas != stsReplicas) {
+      return ComponentState.WaitingForDeployment;
+    }
+    if (specReplicas != stsReadyReplicas) {
+      return ComponentState.WaitingForReadiness;
+    }
+    return ComponentState.Ready;
   }
 
   @Override
@@ -487,6 +722,156 @@ public abstract class AbstractComponent implements Component {
       if (!schemas.containsKey(e.getKey())) {
         schemas.put(e.getKey(), e.getValue());
       }
+    }
+  }
+
+  protected ConfigMap buildLoggingConfigMap() {
+    if (Boolean.TRUE.equals(getCmcc().getSpec().getWith().getJsonLogging())) {
+      var configMap = kubernetesClient.configMaps()
+              .inNamespace(getCmcc().getMetadata().getNamespace())
+              .withName("logging-config")
+              .get();
+
+      if (configMap == null) {
+        try {
+          var logbackConfig = new String(new ClassPathResource("logback-config-json.xml").getInputStream().readAllBytes());
+          var log4jSolrConfig = new String(new ClassPathResource("log4j2-solr-config-json.xml").getInputStream().readAllBytes());
+
+          configMap = new ConfigMapBuilder()
+                  .withMetadata(getTargetState().getResourceMetadataFor("logging-config"))
+                  .withData(Map.of("logback-spring.xml", logbackConfig,
+                          "log4j2-solr.xml", log4jSolrConfig))
+                  .build();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+      }
+
+      return configMap;
+    }
+
+    return null;
+  }
+
+  protected boolean reachedReady() {
+    return compareTo(getCmcc().getStatus().getMilestone(), Ready) >= 0;
+  }
+
+  protected boolean reachedMyMilestone() {
+    return compareTo(getCmcc().getStatus().getMilestone(), getComponentSpec().getMilestone()) >= 0;
+  }
+
+  protected ExecutionResult executeWebRequest(PodResource pod, String url) {
+    return this.executeWebRequest(pod, url, true);
+  }
+
+  protected ExecutionResult executeWebRequest(PodResource pod, String url, boolean failOnError) {
+    return this.executeWebRequest(pod, url, null, failOnError);
+  }
+
+  protected ExecutionResult executeWebRequest(PodResource pod, String url, String authCredentials, boolean failOnError) {
+    return this.executeCommand(pod,   // -s = silent | -f = fail on error -> exit code
+            Utils.format("curl {} -s {} '{}'", authCredentials != null ? "-u " + authCredentials : "", failOnError ? "-f" : "" , url));
+  }
+
+  protected ExecutionResult executePostWebRequest(PodResource pod, String url, String header, String data, boolean failOnError) {
+    return this.executeCommand(pod,   // -s = silent | -f = fail on error -> exit code
+            Utils.format("curl -X POST -s {} {} {} '{}'",
+                    failOnError ? "-f" : "" ,
+                    header != null ? "--header '" + header  + "'" : "",
+                    data != null ? "--data '" + data + "'"  : "",
+                    url));
+  }
+
+  protected ExecutionResult executeCommand(PodResource pod, String command) {
+    SimpleExecListener listener = new SimpleExecListener();
+    ByteArrayOutputStream out = new ByteArrayOutputStream();
+    ByteArrayOutputStream err = new ByteArrayOutputStream();
+
+    var watch = pod.writingOutput(out)
+            .writingError(err)
+            .usingListener(listener)
+            .exec("sh", "-c", command);
+
+    listener.awaitUninterruptable();
+
+    String stdout = out.toString(StandardCharsets.UTF_8);
+    String stderr = err.toString(StandardCharsets.UTF_8).trim();
+
+    log.info("[{}] Command finished on pod {}", getTargetState().getContextForLogging(), pod.get().getMetadata().getName());
+    log.trace("[{}] Process out:\n{}", getTargetState().getContextForLogging(), stdout);
+    if (!stderr.isEmpty()) {
+        log.debug("[{}] Process err:\n{}", getTargetState().getContextForLogging(), stderr);
+    }
+    watch.close();
+
+    return new ExecutionResult(pod, watch, stdout, stderr, watch.exitCode().getNow(null));
+  }
+
+  @AllArgsConstructor
+  @SuppressWarnings("java:S1104")
+  public static class ExecutionResult {
+    public PodResource pod;
+    public ExecWatch watch;
+    public String output;
+    public String errorOutput;
+    public Integer exitCode;
+  }
+
+  private Affinity handleLabelReferences(Affinity affinity) {
+    if (affinity != null) {
+      affinity = Utils.deepClone(affinity, Affinity.class);
+      handleLabelReferences(affinity.getPodAffinity());
+      handleLabelReferences(affinity.getPodAntiAffinity());
+      handleLabelReferences(affinity.getNodeAffinity());
+    }
+    return affinity;
+  }
+
+  private void handleLabelReferences(PodAffinity podAffinity) {
+    if (podAffinity != null) {
+      handleLabelReferences(podAffinity.getRequiredDuringSchedulingIgnoredDuringExecution());
+      handleLabelReferences(podAffinity.getPreferredDuringSchedulingIgnoredDuringExecution());
+    }
+  }
+  private void handleLabelReferences(PodAntiAffinity podAntiAffinity) {
+    if (podAntiAffinity != null) {
+      handleLabelReferences(podAntiAffinity.getRequiredDuringSchedulingIgnoredDuringExecution());
+      handleLabelReferences(podAntiAffinity.getPreferredDuringSchedulingIgnoredDuringExecution());
+    }
+  }
+
+  private void handleLabelReferences(NodeAffinity nodeAffinity) {
+    if (nodeAffinity != null) {
+      handleLabelReferences(nodeAffinity.getRequiredDuringSchedulingIgnoredDuringExecution());
+      handleLabelReferences(nodeAffinity.getPreferredDuringSchedulingIgnoredDuringExecution());
+    }
+  }
+
+  private void handleLabelReferences(List<? extends KubernetesResource> terms) {
+    if (terms != null) {
+      terms.forEach(this::handleLabelReferences);
+    }
+  }
+
+  private void handleLabelReferences(KubernetesResource term) {
+    if (term instanceof WeightedPodAffinityTerm weightedTerm) {
+      handleLabelReferences(weightedTerm.getPodAffinityTerm());
+    }
+    if (term instanceof PodAffinityTerm podAffinityTerm) {
+      handleLabelReferences(podAffinityTerm.getLabelSelector());
+    }
+  }
+
+  private void handleLabelReferences(LabelSelector labelSelector) {
+    if (labelSelector != null) {
+      labelSelector.getMatchLabels().entrySet().forEach(entry -> {
+        var value = entry.getValue();
+        if (value != null && value.startsWith("{podLabel:") && value.endsWith("}")) {
+          var labelKey = value.substring(10 /* length of {podLabel: */, value.length() - 1);
+          entry.setValue(getSelectorLabelsWithVersion().getOrDefault(labelKey, ""));
+        }
+      });
     }
   }
 }

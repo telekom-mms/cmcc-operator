@@ -3,5 +3,19 @@
   "extends": [
     "config:base"
   ],
-  "includeForks": true
+  "includeForks": true,
+  "packageRules": [
+    {
+      "matchUpdateTypes": ["major"],
+      "groupName": "major-updates"
+    },
+    {
+      "matchUpdateTypes": ["minor"],
+      "groupName": "minor-updates"
+    },
+    {
+      "matchUpdateTypes": ["patch"],
+      "groupName": "patch-updates"
+    }
+  ]
 }

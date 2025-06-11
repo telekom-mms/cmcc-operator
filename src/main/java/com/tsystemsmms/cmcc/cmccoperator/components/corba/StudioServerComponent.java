@@ -63,7 +63,10 @@ public class StudioServerComponent extends CorbaComponent implements HasMongoDBC
         List<HasMetadata> resources = new LinkedList<>();
         resources.add(buildStatefulSet());
         resources.add(buildService());
-        resources.addAll(buildIngress());
+        resources.addAll(buildIngressResources());
+        if (getCmcc().getSpec().getWith().getJsonLogging()) {
+            resources.add(buildLoggingConfigMap());
+        }
         return resources;
     }
 
@@ -131,8 +134,14 @@ public class StudioServerComponent extends CorbaComponent implements HasMongoDBC
      *
      * @return the ingress definition
      */
-    public Collection<? extends HasMetadata> buildIngress() {
-        UrlMappingBuilder generator = getTargetState().getManagementUrlMappingBuilderFactory().instance(getTargetState(), getTargetState().getServiceNameFor(this));
+    public Collection<? extends HasMetadata> buildIngressResources() {
+        UrlMappingBuilder generator = getTargetState().getManagementUrlMappingBuilderFactory()
+                .instance(getTargetState(), getTargetState().getServiceNameFor(this));
         return generator.buildStudioResources();
+    }
+
+    @Override
+    protected boolean needsTransformedBlobCache() {
+        return true; // Studio needs that cache volume mount
     }
 }

@@ -10,41 +10,50 @@
 
 package com.tsystemsmms.cmcc.cmccoperator;
 
-import com.tsystemsmms.cmcc.cmccoperator.components.job.MgmtToolsJobComponent;
+import com.tsystemsmms.cmcc.cmccoperator.components.job.JobComponent;
+import com.tsystemsmms.cmcc.cmccoperator.crds.CoreMediaContentCloud;
 import com.tsystemsmms.cmcc.cmccoperator.crds.CoreMediaContentCloudStatus;
 import com.tsystemsmms.cmcc.cmccoperator.customresource.ConfigMapCustomResource;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetStateFactory;
+import com.tsystemsmms.cmcc.cmccoperator.utils.NamespaceFilter;
 import com.tsystemsmms.cmcc.cmccoperator.utils.Utils;
 import com.tsystemsmms.cmcc.cmccoperator.utils.YamlMapper;
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
+import io.javaoperatorsdk.operator.api.config.informer.Informer;
+import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.*;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.Map;
+import java.util.List;
 
 import static com.tsystemsmms.cmcc.cmccoperator.CoreMediaContentCloudReconciler.OPERATOR_SELECTOR_LABELS;
 
-@ControllerConfiguration(labelSelector = CmccConfigMapReconciler.SELECTOR_LABEL)
+@ControllerConfiguration(name = "CoreMediaContentCloudReconciler",
+        // filter needed for excludes, includes are already handled in CMCCOperatorApplication
+        informer = @Informer(genericFilter = NamespaceFilter.class)
+)
 @Slf4j
-public class CmccConfigMapReconciler implements Reconciler<ConfigMap>, ErrorStatusHandler<ConfigMap>, EventSourceInitializer<ConfigMap> {
+public class CmccConfigMapReconciler implements Reconciler<ConfigMap> {
     public static final String SELECTOR_LABEL = "cmcc.tsystemsmms.com.customresource=cmcc";
 
     private final KubernetesClient kubernetesClient;
     private final TargetStateFactory targetStateFactory;
     private final YamlMapper yamlMapper;
+    private final NamespaceFilter<HasMetadata> namespaceFilter;
 
-    public CmccConfigMapReconciler(KubernetesClient kubernetesClient, TargetStateFactory targetStateFactory, YamlMapper yamlMapper) {
+    public CmccConfigMapReconciler(KubernetesClient kubernetesClient, TargetStateFactory targetStateFactory, YamlMapper yamlMapper, NamespaceFilter<HasMetadata> namespaceFilter) {
         this.kubernetesClient = kubernetesClient;
         this.targetStateFactory = targetStateFactory;
         this.yamlMapper = yamlMapper;
+        this.namespaceFilter = namespaceFilter;
         log.info("Using ConfigMap with label {} for configuration", SELECTOR_LABEL);
     }
 
@@ -63,7 +72,7 @@ public class CmccConfigMapReconciler implements Reconciler<ConfigMap>, ErrorStat
         }
         cmcc.setStatus(status);
         cmcc.updateResource();
-        return UpdateControl.updateResource(cm);
+        return UpdateControl.patchResource(cm);
     }
 
     @Override
@@ -75,18 +84,26 @@ public class CmccConfigMapReconciler implements Reconciler<ConfigMap>, ErrorStat
         status.setError("error");
         cmcc.setStatus(status);
         cmcc.updateResource();
-        return ErrorStatusUpdateControl.updateStatus(cm);
+        return ErrorStatusUpdateControl.patchStatus(cm);
     }
 
     @Override
-    public Map<String, EventSource> prepareEventSources(EventSourceContext<ConfigMap> context) {
-        return EventSourceInitializer.nameEventSources(
-                new InformerEventSource<>(InformerConfiguration.from(Job.class, context)
-                        .withLabelSelector(Utils.selectorFromLabels(MgmtToolsJobComponent.getJobLabels()))
-                        .withSecondaryToPrimaryMapper(Mappers.fromOwnerReference()).build(), kubernetesClient),
-                new InformerEventSource<>(InformerConfiguration.from(StatefulSet.class, context)
-                        .withLabelSelector(Utils.selectorFromLabels(OPERATOR_SELECTOR_LABELS))
-                        .withSecondaryToPrimaryMapper(Mappers.fromOwnerReference()).build(), kubernetesClient)
+    public List<EventSource<?, ConfigMap>> prepareEventSources(EventSourceContext<ConfigMap> context) {
+        return List.of(
+                new InformerEventSource<>(
+                        InformerEventSourceConfiguration.from(Job.class, CoreMediaContentCloud.class)
+                                .withGenericFilter(namespaceFilter)
+                                .withLabelSelector(Utils.selectorFromLabels(JobComponent.getJobLabels()))
+                                .withSecondaryToPrimaryMapper(Mappers.fromOwnerReferences(CoreMediaContentCloud.class))
+                                .build(),
+                        context),
+                new InformerEventSource<>(
+                        InformerEventSourceConfiguration.from(StatefulSet.class, CoreMediaContentCloud.class)
+                                .withGenericFilter(namespaceFilter)
+                                .withLabelSelector(Utils.selectorFromLabels(OPERATOR_SELECTOR_LABELS))
+                                .withSecondaryToPrimaryMapper(Mappers.fromOwnerReferences(CoreMediaContentCloud.class))
+                                .build(),
+                        context)
         );
     }
 }

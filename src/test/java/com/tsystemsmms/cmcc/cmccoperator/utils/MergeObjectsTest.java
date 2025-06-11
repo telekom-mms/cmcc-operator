@@ -26,12 +26,14 @@ public class MergeObjectsTest {
             .withAllowPrivilegeEscalation(false)
             .withCapabilities(new CapabilitiesBuilder()
                     .addToAdd("foo")
+                    .addToAdd("goo")
                     .build())
             .withRunAsUser(1000L)
             .build();
     SecurityContext addl = new SecurityContextBuilder()
             .withAllowPrivilegeEscalation(true)
             .withCapabilities(new CapabilitiesBuilder()
+                    .addToAdd("foo")
                     .addToAdd("bar")
                     .build())
             .withRunAsGroup(2000L)
@@ -39,12 +41,11 @@ public class MergeObjectsTest {
 
     main = Utils.mergeObjects(SecurityContext.class, main, addl);
 
-    assertEquals(main.getRunAsGroup(), 2000L, "runAsGroup has beem merged");
+    assertEquals(main.getRunAsGroup(), 2000L, "runAsGroup has not been merged");
     assertEquals(main.getRunAsUser(), 1000L, "runAsUser has not been merged");
     assertEquals(main.getAllowPrivilegeEscalation(), true, "sllowPrivilegeEscalation has not been merged");
     assertNull(main.getRunAsNonRoot(), "runAsNonRoot has not been set");
-    assertEquals(main.getCapabilities().getAdd().size(), 2, "capabilities.add have been merged");
+    assertEquals(main.getCapabilities().getAdd().size(), 2, "capabilities.add has been replaced");
+    assertEquals(main.getCapabilities().getAdd().get(0).equals("foo"), true, "capabilities.add has been replaced");
   }
-
-
 }

@@ -10,6 +10,7 @@
 
 package com.tsystemsmms.cmcc.cmccoperator;
 
+import com.tsystemsmms.cmcc.cmccoperator.components.Component;
 import com.tsystemsmms.cmcc.cmccoperator.components.corba.*;
 import com.tsystemsmms.cmcc.cmccoperator.components.generic.*;
 import com.tsystemsmms.cmcc.cmccoperator.components.job.MgmtToolsCronJobComponent;
@@ -21,6 +22,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
 
+import static org.apache.commons.lang3.StringUtils.isEmpty;
 import static org.springframework.beans.factory.config.BeanDefinition.SCOPE_PROTOTYPE;
 
 @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
@@ -62,6 +64,12 @@ public class ComponentBeanFactories {
         return new ElasticWorkerComponent(kubernetesClient, targetState, cs);
     }
 
+    @Bean("component:headless")
+    @Scope(SCOPE_PROTOTYPE)
+    public HeadlessComponent headlessComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec cs) {
+        return new HeadlessComponent(kubernetesClient, targetState, cs);
+    }
+
     @Bean("component:management-tools")
     @Scope(SCOPE_PROTOTYPE)
     public MgmtToolsJobComponent mgmtToolsJobComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec cs) {
@@ -100,7 +108,10 @@ public class ComponentBeanFactories {
 
     @Bean("component:solr")
     @Scope(SCOPE_PROTOTYPE)
-    public SolrComponent solrServerComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec cs) {
+    public Component solrServerComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec cs) {
+        if (isEmpty(cs.getKind())) {
+            return new LegacySolrComponent(kubernetesClient, targetState, cs);
+        }
         return new SolrComponent(kubernetesClient, targetState, cs);
     }
 

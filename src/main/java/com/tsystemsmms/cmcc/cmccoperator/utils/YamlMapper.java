@@ -46,8 +46,7 @@ public class YamlMapper {
         representer.addClassTag(CoreMediaContentCloudSpec.class, Tag.MAP);
         representer.addClassTag(CoreMediaContentCloudStatus.class, Tag.MAP);
         representer.addClassTag(Set.class, Tag.SEQ);
-        yaml = new Yaml(representer);
-
+        yaml = new Yaml(representer, options);
     }
 
     public <T> T load(String string, Class<T> clazz) {

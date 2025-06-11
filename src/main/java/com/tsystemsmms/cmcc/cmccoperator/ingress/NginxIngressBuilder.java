@@ -17,7 +17,6 @@ import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.networking.v1.*;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class NginxIngressBuilder extends AbstractIngressBuilder {
   private final String hostname;
@@ -37,7 +36,6 @@ public class NginxIngressBuilder extends AbstractIngressBuilder {
 
   @Override
   public Collection<? extends HasMetadata> build() {
-    IngressTLS ingressTls;
     ObjectMeta metadata = targetState.getResourceMetadataFor(name);
     metadata.getAnnotations().putAll(annotations);
 
@@ -48,29 +46,28 @@ public class NginxIngressBuilder extends AbstractIngressBuilder {
                             .withPort(new ServiceBackendPort("http", null))
                             .build())
                     .build())
-            .build()).collect(Collectors.toList());
+            .build()).toList();
+
+    IngressSpecBuilder ingressSpecBuilder = new IngressSpecBuilder()
+            .withIngressClassName("nginx")
+            .withRules(new IngressRuleBuilder()
+                    .withHost(hostname)
+                    .withHttp(new HTTPIngressRuleValueBuilder()
+                            .withPaths(httpPaths)
+                            .build())
+                    .build());
 
     if (tls.isEnabled()) {
-      ingressTls = new IngressTLSBuilder()
+      IngressTLS ingressTls = new IngressTLSBuilder()
               .withHosts(hostname)
               .withSecretName(tls.getSecretName())
               .build();
-    } else {
-      ingressTls = new IngressTLS();
+      ingressSpecBuilder.withTls(ingressTls);
     }
 
     return Collections.singletonList(new io.fabric8.kubernetes.api.model.networking.v1.IngressBuilder()
             .withMetadata(metadata)
-            .withSpec(new IngressSpecBuilder()
-                    .withIngressClassName("nginx")
-                    .withTls(ingressTls)
-                    .withRules(new IngressRuleBuilder()
-                            .withHost(hostname)
-                            .withHttp(new HTTPIngressRuleValueBuilder()
-                                    .withPaths(httpPaths)
-                                    .build())
-                            .build())
-                    .build())
+            .withSpec(ingressSpecBuilder.build())
             .build());
   }
 
@@ -125,7 +122,7 @@ public class NginxIngressBuilder extends AbstractIngressBuilder {
         break;
       case PATTERN:
         b.withPath(path.getPattern() + "$");
-        b.withPathType("Prefix");
+        b.withPathType("ImplementationSpecific");
         break;
       default:
         throw new IllegalArgumentException("Unknown path type " + path.getType());

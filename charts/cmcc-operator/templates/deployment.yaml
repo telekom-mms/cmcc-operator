@@ -30,13 +30,32 @@ spec:
         - name: {{ .Chart.Name }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          {{- /*
+          the following rules apply for the image tag (taken from here https://github.com/helm/helm/issues/3141#issuecomment-2417672797):
+            When values are explicitly specified, those values will always be used.
+            When rendering the chart from the source repository, the version will default to latest.
+            When rendering the chart from a helm package tarball when you did not specify --version, the version will default to latest.
+            When rendering a packaged chart that you did specify a version for, the version will default to the same as the version of the chart.
+          */}}
+          image: '{{ .Values.image.repository }}:{{ .Values.image.tag | default (eq .Chart.AppVersion "0.1.0-alpha1" | ternary "latest" .Chart.AppVersion ) }}'
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
             - name: CMCC_USECONFIGMAP
               value: {{  .Values.cmcc.useConfigMap | quote }}
             - name: CMCC_USECRD
               value: {{  .Values.cmcc.useCrd | quote }}
+              {{- if .Values.cmcc.jsonLogging }}
+            - name: LOGGING_CONFIG
+              value: "classpath:logback-config-json.xml"
+              {{- end }}
+              {{- if .Values.cmcc.scope.namespace.include }}
+            - name: CMCC_SCOPE_NAMESPACE_INCLUDE
+              value: "{{ join "," .Values.cmcc.scope.namespace.include }}"
+              {{- end }}
+              {{- if .Values.cmcc.scope.namespace.exclude }}
+            - name: CMCC_SCOPE_NAMESPACE_EXCLUDE
+              value: "{{ join "," .Values.cmcc.scope.namespace.exclude }}"
+              {{- end }}
           ports:
             - name: http
               containerPort: 8080

@@ -38,7 +38,7 @@ public abstract class CorbaComponent extends SpringBootComponent implements HasS
   public static final String PVC_UAPI_BLOBCACHE = "uapi-blob";
   public static final String MOUNT_UAPI_BLOBCACHE = "/coremedia/cache/uapi-blobcache";
 
-  public CorbaComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec componentSpec, String imageRepository) {
+  protected CorbaComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec componentSpec, String imageRepository) {
     super(kubernetesClient, targetState, componentSpec, imageRepository);
   }
 
@@ -47,6 +47,9 @@ public abstract class CorbaComponent extends SpringBootComponent implements HasS
     List<HasMetadata> resources = new LinkedList<>();
     resources.add(buildStatefulSet());
     resources.add(buildService());
+    if (getCmcc().getSpec().getWith().getJsonLogging()) {
+      resources.add(buildLoggingConfigMap());
+    }
     return resources;
   }
 
@@ -57,6 +60,7 @@ public abstract class CorbaComponent extends SpringBootComponent implements HasS
   }
 
 
+  @Override
   public EnvVarSet getEnvVars() {
     EnvVarSet env = super.getEnvVars();
 
@@ -137,28 +141,38 @@ public abstract class CorbaComponent extends SpringBootComponent implements HasS
                     .withEmptyDir(new EmptyDirVolumeSource())
                     .build()
     ));
-    if (!getCmcc().getSpec().getWith().getCachesAsPvc()) {
-      volumes.addAll(List.of(
-              new VolumeBuilder()
+
+    if (needsTransformedBlobCache() && !getCmcc().getSpec().getWith().getCachesAsPvc()) {
+      volumes.add(new VolumeBuilder()
                       .withName(PVC_TRANSFORMED_BLOBCACHE)
                       .withEmptyDir(new EmptyDirVolumeSource())
-                      .build(),
-              new VolumeBuilder()
-                      .withName(PVC_UAPI_BLOBCACHE)
-                      .withEmptyDir(new EmptyDirVolumeSource())
-                      .build()
-      ));
+                      .build());
     }
+
+    if (needsUapiCache()) {
+      volumes.add(new VolumeBuilder()
+              .withName(PVC_UAPI_BLOBCACHE)
+              .withEmptyDir(new EmptyDirVolumeSource())
+              .build());
+    }
+
     return volumes;
+  }
+
+  protected boolean needsTransformedBlobCache() {
+    return false;
+  }
+
+  protected boolean needsUapiCache() {
+    return true;
   }
 
   @Override
   public List<PersistentVolumeClaim> getVolumeClaims() {
     List<PersistentVolumeClaim> claims = super.getVolumeClaims();
 
-    if (getCmcc().getSpec().getWith().getCachesAsPvc()) {
+    if (needsTransformedBlobCache() && getCmcc().getSpec().getWith().getCachesAsPvc()) {
       claims.add(getPersistentVolumeClaim(PVC_TRANSFORMED_BLOBCACHE, getVolumeSize(ComponentSpec.VolumeSize::getTransformedBlobCache)));
-      claims.add(getPersistentVolumeClaim(PVC_UAPI_BLOBCACHE, getVolumeSize(ComponentSpec.VolumeSize::getUapiBlobCache)));
     }
     return claims;
   }
@@ -167,14 +181,19 @@ public abstract class CorbaComponent extends SpringBootComponent implements HasS
   public List<VolumeMount> getVolumeMounts() {
     LinkedList<VolumeMount> volumeMounts = new LinkedList<>(super.getVolumeMounts());
 
-    volumeMounts.add(new VolumeMountBuilder()
-            .withName(PVC_TRANSFORMED_BLOBCACHE)
-            .withMountPath(MOUNT_TRANSFORMED_BLOBCACHE)
-            .build());
-    volumeMounts.add(new VolumeMountBuilder()
-            .withName(PVC_UAPI_BLOBCACHE)
-            .withMountPath(MOUNT_UAPI_BLOBCACHE)
-            .build());
+    if (needsTransformedBlobCache()) {
+      volumeMounts.add(new VolumeMountBuilder()
+              .withName(PVC_TRANSFORMED_BLOBCACHE)
+              .withMountPath(MOUNT_TRANSFORMED_BLOBCACHE)
+              .build());
+    }
+
+    if (needsUapiCache()) {
+      volumeMounts.add(new VolumeMountBuilder()
+              .withName(PVC_UAPI_BLOBCACHE)
+              .withMountPath(MOUNT_UAPI_BLOBCACHE)
+              .build());
+    }
 
     return volumeMounts;
   }

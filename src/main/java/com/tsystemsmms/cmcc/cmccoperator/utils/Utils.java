@@ -13,17 +13,20 @@ package com.tsystemsmms.cmcc.cmccoperator.utils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarSource;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.SecretKeySelector;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+@Slf4j
 public class Utils {
 
   private static final ObjectMapper objectMapper = new ObjectMapper();
@@ -61,7 +64,7 @@ public class Utils {
   public static String concatOptional(String joiner, List<String> strings) {
     StringBuilder sb = new StringBuilder();
 
-    strings = strings.stream().filter(s -> s != null && !s.isBlank()).collect(Collectors.toList());
+    strings = strings.stream().filter(s -> s != null && !s.isBlank()).toList();
     switch (strings.size()) {
       case 0:
         return "";
@@ -146,6 +149,19 @@ public class Utils {
             .readValue(objectMapper.writeValueAsString(source), clazz);
   }
 
+  public static <K, V> Map<K, V> deepClone(Map<K,V> map) {
+    return map.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+  }
+
+  public static boolean deepEquals(Object o1, Object o2) {
+      try {
+          return objectMapper.writeValueAsString(o1).equals(objectMapper.writeValueAsString(o2));
+      } catch (JsonProcessingException e) {
+          log.warn("deepEquals failed", e);
+          return false;
+      }
+  }
+
   public static String encode64(String s) {
     return Base64.getEncoder().encodeToString(s.getBytes(StandardCharsets.UTF_8));
   }
@@ -214,6 +230,7 @@ public class Utils {
   @SneakyThrows
   public static <T> T mergeObjects(Class<T> clazz, T main, T... additional) {
     ObjectMapper mapper = new ObjectMapper();
+    mapper.configOverride(ArrayNode.class).setMergeable(false);
     JsonNode mainNode = mapper.valueToTree(main);
     for (T a : additional) {
       mainNode = mapper.readerForUpdating(mainNode).readValue(mapper.writeValueAsString(a));
@@ -229,7 +246,7 @@ public class Utils {
    */
   public static String selectorFromLabels(Map<String, String> labels) {
     return labels.entrySet().stream()
-            .map((e) -> e.getKey() + "=" + e.getValue())
+            .map(e -> e.getKey() + "=" + e.getValue())
             .collect(Collectors.joining(","));
   }
 }

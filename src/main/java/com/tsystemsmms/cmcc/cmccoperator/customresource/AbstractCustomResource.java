@@ -38,6 +38,10 @@ public abstract class AbstractCustomResource implements CustomResource {
         this.status = status;
     }
 
+    @Override
+    public String getVersion() {
+        return spec.getVersion();
+    }
 
     @Override
     public String getApiVersion() {

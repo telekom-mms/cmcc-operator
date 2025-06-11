@@ -22,11 +22,9 @@ import com.tsystemsmms.cmcc.cmccoperator.utils.EnvVarSet;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static com.tsystemsmms.cmcc.cmccoperator.components.HasMongoDBClient.MONGODB_CLIENT_SECRET_REF_KIND;
 import static com.tsystemsmms.cmcc.cmccoperator.crds.ClientSecretRef.DEFAULT_PASSWORD_KEY;
@@ -71,13 +69,17 @@ public class MongoDBComponent extends AbstractComponent implements HasService {
     }
 
     @Override
+    public Map<String, String> getPodLabels() {
+        return super.getSelectorLabels(); // no version on the db
+    }
+
+    @Override
     public long getTerminationGracePeriodSeconds() {
         return 30L;
     }
 
     @Override
     public EnvVarSet getEnvVars() {
-        String name = getTargetState().getResourceNameFor(this, MONGODB_ROOT_USERNAME);
         ClientSecretRef csr = getClientSecretRef();
         EnvVarSet env = new EnvVarSet();
         env.add(EnvVarSecret("MONGO_INITDB_ROOT_USERNAME", csr.getSecretName(), csr.getUsernameKey()));
@@ -87,30 +89,46 @@ public class MongoDBComponent extends AbstractComponent implements HasService {
 
     @Override
     public Probe getStartupProbe() {
-        return new ProbeBuilder()
-                .withExec(new ExecActionBuilder()
-                        .withCommand("bash", "-ec", "mongo --disableImplicitSessions $TLS_OPTIONS --eval 'db.hello().isWritablePrimary || db.hello().secondary' | grep -q 'true'")
-                        .build())
+        var result = new ProbeBuilder()
                 .withFailureThreshold(6)
                 .withInitialDelaySeconds(5)
                 .withPeriodSeconds(10)
                 .withSuccessThreshold(1)
-                .withTimeoutSeconds(5)
-                .build();
+                .withTimeoutSeconds(5);
+
+        if (isMongo5()) {
+            result.withExec(new ExecActionBuilder()
+                    .withCommand("bash", "-ec", "mongo --disableImplicitSessions $TLS_OPTIONS --eval 'db.hello().isWritablePrimary || db.hello().secondary' | grep -q 'true'")
+                    .build());
+        } else {
+            result.withExec(new ExecActionBuilder()
+                    .withCommand("bash", "-ec", "mongosh $TLS_OPTIONS --eval 'db.hello().isWritablePrimary || db.hello().secondary' | grep -q 'true'")
+                    .build());
+        }
+
+        return result.build();
     }
 
     @Override
     public Probe getLivenessProbe() {
-        return new ProbeBuilder()
-                .withExec(new ExecActionBuilder()
-                        .withCommand("mongo", "--disableImplicitSessions", "--eval", "db.adminCommand('ping')")
-                        .build())
+        var result = new ProbeBuilder()
                 .withFailureThreshold(6)
                 .withInitialDelaySeconds(30)
                 .withPeriodSeconds(10)
                 .withSuccessThreshold(1)
-                .withTimeoutSeconds(5)
-                .build();
+                .withTimeoutSeconds(5);
+
+        if (isMongo5()) {
+            result.withExec(new ExecActionBuilder()
+                    .withCommand("mongo", "--disableImplicitSessions", "--eval", "db.adminCommand('ping')")
+                    .build());
+        } else {
+            result.withExec(new ExecActionBuilder()
+                    .withCommand("/bin/bash", "-ec", "mongosh --quiet \"$(hostname --ip-address || echo '127.0.0.1')/test\" --eval 'quit(db.runCommand({ ping: 1 }).ok ? 0 : 2)' || exit 1")
+                    .build());
+        }
+
+        return result.build();
     }
 
     @Override
@@ -120,7 +138,7 @@ public class MongoDBComponent extends AbstractComponent implements HasService {
 
     @Override
     public ImageSpec getDefaultImage() {
-        return new ImageSpec("docker.io/library/mongo:5.0");
+        return new ImageSpec("docker.io/library/mongo:7.0");
     }
 
     @Override
@@ -170,7 +188,8 @@ public class MongoDBComponent extends AbstractComponent implements HasService {
                 .build());
         volumeMounts.add(new VolumeMountBuilder()
                 .withName(getTargetState().getResourceNameFor(this, "init"))
-                .withMountPath("/docker-entrypoint-initdb.d")
+                .withMountPath("/docker-entrypoint-initdb.d/create-default-users.js")
+                .withSubPath("create-default-users.js")
                 .build());
 
         return volumeMounts;
@@ -186,11 +205,16 @@ public class MongoDBComponent extends AbstractComponent implements HasService {
                 .build());
     }
 
+    boolean isMongo5() {
+        var version = getComponentSpec().getExtra().get("version");
+        return !StringUtils.isEmpty(version) && version.equals("5.0");
+    }
+
     public static Map<String, String> createUsersFromClientSecrets(TargetState targetState) {
         Map<String, ClientSecret> secrets = targetState.getClientSecrets(MONGODB_CLIENT_SECRET_REF_KIND);
 
         if (secrets == null) {
-            log.warn("No MongoDB users to be created");
+            log.warn("[{}] No MongoDB users to be created", targetState.getContextForLogging());
             return Collections.emptyMap();
         }
 
@@ -210,11 +234,6 @@ public class MongoDBComponent extends AbstractComponent implements HasService {
             if (MONGODB_ROOT_USERNAME.equals(data.get(DEFAULT_USERNAME_KEY)))
                 continue;
             // we would like to give client only rights to a specific database, but CM requires the right to create multiple databases (or somehow know which DBs will be created; the list is undocumented, however.
-//            createUsersJs.append(format("db = db.getSiblingDB('{}');\ndb.createUser({user: '{}', pwd: '{}', roles: ['readWrite', 'dbAdmin']});\n",
-//                    data.get(DEFAULT_SCHEMA_KEY),
-//                    data.get(DEFAULT_USERNAME_KEY),
-//                    data.get(DEFAULT_PASSWORD_KEY)
-//            ));
             createUsersJs.append(format("db.createUser({user: '{}', pwd: '{}', roles: ['root']});\n",
                     data.get(DEFAULT_USERNAME_KEY),
                     data.get(DEFAULT_PASSWORD_KEY)

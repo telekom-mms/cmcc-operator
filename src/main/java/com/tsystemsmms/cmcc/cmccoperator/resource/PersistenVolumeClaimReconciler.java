@@ -28,15 +28,28 @@ public class PersistenVolumeClaimReconciler implements Reconciler {
         if (existing.get() != null) {
             Quantity storage = pvc.getSpec().getResources().getRequests().get("storage");
             //noinspection StatementWithEmptyBody
-            if (storage.equals(existing.get().getSpec().getResources().getRequests().get("storage"))) {
+            if (!needsUpdate(existing.get(), pvc)) {
 //                log.debug("skipping unchanged {}/{}", resource.getKind(), resource.getMetadata().getName());
             } else {
 //                log.debug("patching {}/{}", resource.getKind(), resource.getMetadata().getName());
-                existing.edit(r -> new PersistentVolumeClaimBuilder(r).editOrNewSpec().editOrNewResources().addToRequests("storage", storage).endResources().endSpec().build());
+                existing.edit(r -> new PersistentVolumeClaimBuilder(r)
+                        // the following is only needed during the transition from v1 to v2
+                        .editMetadata().withOwnerReferences(pvc.getMetadata().getOwnerReferences()).endMetadata()
+                        .editOrNewSpec()
+                        .editOrNewResources().addToRequests("storage", storage).endResources()
+                        .endSpec()
+                        .build());
             }
         } else {
 //            log.debug("reconciling {}/{}", resource.getKind(), resource.getMetadata().getName());
-            kubernetesClient.resource(resource).inNamespace(namespace).createOrReplace();
+            kubernetesClient.resource(resource).inNamespace(namespace).create();
         }
+    }
+
+    private boolean needsUpdate(PersistentVolumeClaim existing, PersistentVolumeClaim pvc) {
+        var storage = pvc.getSpec().getResources().getRequests().get("storage");
+        var ownerRef = pvc.getMetadata().getOwnerReferences();
+        return !storage.equals(existing.getSpec().getResources().getRequests().get("storage")) ||
+                !ownerRef.containsAll(existing.getMetadata().getOwnerReferences());
     }
 }

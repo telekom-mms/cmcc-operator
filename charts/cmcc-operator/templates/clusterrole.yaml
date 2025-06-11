@@ -24,6 +24,8 @@ rules:
     verbs:
       - get
       - list
+      - delete
+      - deletecollection
   - apiGroups:
       - ""
     resources:
@@ -68,5 +70,6 @@ rules:
       - list
       - update
       - watch
+      - patch
 {{- end }}
 {{- end }}

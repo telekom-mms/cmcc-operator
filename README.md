@@ -2,6 +2,27 @@
 
 [![build](https://github.com/Telekom-MMS/cmcc-operator/actions/workflows/build.yml/badge.svg)](https://github.com/Telekom-MMS/cmcc-operator/actions/workflows/build.yml)
 
+
+**!!! ATTENTION - Version 2 - Breaking changes !!!**
+
+**Important** Since May 26, 2025 
+The new version V2 is incompatible with previous releases. Therefore we removed support for v1 CRD objects in this release. That means that in order to use the latest version of the operator you need to upgrade your existing CRDs to v2. The easiest way to do this is to uninstall (helm uninstall) all CMCCs, remove the CRD and to re-install your operator and CMCCs again.
+
+Important changes:
+ - Versioning and [Upgrade path](docs/upgrade-path.md)
+ - [Scaling](docs/scaling.md)
+ - Mongo DB 7 (as default)
+ - JSON - structured logging
+ - Headless components
+ - Several additional 
+
+Please also note that in terms of CRD handling we switched to the HELM 3 approach with these consequences
+- CRD files are now located in the subdirectory `crds` of a chart
+- CRDs are deployed together with the operator ONLY when there does not yet exist a similarly named CRD
+- Therefore, CRDs are NOT UPDATED when the operator is upgraded (even when deployed with `helm upgrade`)
+
+Find details on how to migrate (also how to migrate without redeployment) see [Migration Guide](migrateToV2).
+
 **Important** Since June 4, 2024, this repo has moved from T-Systems-MMS/cmcc-operator to Telekom-MMS/cmcc-operator. While Github will automatically redirect requests for the Git repo, the Helm repo URL has to be adjusted manually.
 
 In particular, you will need to update your Helm repo URL like this:
@@ -14,6 +35,7 @@ helm repo update
 
 [Kubernetes Operators](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/) are specialized software packages that help manage applications and resources in a k8s cluster. This operator will create, initialize and run a [CoreMedia Content Cloud](https://www.coremedia.com) application. A custom resource definition is used to define all relevant parameters.
 
+
 ## Quick Links
 
 * [Helm chart cmcc-operator](charts/cmcc-operator) to install the operator
@@ -21,6 +43,7 @@ helm repo update
 * [Configuring provisioning through the CoreMediaContentClouds custom resource](docs/custom-resource.md): complete description of all options
 * [Installing the Operator](#preparing-your-cluster-and-installing-the-operator)
 * [Using the Operator to create a CoreMedia installation](#using-the-operator): quick start
+* [Upgrade-Path / Zero-Downtime Deployments](docs/upgrade-path.md): What is that? How?
 * [Customizing the CMCC Operator](docs/customizing-the-operator.md): information for developers
 * [ghcr.io/telekom-mms/cmcc-operator/cmcc-operator](https://github.com/Telekom-MMS/cmcc-operator/pkgs/container/cmcc-operator%2Fcmcc-operator) Docker Image
 * [Cluster Roles and Rights](docs/cluster-roles.md) that the operator requires.
@@ -59,14 +82,14 @@ The operator:
 
 * manages the creation and updating of all the Kubernetes resources required to run CoreMedia Content Cloud. Care has
   been taken to have sensible defaults for all parameters wherever possible.
+* manages the "version upgrade" of a CMCC deployment ensuring a [Zero-Downtime Deployment](docs/zero-downtime-deployments.md)
 * can create a fresh installation from scratch, creating MariaDB and MongoDB database servers, and initialize the
   necessary database schemas and secrets, suitable for a development environment. For production, persistence should be
   provided, for example by using cloud services, or using other operators to provision databases.
 * can deploy against existing databases, using pre-existing secrets provided.
 * can use a custom resource definition or a config map to supply the values. This makes it possible to use the operator
   even on clusters where you cannot install cluster-wide resources.
-* deploys the CoreMedia Content Cloud components step by step. This ensures that components that require other
-  components are only started when the dependencies have been initialized successfully.
+* deploys the CoreMedia Content Cloud components step by step. This ensures that components that require other components are only started when the dependencies have been initialized successfully.
 * imports test users and contents initially.
 * run additional jobs, for example to re-import content into a running installation.
 * configures the live CAE deployment with the desired number of replicas.
@@ -74,13 +97,13 @@ The operator:
 * can create random passwords for all components and configures the components to use them (MariaDB, MongoDB, and
   UAPI/Corba). You can override any or all secrets for these usernames and password.
 * configures Solr clustering by specifying the number of replicas to create.
+* configures Solr BASIC Auth for solr leader, follower and clients if it is enabled.
 * configures zero or more Replication Live Servers to provide redundancy in the delivery/live stage.
-* supports CoreMedia Content Cloud 11.
+* supports CoreMedia Content Cloud 12.
 
 Planned features include:
 * Support for Traefik ingress controller and its resource types (in addition to the [kubernetes/ingress-nginx](https://github.com/kubernetes/ingress-nginx)).
 * Admission webhook that verifies consistency of the custom resource, and can migrate between CRD versions.
-* Configuring a horizontal pod autoscaler for the live CAEs.
 
 ## Preparing Your Cluster and Installing the Operator
 
@@ -105,16 +128,27 @@ In order for users to be able to access the CoreMedia websites, you will need to
 
 If you don't have a domain handy for a development setup, for example on your local machine, you can use a DNS service like [nip.io](https://nip.io) or [sslip.io](https://sslip.io). This allows you to configure `defaults.ingressDomain: 127.0.0.1.nip.io`.
 
-All host names are built from three components: the `defaults.namePrefix`, the component name/site mapping name, and the `defaults.ingressDomain`. See below for [Site Mappings](docs/custom-resource.md#site-mappings). Examples:
+All host names are built by the following components: 
+- `defaults.namePrefix`
+- `defaults.nameSuffix`
+- `defaults.namePrefixForIngressDomain`
+- `defaults.nameSuffixForIngressDomain`
+- the `defaults.ingressDomain`
 
-| namePrefix | component/site | ingressDomain    | Resulting URL                         |
-|------------|----------------|------------------|---------------------------------------|
-| –          | overview       | 127.0.0.1.nip.io | https://overview.127.0.0.1.nip.io     |
-| –          | studio         | 127.0.0.1.nip.io | https://studio.127.0.0.1.nip.io       |
-| –          | corporate      | 127.0.0.1.nip.io | https://corporate.127.0.0.1.nip.io    |
-| dev        | overview       | k8s.example.com  | https://dev-overview.k8s.example.com  |
-| dev        | studio         | k8s.example.com  | https://dev-studio.k8s.example.com    |
-| dev        | corporate      | k8s.example.com  | https://dev-corporate.k8s.example.com |
+As the `namePrefix` and the `nameSuffix` are used also for the container-names, what is not always wanted, it is possible to use `namePrefixForIngressDomain` and `nameSuffixForIngressDomain` instead. Both of them are only used to build the DNS name.
+
+If `namePrefix` and `namePrefixForIngressDomain` are used, `namePrefixForIngressDomain` overrides `namePrefix` to build the DNS name. But only the `namePrefix` and the `nameSuffix` are used to create the container name.  
+
+See below for [Site Mappings](docs/custom-resource.md#site-mappings). Examples:
+
+| namePrefix | namePrefixForIngressDomain | component/site | ingressDomain    | nameSuffix | nameSuffixForIngressDomain | Resulting URL                               |
+|------------|----------------------------|----------------|------------------|------------|----------------------------|---------------------------------------------|
+| –          | -                          | overview       | 127.0.0.1.nip.io | -          | -                          | https://overview.127.0.0.1.nip.io           |
+| –          | -                          | studio         | 127.0.0.1.nip.io | -          | -                          | https://studio.127.0.0.1.nip.io             |
+| –          | dev2                       | corporate      | 127.0.0.1.nip.io | -          | sb2                        | https://dev2-corporate-sb2.127.0.0.1.nip.io |
+| dev        | -                          | overview       | k8s.example.com  | sb         | -                          | https://dev-overview-sb.k8s.example.com     |
+| dev        | -                          | studio         | k8s.example.com  | sb         | -                          | https://dev-studio-sb.k8s.example.com       |
+| dev        | dev2                       | corporate      | k8s.example.com  | sb         | sb2                        | https://de2-corporate-sb2.k8s.example.com   |
 
 
 ### Using Docker Desktop
@@ -132,7 +166,7 @@ If you're using [k3d](https://k3d.io/) as a cluster, your Docker install will ne
 The [Helm chart cmcc-operator](charts/cmcc-operator) can be used to install and configure the operator.
 
 ```console
-$ helm repo add cmcc-operator https://telekom-mms.github.io/cmcc-operator/
+$ helm repo add cmcc-operator https://t-systems-mms.github.io/cmcc-operator/
 $ helm upgrade --install --create-namespace --namespace cmcc-operator cmcc-operator cmcc-operator/cmcc-operator
 ```
 
@@ -191,7 +225,7 @@ The license secrets need to be created in the same namespace you plan to install
 The [Helm chart cmcc](charts/cmcc) can be used to create a deployment for CoreMedia Content Cloud. See the documentation there for information on how to supply the necessary values to Helm.
 
 ````shell
-$ helm repo add cmcc-operator https://telekom-mms.github.io/cmcc-operator/
+$ helm repo add cmcc-operator https://t-systems-mms.github.io/cmcc-operator/
 $ helm upgrade --install my-release cmcc-operator/cmcc --values my-values.yaml
 ````
 
