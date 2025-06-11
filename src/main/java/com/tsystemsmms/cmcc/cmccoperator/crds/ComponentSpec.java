@@ -12,13 +12,15 @@ package com.tsystemsmms.cmcc.cmccoperator.crds;
 
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import com.tsystemsmms.cmcc.cmccoperator.utils.Utils;
-import io.fabric8.kubernetes.api.model.EnvVar;
-import io.fabric8.kubernetes.api.model.PodSecurityContext;
-import io.fabric8.kubernetes.api.model.SecurityContext;
+import io.fabric8.kubernetes.api.model.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import org.apache.commons.lang3.StringUtils;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 @Data
 public class ComponentSpec {
@@ -30,6 +32,9 @@ public class ComponentSpec {
 
   @JsonPropertyDescription("Name to be used for k8s objects")
   private String name = "";
+
+  @JsonPropertyDescription("Forces to use MLS over RLS when set to true")
+  private Boolean forceMls = false;
 
   @JsonPropertyDescription("Additional annotations")
   private Map<String, String> annotations = new HashMap<>();
@@ -64,6 +69,28 @@ public class ComponentSpec {
   @JsonPropertyDescription("Size of persistent data/cache volumes")
   ComponentSpec.VolumeSize volumeSize = new ComponentSpec.VolumeSize();
 
+  @JsonPropertyDescription("Additional volume mounts for a pod")
+  private List<VolumeMount> volumeMounts = new LinkedList<>();
+
+  @JsonPropertyDescription("Additional volumes for a pod")
+  private List<Volume> volumes = new LinkedList<>();
+
+  @JsonPropertyDescription("Overriding Affinity rules for a pod")
+  private Affinity affinity;
+
+  @JsonPropertyDescription("Health probe timeouts for a pod")
+  private Timeouts timeouts = new Timeouts();
+
+  @Data
+  public static class Timeouts {
+    @JsonPropertyDescription("Timeout in seconds for startup")
+    Integer startup = 600;
+    @JsonPropertyDescription("Timeout in seconds for liveness")
+    Integer live = 200;
+    @JsonPropertyDescription("Timeout in seconds for readiness")
+    Integer ready = 100;
+  }
+
   public ComponentSpec() {
   }
 
@@ -80,20 +107,9 @@ public class ComponentSpec {
     this.update(that);
   }
 
-  /**
-   * Get the value of an entry in the extra hash.
-   *
-   * @param key name of the entry
-   * @return value of the entry, or Optional.empty
-   */
-  public Optional<String> getExtra(String key) {
-    if (extra == null)
-      return Optional.empty();
-    return Optional.ofNullable(extra.get(key));
-  }
-
   public void update(ComponentSpec that) {
     this.setAnnotations(that.getAnnotations());
+    this.setForceMls(that.getForceMls());
     this.setArgs(that.getArgs());
     this.getEnv().addAll(that.getEnv());
     this.getExtra().putAll(that.getExtra());
@@ -128,6 +144,20 @@ public class ComponentSpec {
       this.volumeSize.setTransformedBlobCache(that.getVolumeSize().getTransformedBlobCache());
     if (that.getVolumeSize().getUapiBlobCache() != null)
       this.volumeSize.setUapiBlobCache(that.getVolumeSize().getUapiBlobCache());
+
+    that.getVolumeMounts().forEach(v -> {
+      if (this.volumeMounts.stream().noneMatch(tv ->
+              StringUtils.equals(tv.getName(),      v.getName()) &&
+              StringUtils.equals(tv.getMountPath(), v.getMountPath()) &&
+              StringUtils.equals(tv.getSubPath(),   v.getSubPath())))
+        this.volumeMounts.add(v);
+    });
+    that.getVolumes().forEach(v -> {
+      if (this.volumes.stream().noneMatch(tv -> tv.getName().equals(v.getName())))
+        this.volumes.add(v);
+    });
+    this.affinity = that.getAffinity();
+    this.timeouts = that.getTimeouts();
   }
 
   @Data

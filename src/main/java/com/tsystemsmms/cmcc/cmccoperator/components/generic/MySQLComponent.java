@@ -23,20 +23,17 @@ import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static com.tsystemsmms.cmcc.cmccoperator.components.HasJdbcClient.JDBC_CLIENT_SECRET_REF_KIND;
-import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.EnvVarSecret;
-import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.format;
+import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.*;
 
 /**
  * Build a MySQL deployment.
  */
 @Slf4j
 public class MySQLComponent extends AbstractComponent implements HasService {
+    public static final String MYSQL = "mysql";
     public static final String MYSQL_ROOT_USERNAME = "root";
 
     public MySQLComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec componentSpec) {
@@ -65,7 +62,45 @@ public class MySQLComponent extends AbstractComponent implements HasService {
         resources.add(buildStatefulSet());
         resources.add(buildService());
         resources.addAll(buildExtraConfigMaps());
+
+        restoreUserSchemasIfNeeded();
+
         return resources;
+    }
+
+    @Override
+    public Map<String, String> getPodLabels() {
+        return super.getSelectorLabels(); // no version on the db
+    }
+
+    protected void restoreUserSchemasIfNeeded() {
+        String name = getTargetState().getResourceNameFor(this);
+        String flag = concatOptional("restore", name, "users");
+        if (getTargetState().isFlag(flag)) {
+            if (!getState().isReady().orElse(false)) {
+                return;
+            }
+            restoreUserSchemas();
+            getTargetState().setFlag(flag, false);
+        }
+    }
+
+    private void restoreUserSchemas() {
+        var pod = getTargetState().getKubernetesClient().pods()
+                .inNamespace(getNamespace())
+                .withLabels(getSelectorLabels())
+                .resources()
+                .findFirst().get();
+
+        var result = executeCommand(pod, "mysql -v -u root --password=$MYSQL_ROOT_PASSWORD < /docker-entrypoint-initdb.d/create-default-users.sql");
+
+        if (result.exitCode != 0) {
+            log.warn("[{}] Error while restoring database user schemas for {}. Output: {} Error: {}",
+                    getTargetState().getContextForLogging(),
+                    getTargetState().getResourceNameFor(this),
+                    result.output,
+                    result.errorOutput);
+        }
     }
 
     @Override
@@ -85,11 +120,13 @@ public class MySQLComponent extends AbstractComponent implements HasService {
     public Probe getStartupProbe() {
         return new ProbeBuilder()
                 .withExec(new ExecActionBuilder()
-                        .withCommand("/bin/bash", "-ec", "password_aux=\"${MYSQL_ROOT_PASSWORD:-}\"\n" +
-                                "if [[ -f \"${MYSQL_ROOT_PASSWORD_FILE:-}\" ]]; then\n" +
-                                "    password_aux=$(cat \"$MYSQL_ROOT_PASSWORD_FILE\")\n" +
-                                "fi\n" +
-                                "mysqladmin status -uroot -p\"${password_aux}\"")
+                        .withCommand("/bin/bash", "-ec","""
+                                password_aux="${MYSQL_ROOT_PASSWORD:-}"
+                                if [[ -f "${MYSQL_ROOT_PASSWORD_FILE:-}" ]]; then
+                                    password_aux=$(cat "$MYSQL_ROOT_PASSWORD_FILE")
+                                fi
+                                mysqladmin status -uroot -p"${password_aux}"
+                                """)
                         .build())
                 .withFailureThreshold(300)
                 .withInitialDelaySeconds(10)

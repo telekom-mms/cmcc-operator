@@ -10,180 +10,62 @@
 
 package com.tsystemsmms.cmcc.cmccoperator.components.corba;
 
-import com.tsystemsmms.cmcc.cmccoperator.components.Component;
-import com.tsystemsmms.cmcc.cmccoperator.components.HasMongoDBClient;
-import com.tsystemsmms.cmcc.cmccoperator.components.HasService;
-import com.tsystemsmms.cmcc.cmccoperator.components.HasSolrClient;
-import com.tsystemsmms.cmcc.cmccoperator.crds.ClientSecretRef;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
-import com.tsystemsmms.cmcc.cmccoperator.crds.SiteMapping;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.CustomResourceConfigError;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
-import com.tsystemsmms.cmcc.cmccoperator.utils.EnvVarSet;
-import com.tsystemsmms.cmcc.cmccoperator.utils.Utils;
-import io.fabric8.kubernetes.api.model.*;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
-import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.concatOptional;
+import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.defaultString;
 import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.getInt;
 
 @Slf4j
-public class CAEComponent extends CorbaComponent implements HasMongoDBClient, HasSolrClient, HasService {
+public class CAEComponent extends AbstractRenderingCorbaComponent {
+    public static final String TYPE_CAE = "cae";
 
-  public static final String KIND_LIVE = "live";
-  public static final String KIND_PREVIEW = "preview";
-  public static final String SOLR_COLLECTION_LIVE = "live";
-  public static final String SOLR_COLLECTION_PREVIEW = "preview";
-  public static final String EXTRA_REPLICAS = "replicas";
-
-  String servletPathPattern;
-
-  private int replicas = 1;
-
-  public CAEComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec componentSpec) {
-    super(kubernetesClient, targetState, componentSpec, "cae-preview");
-
-    String solrCsr;
-
-    if (getComponentSpec().getKind() == null)
-      throw new CustomResourceConfigError("kind must be set to either " + KIND_LIVE + " or " + KIND_PREVIEW);
-    switch (componentSpec.getKind()) {
-      case KIND_LIVE:
-        solrCsr = HasSolrClient.getSolrClientSecretRefName(SOLR_COLLECTION_LIVE, SOLR_CLIENT_SERVER_FOLLOWER);
-        setImageRepository("cae-live");
-        break;
-      case KIND_PREVIEW:
-        solrCsr = HasSolrClient.getSolrClientSecretRefName(SOLR_COLLECTION_PREVIEW, SOLR_CLIENT_SERVER_LEADER);
-        break;
-      default:
-        throw new CustomResourceConfigError("kind \"" + getComponentSpec().getKind() + "\" is illegal, must be either " + KIND_LIVE + " or " + KIND_PREVIEW);
+    public CAEComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec componentSpec) {
+        super(kubernetesClient, targetState, componentSpec);
     }
-    setDefaultSchemas(Map.of(
-            MONGODB_CLIENT_SECRET_REF_KIND, "blueprint",
-            SOLR_CLIENT_SECRET_REF_KIND, solrCsr,
-            UAPI_CLIENT_SECRET_REF_KIND, "webserver"
-    ));
-    servletPathPattern = String.join("|", getDefaults().getServletNames());
-    if (componentSpec.getExtra().containsKey(EXTRA_REPLICAS))
-      replicas = Integer.parseInt(componentSpec.getExtra().get(EXTRA_REPLICAS));
-  }
 
-  @Override
-  public Component updateComponentSpec(ComponentSpec newCs) {
-    super.updateComponentSpec(newCs);
-    if (newCs.getExtra().containsKey(EXTRA_REPLICAS))
-      replicas = Integer.parseInt(newCs.getExtra().get(EXTRA_REPLICAS));
-    return this;
-  }
-
-
-  @Override
-  public void requestRequiredResources() {
-    super.requestRequiredResources();
-    getMongoDBClientSecretRef();
-    getSolrClientSecretRef();
-  }
-
-  @Override
-  public List<HasMetadata> buildResources() {
-    List<HasMetadata> resources = new LinkedList<>();
-    resources.add(buildStatefulSet(replicas));
-    resources.add(buildService());
-    return resources;
-  }
-
-  @Override
-  public HashMap<String, String> getSelectorLabels() {
-    HashMap<String, String> labels = super.getSelectorLabels();
-    labels.put("cmcc.tsystemsmms.com/kind", getComponentSpec().getKind());
-    return labels;
-  }
-
-  @Override
-  public EnvVarSet getEnvVars() {
-    EnvVarSet env = super.getEnvVars();
-
-    env.addAll(getMongoDBEnvVars());
-    env.addAll(getSolrEnvVars("cae"));
-
-    return env;
-  }
-
+    @Override
   public Map<String, String> getSpringBootProperties() {
     Map<String, String> properties = super.getSpringBootProperties();
-
-    properties.putAll(Map.of(
-            "server.tomcat.accesslog.enabled", "true",
-            "server.tomcat.accesslog.directory", "dev",
-            "server.tomcat.accesslog.prefix", "stdout",
-            "server.tomcat.accesslog.suffix", "",
-            "server.tomcat.accesslog.file-date-format", "",
-            "server.tomcat.accesslog.pattern", "[ACCESS] %l %t %D %F %B %S",
-            "server.tomcat.accesslog.rotate", "false",
-            "com.coremedia.transform.blobCache.basePath", MOUNT_TRANSFORMED_BLOBCACHE,
-            "cae.preview.pbe.studio-url-whitelist[0]", "https://" + getTargetState().getStudioHostname()
-    ));
+    properties.put("cae.preview.pbe.studio-url-whitelist[0]", "https://" + getTargetState().getStudioHostname());
     addUploadSizeProperties(properties, getInt(getComponentSpec().getKind().equals(KIND_LIVE)
             ? getSpec().getWith().getUploadSize().getLive()
             : getSpec().getWith().getUploadSize().getPreview()));
 
-    if (getComponentSpec().getKind().equals(KIND_LIVE)) {
-      if (getInt(getCmcc().getSpec().getWith().getDelivery().getRls()) == 0)
-        properties.put("repository.url", getTargetState().getServiceUrlFor("content-server", "mls"));
-      else
-        properties.put("repository.url", getTargetState().getServiceUrlFor("content-server", "rls"));
-
-      for (SiteMapping siteMapping : getSpec().getSiteMappings()) {
-        String fqdn = concatOptional(getDefaults().getNamePrefix(), siteMapping.getHostname()) + "." + getDefaults().getIngressDomain();
-        if (siteMapping.getFqdn() != null && !siteMapping.getFqdn().isEmpty())
-          fqdn = siteMapping.getFqdn();
-
-        if (!siteMapping.getFqdn().isBlank())
-          fqdn = siteMapping.getFqdn();
-        String protocol = Utils.defaultString(siteMapping.getProtocol(), getDefaults().getSiteMappingProtocol(), "//");
-        properties.put("blueprint.site.mapping." + siteMapping.getPrimarySegment(), protocol + fqdn);
-        for (String segment : siteMapping.getAdditionalSegments()) {
-          properties.put("blueprint.site.mapping." + segment, protocol + fqdn);
-        }
-      }
-    } else {
-      properties.putAll(getSiteMappingProperties());
-    }
     return properties;
   }
 
   @Override
-  public List<ContainerPort> getContainerPorts() {
-    return List.of(
-            new ContainerPortBuilder()
-                    .withName("http")
-                    .withContainerPort(8080)
-                    .build(),
-            new ContainerPortBuilder()
-                    .withName("management")
-                    .withContainerPort(8081)
-                    .build()
-    );
-  }
+  public Collection<? extends HasMetadata> buildIngressResources() {
+    var defaults = getCmcc().getSpec().getDefaults();
+    var kind = this.getComponentSpec().getKind();
+    var defaultLiveUrlMapperName = defaultString(defaults.getLiveUrlMapper(), defaults.getManagementUrlMapper());
 
-  @Override
-  public List<ServicePort> getServicePorts() {
-    return List.of(
-            new ServicePortBuilder().withName("http").withPort(8080).withNewTargetPort("http").build(),
-            new ServicePortBuilder().withName("management").withPort(8081).withNewTargetPort("management").build());
-  }
-
-  @Override
-  public Optional<ClientSecretRef> getSolrClientSecretRef() {
-    switch (getComponentSpec().getKind()) {
-      case KIND_LIVE:
-        return getSolrClientSecretRef(HasSolrClient.getSolrClientSecretRefName(SOLR_COLLECTION_LIVE, SOLR_CLIENT_SERVER_FOLLOWER));
-      case KIND_PREVIEW:
-        return getSolrClientSecretRef(HasSolrClient.getSolrClientSecretRefName(SOLR_COLLECTION_PREVIEW, SOLR_CLIENT_SERVER_LEADER));
-    }
-    return Optional.empty();
+    return switch (kind) {
+      case KIND_PREVIEW -> getTargetState().getManagementUrlMappingBuilderFactory()
+              .instance(getTargetState(), getTargetState().getServiceNameFor(this))
+              .buildPreviewResources();
+      case KIND_LIVE -> getCmcc().getSpec().getSiteMappings().stream().map(
+              sm -> {
+                var urlMapperName = defaultString(sm.getUrlMapper(), defaultLiveUrlMapperName);
+                var factory = getTargetState().getUrlMappingBuilderFactories().get(urlMapperName);
+                if (factory == null) {
+                  throw new CustomResourceConfigError("Unable to find URL Mapper \"" + urlMapperName + "\" for site mapping \"" + sm + "\"");
+                }
+                return factory
+                        .instance(getTargetState(), getTargetState().getServiceNameFor("cae", "live"))
+                        .buildLiveResources(sm);
+              })
+              .flatMap(Collection::stream)
+              .collect(Collectors.toList());
+      default -> Collections.emptyList();
+    };
   }
 }

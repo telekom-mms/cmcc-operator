@@ -34,6 +34,9 @@ public class SiteMapping {
     @JsonPropertyDescription("The site segment the root maps to")
     private String primarySegment;
 
+    @JsonPropertyDescription("Turn on/off redirects to the primary site segment for the root path")
+    private Boolean primarySegmentRedirect = true;
+
     @JsonPropertyDescription("Protocol for this entry")
     private String protocol;
 

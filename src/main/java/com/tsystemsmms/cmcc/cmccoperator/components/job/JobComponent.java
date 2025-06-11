@@ -10,6 +10,7 @@
 
 package com.tsystemsmms.cmcc.cmccoperator.components.job;
 
+import com.tsystemsmms.cmcc.cmccoperator.components.ComponentState;
 import com.tsystemsmms.cmcc.cmccoperator.components.SpringBootComponent;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
 import com.tsystemsmms.cmcc.cmccoperator.crds.Milestone;
@@ -20,11 +21,8 @@ import io.fabric8.kubernetes.api.model.batch.v1.JobBuilder;
 import io.fabric8.kubernetes.api.model.batch.v1.JobSpecBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 public abstract class JobComponent extends SpringBootComponent {
   long activeDeadlineSeconds = 120L;
@@ -69,7 +67,7 @@ public abstract class JobComponent extends SpringBootComponent {
                     .withTemplate(new PodTemplateSpecBuilder()
                             .withMetadata(new ObjectMetaBuilder()
                                     .withAnnotations(getAnnotations())
-                                    .withLabels(getSelectorLabels())
+                                    .withLabels(getPodLabels())
                                     .build())
                             .withSpec(new PodSpecBuilder()
                                     .withRestartPolicy("Never")
@@ -83,8 +81,8 @@ public abstract class JobComponent extends SpringBootComponent {
   }
 
   @Override
-  public HashMap<String, String> getSelectorLabels() {
-    HashMap<String, String> labels = super.getSelectorLabels();
+  public Map<String, String> getSelectorLabels() {
+    Map<String, String> labels = super.getSelectorLabels();
     labels.putAll(getJobLabels());
     return labels;
   }
@@ -94,12 +92,22 @@ public abstract class JobComponent extends SpringBootComponent {
   }
 
   @Override
-  public Optional<Boolean> isReady() {
+  public ComponentState getState() {
     // job is only active during one milestone
-    if (Milestone.compareTo(getCmcc().getStatus().getMilestone(), getComponentSpec().getMilestone()) != 0)
-      return Optional.empty();
-    return Optional.of(getTargetState().isJobReady(getTargetState().getResourceNameFor(this)));
+    if (Milestone.compareTo(getCmcc().getStatus().getMilestone(), getComponentSpec().getMilestone()) != 0) {
+      return ComponentState.NotApplicable;
+    }
+
+    var name = getTargetState().getResourceNameFor(this);
+    var job = getKubernetesClient().batch().v1().jobs().inNamespace(getCmcc().getMetadata().getNamespace()).withName(name).get();
+    if (job == null) {
+      return ComponentState.WaitingForDeployment;
+    }
+
+    if (job.getStatus() != null && job.getStatus().getSucceeded() != null && job.getStatus().getSucceeded() > 0) {
+      return ComponentState.Ready;
+    }
+
+    return ComponentState.WaitingForCompletion;
   }
-
-
 }

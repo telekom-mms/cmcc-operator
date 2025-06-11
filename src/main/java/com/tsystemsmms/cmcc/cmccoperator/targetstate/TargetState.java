@@ -21,12 +21,13 @@ import com.tsystemsmms.cmcc.cmccoperator.resource.ResourceReconcilerManager;
 import com.tsystemsmms.cmcc.cmccoperator.utils.YamlMapper;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.*;
 import java.util.function.BiConsumer;
 
-import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.booleanOf;
-import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.concatOptional;
+import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.*;
+import static org.apache.commons.lang3.StringUtils.isEmpty;
 
 /**
  * Create kubernetes resources for the target state described by the custom resource.
@@ -161,7 +162,7 @@ public interface TargetState {
   }
 
   /**
-   * Returns a hostname for the given name. If the name does not contain periods, extend it with the prefix and
+   * Returns a hostname for the given name. If the name does not contain periods, extend it with the prefix, suffix and
    * ingress domain; otherwise return it unchanged.
    *
    * @param name the name
@@ -170,8 +171,13 @@ public interface TargetState {
   default String getHostname(String name) {
     ComponentDefaults defaults = getCmcc().getSpec().getDefaults();
     String fqdn = name;
-    if (!fqdn.contains("."))
-      fqdn = concatOptional(defaults.getNamePrefix(), fqdn) + "." + defaults.getIngressDomain();
+    if (!fqdn.contains(".")) {
+      fqdn = concatOptional(
+              isEmpty(defaults.getNamePrefixForIngressDomain()) ? defaults.getNamePrefix() : defaults.getNamePrefixForIngressDomain(),
+              fqdn,
+              isEmpty(defaults.getNameSuffixForIngressDomain()) ? defaults.getNameSuffix() : defaults.getNameSuffixForIngressDomain()
+      ) + "." + defaults.getIngressDomain();
+    }
     return fqdn;
   }
 
@@ -203,6 +209,24 @@ public interface TargetState {
    */
   default String getPreviewHostname() {
     return getHostname(getCmcc().getSpec().getDefaults().getPreviewHostname());
+  }
+
+  /**
+   * Returns the hostname the Headless Server Preview is available under from the outside.
+   *
+   * @return hostname of the Headless Server Preview.
+   */
+  default String getHeadlessServerPreviewHostname() {
+    return getHostname(getCmcc().getSpec().getDefaults().getHeadlessServerPreviewHostname());
+  }
+
+  /**
+   * Returns the hostname the Headless Server Live is available under from the outside.
+   *
+   * @return hostname of the Headless Server Live.
+   */
+  default String getHeadlessServerLiveHostname() {
+    return getHostname(getCmcc().getSpec().getDefaults().getHeadlessServerLiveHostname());
   }
 
   /**
@@ -257,7 +281,34 @@ public interface TargetState {
    * @return name
    */
   default String getSecretName(String kind, String schema) {
-    return concatOptional(getCmcc().getSpec().getDefaults().getNamePrefix(), kind, schema);
+    return concatOptional(getCmcc().getSpec().getDefaults().getNamePrefix(), kind, getCmcc().getSpec().getDefaults().getNameSuffix(), schema);
+  }
+
+  /**
+   * Returns a boolean that indicates if a version has been given and therefore versioning / upgrading shall be used.
+   *
+   * @return true if versioning is used
+   */
+  default boolean isVersioning() {
+    return false;
+  }
+
+  default String getVersion() {
+    return getCmcc().getVersion();
+  }
+
+  default String getCurrentlyDeployedVersion() {
+    return getCmcc().getStatus().getCurrentVersion();
+  }
+
+  /**
+   * Returns a boolean that indicates if an Upgrade process is currently going on (status has targetVersion and currentVersion)
+   *
+   * @return true if versioning is used
+   */
+  default boolean isUpgrading() {
+    return !StringUtils.isEmpty(getCmcc().getStatus().getTargetVersion()) &&
+            !getCmcc().getStatus().getCurrentVersion().equals(getCmcc().getStatus().getTargetVersion());
   }
 
   /**
@@ -269,6 +320,20 @@ public interface TargetState {
     HashMap<String, String> labels = new HashMap<>();
     labels.putAll(CoreMediaContentCloudReconciler.OPERATOR_SELECTOR_LABELS);
     labels.put("cmcc.tsystemsmms.com/cmcc", getCmcc().getMetadata().getName());
+    return labels;
+  }
+
+  /**
+   * Returns a map of labels that can be used to identify resources created from the custom resource.
+   * Adds version label which allows honoring the current cmcc version.
+   *
+   * @return labels
+   */
+  default HashMap<String, String> getSelectorLabelsWithVersion() {
+    HashMap<String, String> labels = getSelectorLabels();
+    if (isVersioning()) {
+      labels.put("cmcc.tsystemsmms.com/cmcc-version", getVersion());
+    }
     return labels;
   }
 
@@ -352,23 +417,6 @@ public interface TargetState {
   YamlMapper getYamlMapper();
 
   /**
-   * Checks if the given Job is ready. The Job has to exist, and it has to have at least one successful execution.
-   *
-   * @param name resource
-   * @return true if ready
-   */
-  boolean isJobReady(String name);
-
-  /**
-   * Checks if the given StatefulSet is ready. The StatefulSet has to exist, and its current number of replicas have
-   * to match the desired count.
-   *
-   * @param name resource
-   * @return true if ready
-   */
-  boolean isStatefulSetReady(String name);
-
-  /**
    * Returns true if this resource is owned by the operator.
    *
    * @param resource to check
@@ -400,4 +448,6 @@ public interface TargetState {
   default void setFlag(String name, boolean value) {
     setFlag(name, value ? "true" : "false");
   }
+
+  void restartStatefulSet(String name);
 }

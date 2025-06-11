@@ -12,7 +12,8 @@ package com.tsystemsmms.cmcc.cmccoperator.crds;
 
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import io.fabric8.crd.generator.annotation.PrinterColumn;
-import io.javaoperatorsdk.operator.api.ObservedGenerationAwareStatus;
+import io.fabric8.kubernetes.model.annotation.LabelSelector;
+import io.fabric8.kubernetes.model.annotation.StatusReplicas;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -22,7 +23,8 @@ import java.util.HashMap;
 @Getter
 @Setter
 @ToString
-public class CoreMediaContentCloudStatus extends ObservedGenerationAwareStatus {
+public class CoreMediaContentCloudStatus {
+
     @PrinterColumn
     @JsonPropertyDescription("Error indication, or empty string")
     String error = "";
@@ -33,14 +35,26 @@ public class CoreMediaContentCloudStatus extends ObservedGenerationAwareStatus {
     @JsonPropertyDescription("Additional state flags")
     HashMap<String, String> flags = new HashMap<>();
 
+    @JsonPropertyDescription("Currently successfully deployed and running version (set on milestone Ready)")
+    @PrinterColumn(name = "VERSION", priority = 1)
+    String currentVersion = "";
+
+    @JsonPropertyDescription("Target version during upgrade (until milestone Ready)")
+    String targetVersion = "";
+
     @JsonPropertyDescription("Currently executing job")
     String job = "";
 
     @PrinterColumn
     @JsonPropertyDescription("Which milestone has been reached in configuring all components")
-    Milestone milestone = Milestone.Created;
+    Milestone milestone = Milestone.DeploymentStarted;
 
-    @JsonPropertyDescription("Unused")
-    @Deprecated
-    String ownedResourceRefs = "[]";
+    @StatusReplicas
+    int scaling;
+
+    @LabelSelector
+    String scalingSelector;
+
+    @PrinterColumn(name="SCALED", priority = 1)
+    String scaledMessage;
 }

@@ -20,7 +20,7 @@ import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.concatOptional;
 /**
  * Implements a default way of generating Kubernetes resource names.
  * <p>
- * The name consists of the optional defaults.namePrefix, the component name, and any optional parts passed in.
+ * The name consists of the optional defaults.namePrefix, the optional defaults.nameSuffix, the component name, and any optional parts passed in.
  */
 public class DefaultResourceNamingProvider implements ResourceNamingProvider {
     private final TargetState targetState;
@@ -39,7 +39,10 @@ public class DefaultResourceNamingProvider implements ResourceNamingProvider {
         LinkedList<String> args = new LinkedList<>();
         args.add(targetState.getCmcc().getSpec().getDefaults().getNamePrefix());
         args.add(component);
-        args.addAll(Arrays.asList(additional));
+        args.add(targetState.getCmcc().getSpec().getDefaults().getNameSuffix());
+        if (additional != null && additional.length > 0) {
+            args.addAll(Arrays.asList(additional));
+        }
         return concatOptional(args);
     }
 }

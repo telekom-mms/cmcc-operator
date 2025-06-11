@@ -12,6 +12,7 @@ package com.tsystemsmms.cmcc.cmccoperator.resource;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.dsl.NonDeletingOperation;
 import lombok.extern.slf4j.Slf4j;
 
 @ResourceReconciler(HasMetadata.class)
@@ -20,6 +21,7 @@ public class HasMetadataReconciler implements Reconciler {
     @Override
     public void reconcile(KubernetesClient kubernetesClient, String namespace, HasMetadata resource) {
 //        log.debug("reconciling {}/{}", resource.getKind(), resource.getMetadata().getName());
-        kubernetesClient.resource(resource).inNamespace(namespace).createOrReplace();
+        // https://github.com/fabric8io/kubernetes-client/blob/main/doc/FAQ.md#alternatives-to-createorreplace-and-replace
+        kubernetesClient.resource(resource).inNamespace(namespace).unlock().createOr(NonDeletingOperation::update);
     }
 }

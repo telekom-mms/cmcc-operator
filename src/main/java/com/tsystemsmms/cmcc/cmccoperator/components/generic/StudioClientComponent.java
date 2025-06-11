@@ -11,6 +11,7 @@
 package com.tsystemsmms.cmcc.cmccoperator.components.generic;
 
 import com.tsystemsmms.cmcc.cmccoperator.components.AbstractComponent;
+import com.tsystemsmms.cmcc.cmccoperator.components.Component;
 import com.tsystemsmms.cmcc.cmccoperator.components.HasService;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
@@ -21,15 +22,34 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 
 import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.EnvVarSimple;
 
 @Slf4j
 public class StudioClientComponent extends AbstractComponent implements HasService {
 
+    public static final String CONTAINER_PORT_KEY = "containerPort";
+    public static final String SERVICE_PORT_KEY = "servicePort";
+    public static final int DEFAULT_PORT = 80;
+
+    private int containerPort;
+    private int servicePort;
+
     public StudioClientComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec componentSpec) {
         super(kubernetesClient, targetState, componentSpec, "studio-client");
     }
+
+    @Override
+    public Component updateComponentSpec(ComponentSpec newCs) {
+        super.updateComponentSpec(newCs);
+        String containerPortString = getComponentSpec().getExtra().get(CONTAINER_PORT_KEY);
+        containerPort = null != containerPortString ? Integer.parseInt(containerPortString) : DEFAULT_PORT;
+        String servicePortString = getComponentSpec().getExtra().get(SERVICE_PORT_KEY);
+        servicePort = null != servicePortString ? Integer.parseInt(servicePortString) : DEFAULT_PORT;
+        return this;
+    }
+
 
     @Override
     public List<HasMetadata> buildResources() {
@@ -65,7 +85,7 @@ public class StudioClientComponent extends AbstractComponent implements HasServi
         return List.of(
                 new ContainerPortBuilder()
                         .withName("http")
-                        .withContainerPort(80)
+                        .withContainerPort(containerPort)
                         .build()
         );
     }
@@ -73,7 +93,12 @@ public class StudioClientComponent extends AbstractComponent implements HasServi
     @Override
     public List<ServicePort> getServicePorts() {
         return List.of(
-                new ServicePortBuilder().withName("http").withPort(80).withNewTargetPort("http").build());
+                new ServicePortBuilder()
+                        .withName("http")
+                        .withPort(servicePort)
+                        .withNewTargetPort("http")
+                        .build()
+        );
     }
 
     /**
@@ -82,9 +107,13 @@ public class StudioClientComponent extends AbstractComponent implements HasServi
      * @return probe definition
      */
     public Probe getStartupProbe() {
+        var interval = 5;
+        var timeout = Optional.ofNullable(getComponentSpec().getTimeouts().getStartup()).orElse(300);
         return new ProbeBuilder()
-                .withPeriodSeconds(10)
-                .withFailureThreshold(30)
+                .withInitialDelaySeconds(30)
+                .withPeriodSeconds(interval)
+                .withTimeoutSeconds(interval)
+                .withFailureThreshold(timeout / interval)
                 .withHttpGet(new HTTPGetActionBuilder()
                         .withPath("/")
                         .withPort(new IntOrString("http"))
@@ -99,8 +128,9 @@ public class StudioClientComponent extends AbstractComponent implements HasServi
      */
     public Probe getLivenessProbe() {
         return new ProbeBuilder()
+                .withInitialDelaySeconds(30)
                 .withPeriodSeconds(10)
-                .withFailureThreshold(20)
+                .withFailureThreshold(200)
                 .withHttpGet(new HTTPGetActionBuilder()
                         .withPath("/")
                         .withPort(new IntOrString("http"))
@@ -115,8 +145,9 @@ public class StudioClientComponent extends AbstractComponent implements HasServi
      */
     public Probe getReadinessProbe() {
         return new ProbeBuilder()
+                .withInitialDelaySeconds(30)
                 .withPeriodSeconds(10)
-                .withFailureThreshold(10)
+                .withFailureThreshold(100)
                 .withHttpGet(new HTTPGetActionBuilder()
                         .withPath("/")
                         .withPort(new IntOrString("http"))
@@ -154,7 +185,7 @@ public class StudioClientComponent extends AbstractComponent implements HasServi
 
         volumeMounts.add(new VolumeMountBuilder()
                 .withName("docroot")
-                .withMountPath("/usr/share/nginx") // must not be ../html, otherwise the entrypoint script doesn't work
+                .withMountPath("/usr/share/nginx/html") // must be ../html, since CoreMedia 2412.0.1
                 .build());
         volumeMounts.add(new VolumeMountBuilder()
                 .withName("nginx-config")

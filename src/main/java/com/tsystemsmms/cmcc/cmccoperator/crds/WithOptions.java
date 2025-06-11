@@ -29,6 +29,18 @@ public class WithOptions {
     @JsonPropertyDescription("Create databases and secrets for CoreMedia")
     Boolean databases = false;
 
+    @JsonPropertyDescription("Create and mount ConfigMap Entries / Env vars for JSON logging in managed Containers")
+    Boolean jsonLogging = false;
+
+    @JsonPropertyDescription("If Solr Basic authentication is enabled (default 'false')")
+    private boolean solrBasicAuthEnabled = false;
+
+    @JsonPropertyDescription("Restart CMS and MLS when ContentServerReady is reached (after content import job, initcms)")
+    Boolean restartContentServer = true;
+
+    @JsonPropertyDescription("Add default Pod Affinity/AntiAffinity rules for all components")
+    Boolean defaultAffinityRules = false;
+
     @JsonPropertyDescription("Create databases and secrets, except for these")
     Map<String, Boolean> databasesOverride = new HashMap<>();
 
@@ -64,9 +76,13 @@ public class WithOptions {
         @JsonPropertyDescription("Number of RLS to create")
         IntOrString rls = new IntOrString(0);
         @JsonPropertyDescription("Minimum number of CAEs per RLS")
-        IntOrString minCae = new IntOrString(0);
+        IntOrString minCae = new IntOrString(1);
         @JsonPropertyDescription("Maximum number of CAEs per RLS")
-        IntOrString maxCae = new IntOrString(0);
+        IntOrString maxCae = new IntOrString(1);
+        @JsonPropertyDescription("Minimum number of Headless per RLS")
+        IntOrString minHeadless = new IntOrString(1);
+        @JsonPropertyDescription("Maximum number of Headless per RLS")
+        IntOrString maxHeadless = new IntOrString(1);
     }
 
     @Data

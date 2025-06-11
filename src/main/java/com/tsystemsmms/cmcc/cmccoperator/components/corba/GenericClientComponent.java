@@ -21,6 +21,9 @@ import com.tsystemsmms.cmcc.cmccoperator.utils.EnvVarSet;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import lombok.extern.slf4j.Slf4j;
+import org.yaml.snakeyaml.LoaderOptions;
+import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.Constructor;
 
 import java.util.*;
 
@@ -28,6 +31,7 @@ import java.util.*;
 @Slf4j
 public class GenericClientComponent extends CorbaComponent implements HasMongoDBClient, HasSolrClient, HasService {
 
+    public static final String NO_VOLUMES_KEY = "noVolumes";
     public static final String SOLR_SERVER_KEY = "solr-server";
     public static final String SOLR_COLLECTION_KEY = "solr-collection";
     public static final String CONTENT_SERVER_TYPE_KEY = "content-server-type";
@@ -70,6 +74,39 @@ public class GenericClientComponent extends CorbaComponent implements HasMongoDB
         resources.add(buildStatefulSet());
         resources.add(buildService());
         return resources;
+    }
+
+    @Override
+    public List<ServicePort> getServicePorts() {
+        List<ServicePort> result = new LinkedList<>(super.getServicePorts());
+
+        Yaml yaml = new Yaml(new Constructor(ServicePort.class, new LoaderOptions()));
+        if (getComponentSpec().getExtra() != null && getComponentSpec().getExtra().containsKey("ports")) {
+            result.clear();
+            yaml.loadAll(getComponentSpec().getExtra().get("ports")).forEach(x -> result.add((ServicePort) x));
+        }
+
+        return result;
+    }
+
+    @Override
+    public List<Volume> getVolumes() {
+        var noVolumes = Boolean.valueOf(getComponentSpec().getExtra().getOrDefault(NO_VOLUMES_KEY, "false"));
+        if (noVolumes) {
+            return Collections.emptyList();
+        }
+
+        return super.getVolumes();
+    }
+
+    @Override
+    public List<VolumeMount> getVolumeMounts() {
+        var noVolumes = Boolean.valueOf(getComponentSpec().getExtra().getOrDefault(NO_VOLUMES_KEY, "false"));
+        if (noVolumes) {
+            return Collections.emptyList();
+        }
+
+        return super.getVolumeMounts();
     }
 
     @Override

@@ -15,6 +15,7 @@ import io.fabric8.kubernetes.api.model.*;
 import lombok.Data;
 
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -32,8 +33,17 @@ public class ComponentDefaults {
     @JsonPropertyDescription("Default domain name for Ingresses")
     private String ingressDomain;
 
+    @JsonPropertyDescription("Prefix ingress host-domains with this name plus '-'. Empty string means no prefix. Overrides namePrefix for ingress domain name generation")
+    String namePrefixForIngressDomain = "";
+
+    @JsonPropertyDescription("Suffix ingress host-domains with '-' plus this name. Empty string means no suffix. Overrides nameSuffix for ingress domain name generation")
+    String nameSuffixForIngressDomain = "";
+
     @JsonPropertyDescription("Use this password for all database accounts, instead of a random one.")
     private String insecureDatabasePassword = "";
+
+    @JsonPropertyDescription("Default environment variables for all pods")
+    private List<EnvVar> env = new LinkedList<>();
 
     @JsonPropertyDescription("For Java components, use these JAVA_OPTS.")
     private String javaOpts = "-XX:MinRAMPercentage=75 -XX:MaxRAMPercentage=90";
@@ -50,11 +60,23 @@ public class ComponentDefaults {
     @JsonPropertyDescription("Name of the URL Mapper to use to create preview and studio URL mappings")
     String managementUrlMapper = "blueprint";
 
+    @JsonPropertyDescription("Name of the URL Mapper to use to create headless URL mappings")
+    String headlessUrlMapper = "headless";
+
     @JsonPropertyDescription("Prefix resources with this name plus '-'. Empty string means no prefix")
     String namePrefix = "";
 
+    @JsonPropertyDescription("Suffix resources with '-' plus this name. Empty string means no suffix")
+    String nameSuffix = "";
+
     @JsonPropertyDescription("Hostname of the preview CAE. If short, will be prefixed with the prefix and the ingressDomain appended")
     private String previewHostname = "preview";
+
+    @JsonPropertyDescription("Hostname of the headless server preview. If short, will be prefixed with the prefix and the ingressDomain appended")
+    private String headlessServerPreviewHostname = "headless-preview";
+
+    @JsonPropertyDescription("Hostname of the headless server live. If short, will be prefixed with the prefix and the ingressDomain appended")
+    private String headlessServerLiveHostname = "headless";
 
     @JsonPropertyDescription("Default security context for containers in a pod")
     SecurityContext securityContext = new SecurityContext();
@@ -67,6 +89,9 @@ public class ComponentDefaults {
 
     @JsonPropertyDescription("Hostname of the Studio. If short, will be prefixed with the prefix and the ingressDomain appended")
     private String studioHostname = "studio";
+
+    @JsonPropertyDescription("Default topology string to be used for PodAffinity rules")
+    private String affinityTopology = "kubernetes.io/hostname";
 
     @JsonPropertyDescription("List of servlets the CAE serves")
     private List<String> servletNames = List.of("action", "assets", "blob", "dynamic", "preview", "resource", "service", "static");

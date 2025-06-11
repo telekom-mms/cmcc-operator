@@ -10,48 +10,36 @@
 
 package com.tsystemsmms.cmcc.cmccoperator.components.generic;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tsystemsmms.cmcc.cmccoperator.components.AbstractComponent;
 import com.tsystemsmms.cmcc.cmccoperator.components.Component;
 import com.tsystemsmms.cmcc.cmccoperator.components.HasService;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
-import com.tsystemsmms.cmcc.cmccoperator.crds.Milestone;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.CustomResourceConfigError;
+import com.tsystemsmms.cmcc.cmccoperator.targetstate.NoSuchComponentException;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 import com.tsystemsmms.cmcc.cmccoperator.utils.EnvVarSet;
-import com.tsystemsmms.cmcc.cmccoperator.utils.SimpleExecListener;
 import io.fabric8.kubernetes.api.model.*;
-import io.fabric8.kubernetes.api.model.apps.StatefulSet;
-import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
-import io.fabric8.kubernetes.api.model.apps.StatefulSetSpecBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.dsl.ExecWatch;
-import lombok.Data;
-import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.util.UriComponentsBuilder;
 
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 import static com.tsystemsmms.cmcc.cmccoperator.components.HasSolrClient.SOLR_CLIENT_SERVER_FOLLOWER;
-import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.EnvVarSimple;
-import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.concatOptional;
+import static com.tsystemsmms.cmcc.cmccoperator.crds.Milestone.Ready;
+import static com.tsystemsmms.cmcc.cmccoperator.crds.Milestone.compareTo;
+import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.*;
 
 @Slf4j
 public class SolrComponent extends AbstractComponent implements HasService {
-  public static final String SOLR_PERSISTENT_STORAGE = "solr-persistent-storage";
   public static final String SOLR_REPLICAS = "replicas";
   public static final String SOLR_CORES_TO_REPLICATE = "coresToReplicate";
-  public static final String SOLR_LEADER_COMPONENT = "leader";
-  public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
-          .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+  public static final String KIND_LEADER = "leader";
+  public static final String KIND_FOLLOWER = "follower";
+  public static final String SOLR = "solr";
+
+  private static final String SOLR_FOLLOWER_DISABLE_SYNC_URL = "http://localhost:8983/solr/live/replication?command=disablereplication";
+  private static final String SOLR_FOLLOWER_DISABLE_POLL_URL = "http://localhost:8983/solr/live/replication?command=disablepoll";
 
   /**
    * Cores that the Operator should create in the followers. The map is modifyable so additional entries can be added
@@ -61,148 +49,127 @@ public class SolrComponent extends AbstractComponent implements HasService {
           "live", "cae"
   ));
 
-  private int replicas = 1;
-
   public SolrComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec componentSpec) {
-    super(kubernetesClient, targetState, componentSpec, "solr");
-    if (!componentSpec.getKind().isBlank())
-      throw new CustomResourceConfigError("Invalid specification \"kind\" for \"solr\": there are no different kinds.");
-    if (componentSpec.getExtra().containsKey(SOLR_REPLICAS))
-      replicas = Integer.parseInt(componentSpec.getExtra().get(SOLR_REPLICAS));
+    super(kubernetesClient, targetState, componentSpec, SOLR);
+
+    switch (componentSpec.getKind()) {
+      case KIND_LEADER:
+        //nothing
+        break;
+      case KIND_FOLLOWER:
+        if (componentSpec.getExtra().containsKey(SOLR_REPLICAS)) {
+          setReplicas(Integer.parseInt(componentSpec.getExtra().get(SOLR_REPLICAS)));
+        }
+        break;
+      default:
+        throw new CustomResourceConfigError("kind \"" + getComponentSpec().getKind() + "\" is illegal, must be either " + KIND_LEADER + ", or " + KIND_FOLLOWER);
+    }
   }
 
   @Override
   public Component updateComponentSpec(ComponentSpec newCs) {
     super.updateComponentSpec(newCs);
-    if (newCs.getExtra().containsKey(SOLR_REPLICAS))
-      replicas = Integer.parseInt(newCs.getExtra().get(SOLR_REPLICAS));
-    if (newCs.getExtra().containsKey(SOLR_CORES_TO_REPLICATE))
+    if (newCs.getExtra().containsKey(SOLR_REPLICAS)) {
+      setReplicas(Integer.parseInt(newCs.getExtra().get(SOLR_REPLICAS)));
+    }
+    if (newCs.getExtra().containsKey(SOLR_CORES_TO_REPLICATE)) {
       coresToReplicate.putAll(getTargetState().getYamlMapper().load(newCs.getExtra().get(SOLR_CORES_TO_REPLICATE), new TypeReference<HashMap<String, String>>() {
               },
               () -> "Unable to read \"" + SOLR_CORES_TO_REPLICATE + "\" as a map in component \"" + newCs.getName() + "\""));
+    }
     return this;
+  }
+
+  @Override
+  public int getCurrentReplicas() {
+    if ( getTargetState().isUpgrading() && getComponentSpec().getKind().equals(KIND_FOLLOWER)) {
+      // during upgrade, we want to keep the existing follower pods running
+      return super.getReplicas();
+    }
+    return super.getCurrentReplicas();
   }
 
   @Override
   public List<HasMetadata> buildResources() {
     List<HasMetadata> resources = new LinkedList<>();
 
-    if (replicas < 1)
-      throw new CustomResourceConfigError("component solr: extra.replicas must be 1 or higher, not " + replicas);
+    if (getComponentSpec().getKind().equals(KIND_LEADER)) {
+      resources.add(buildServiceLeader());
+      resources.add(buildStatefulSet());
+    } else if (getReplicas() > 0) {
 
-    resources.add(buildService());
-    resources.add(buildServiceLeader());
-    resources.add(buildStatefulSetLeader());
-    resources.add(getPersistentVolumeClaim(getTargetState().getResourceNameFor(this, SOLR_LEADER_COMPONENT),
-            getVolumeSize(ComponentSpec.VolumeSize::getData)));
-    for (int i = 1; i < replicas; i++) {
-      resources.add(buildStatefulSetFollower(i));
-      resources.add(getPersistentVolumeClaim(getTargetState().getResourceNameFor(this, getFollowerName(i)),
-              getVolumeSize(ComponentSpec.VolumeSize::getData)));
-      createCoresInFollower(i);
+      var partition = 0;
+      if (getComponentSpec().getKind().equals(KIND_FOLLOWER)) {
+        // in any case: do always deploy/keep PVCs and the most recent follower service
+        resources.add(buildServiceFollower());
+
+        if (getTargetState().isUpgrading()) {
+        // create old service
+          try(var __ = getVersioningTargetState().withCurrentlyDeployedVersion()) {
+            resources.add(buildServiceFollower());
+          }
+        }
+
+        // check if we have to be keep the previous version running
+        if (getTargetState().isUpgrading()) {
+          if (compareTo(getCmcc().getStatus().getMilestone(), getComponentSpec().getMilestone()) < 0) {
+            partition = getReplicas();
+            log.info("[{}] Keeping old versions of {} with partition:{}", getTargetState().getContextForLogging(),
+                    getTargetState().getResourceNameFor(this), partition);
+          } else if (compareTo(getCmcc().getStatus().getMilestone(), Ready) < 0) {
+            // we reached our milestone, but we haven't reached ready
+            // so new version should be deployed (but keep 1 last old version running until all are ready => partition:1)
+            partition = 1;
+            log.info("[{}] Deploying new version of {} with partition:1", getTargetState().getContextForLogging(),
+                    getTargetState().getResourceNameFor(this));
+          }
+        }
+      }
+
+      resources.add(buildStatefulSet(getCurrentReplicas(), partition));
+    }
+
+    if (getCmcc().getSpec().getWith().getJsonLogging()) {
+      resources.add(buildLoggingConfigMap());
     }
 
     return resources;
   }
 
-  /**
-   * Create all cores for the follower.
-   *
-   * @param follower index of the follower StatefulSet.
-   */
-  void createCoresInFollower(int follower) {
-    for (Map.Entry<String, String> core : coresToReplicate.entrySet()) {
-      String name = getTargetState().getResourceNameFor(this, getFollowerName(follower));
-      if (!getTargetState().isStatefulSetReady(name))
-        return;
-      String flag = concatOptional("solr-core", name, core.getKey(), "created");
-      if (getTargetState().isFlag(flag))
-        continue;
-      createCore(name, core.getKey(), core.getValue());
-      getTargetState().setFlag(flag, true);
+  @Override
+  protected PodAntiAffinity getPodAntiAffinity() {
+    var antiAffinityRules = new LinkedList<WeightedPodAffinityTerm>();
+
+    if (getComponentSpec().getKind().equals(KIND_FOLLOWER)) {
+      antiAffinityRules.add(createAffinityToComponent(SOLR, KIND_LEADER, 25));
+      antiAffinityRules.add(createAffinityToComponent(SOLR, KIND_FOLLOWER, 10));
     }
 
-  }
-
-  public StatefulSet buildStatefulSetLeader() {
-    EnvVarSet env = getEnvVars();
-    env.add(EnvVarSimple("SOLR_LEADER", "true"));
-    env.addAll(getComponentSpec().getEnv());
-
-    return new StatefulSetBuilder()
-            .withMetadata(getResourceMetadataForName(getTargetState().getResourceNameFor(this, SOLR_LEADER_COMPONENT)))
-            .withSpec(new StatefulSetSpecBuilder()
-                    .withServiceName(getTargetState().getServiceNameFor(this))
-                    .withSelector(new LabelSelectorBuilder()
-                            .withMatchLabels(getSelectorLabels(SOLR_LEADER_COMPONENT))
-                            .build())
-                    .withTemplate(new PodTemplateSpecBuilder()
-                            .withMetadata(new ObjectMetaBuilder()
-                                    .withAnnotations(getAnnotations())
-                                    .withLabels(getSelectorLabels(SOLR_LEADER_COMPONENT))
-                                    .build())
-                            .withSpec(new PodSpecBuilder()
-                                    .withContainers(buildContainersWithEnv(env))
-                                    .withInitContainers(getInitContainers())
-                                    .withSecurityContext(getPodSecurityContext())
-                                    .withTerminationGracePeriodSeconds(getTerminationGracePeriodSeconds())
-                                    .withVolumes(getVolumes(SOLR_LEADER_COMPONENT))
-                                    .build())
-                            .build())
-                    .build())
+    return new PodAntiAffinityBuilder()
+            .withPreferredDuringSchedulingIgnoredDuringExecution(antiAffinityRules.stream().filter(Objects::nonNull).toList())
             .build();
-  }
-
-  public StatefulSet buildStatefulSetFollower(int i) {
-    EnvVarSet env = getEnvVars();
-    env.add(EnvVarSimple("SOLR_FOLLOWER", "true"));
-    env.add(EnvVarSimple("SOLR_LEADER_URL", getServiceUrl(SOLR_LEADER_COMPONENT)));
-    env.addAll(getComponentSpec().getEnv());
-
-    return new StatefulSetBuilder()
-            .withMetadata(getResourceMetadataForName(getTargetState().getResourceNameFor(this, getFollowerName(i))))
-            .withSpec(new StatefulSetSpecBuilder()
-                    .withServiceName(getTargetState().getServiceNameFor(this))
-                    .withSelector(new LabelSelectorBuilder()
-                            .withMatchLabels(getSelectorLabels(getFollowerName(i)))
-                            .build())
-                    .withTemplate(new PodTemplateSpecBuilder()
-                            .withMetadata(new ObjectMetaBuilder()
-                                    .withAnnotations(getAnnotations())
-                                    .withLabels(getSelectorLabels(getFollowerName(i)))
-                                    .build())
-                            .withSpec(new PodSpecBuilder()
-                                    .withContainers(buildContainersWithEnv(env))
-                                    .withInitContainers(getInitContainers())
-                                    .withSecurityContext(getPodSecurityContext())
-                                    .withTerminationGracePeriodSeconds(getTerminationGracePeriodSeconds())
-                                    .withVolumes(getVolumes(getFollowerName(i)))
-                                    .build())
-                            .build())
-                    .build())
-            .build();
-  }
-
-  private String getFollowerName(int i) {
-    return "follower-" + i;
   }
 
   @Override
-  public Service buildService() {
+  public List<PersistentVolumeClaim> getVolumeClaims() {
+    var resourceName = getTargetState().getResourceNameFor(this);
+    return List.of(getPersistentVolumeClaim(resourceName, getVolumeSize(ComponentSpec.VolumeSize::getData)));
+  }
+
+  private String getFollowerServiceName() {
+    return concatOptional(getTargetState().getResourceNameFor(SOLR, KIND_FOLLOWER), getVersionSuffix());
+  }
+
+  public Service buildServiceFollower() {
+    ObjectMeta metadata = getTargetState().getResourceMetadataFor(this, SOLR_CLIENT_SERVER_FOLLOWER);
+    metadata.setName(getFollowerServiceName());
     return new ServiceBuilder()
-            .withMetadata(getTargetState().getResourceMetadataFor(this, SOLR_CLIENT_SERVER_FOLLOWER))
+            .withMetadata(metadata)
             .withSpec(new ServiceSpecBuilder()
-                    .withSelector(getSelectorLabelsForService())
+                    .withSelector(getSelectorLabelsWithVersion())
                     .withPorts(getServicePorts())
                     .build())
             .build();
-  }
-
-  public HashMap<String, String> getSelectorLabelsForService() {
-    HashMap<String, String> labels = getTargetState().getSelectorLabels();
-    // do not key off the name of the component, only the type (and standard selectors), so we match any Solr pod
-    labels.put("cmcc.tsystemsmms.com/type", getComponentSpec().getType());
-    return labels;
   }
 
   /**
@@ -212,9 +179,9 @@ public class SolrComponent extends AbstractComponent implements HasService {
    */
   private Service buildServiceLeader() {
     return new ServiceBuilder()
-            .withMetadata(getTargetState().getResourceMetadataFor(this, SOLR_LEADER_COMPONENT))
+            .withMetadata(getTargetState().getResourceMetadataFor(this))
             .withSpec(new ServiceSpecBuilder()
-                    .withSelector(getSelectorLabels(SOLR_LEADER_COMPONENT))
+                    .withSelector(getSelectorLabels())
                     .withPorts(getServicePorts())
                     .build())
             .build();
@@ -234,77 +201,56 @@ public class SolrComponent extends AbstractComponent implements HasService {
     env.add(EnvVarSimple("GC_TUNE", "-XX:+UseG1GC -XX:+PerfDisableSharedMem -XX:+ParallelRefProcEnabled -XX:MaxGCPauseMillis=250 -XX:+AlwaysPreTouch"));
     env.add(EnvVarSimple("SOLR_HEAP", ""));
     env.add(EnvVarSimple("SOLR_JAVA_MEM", getCmcc().getSpec().getDefaults().getJavaOpts()));
+
+    if (getComponentSpec().getKind().equals(KIND_LEADER)) {
+      env.add(EnvVarSimple("SOLR_LEADER", "true"));
+    }
+    if (getComponentSpec().getKind().equals(KIND_FOLLOWER)) {
+      env.add(EnvVarSimple("SOLR_FOLLOWER", "true"));
+      if (getSpec().getWith().isSolrBasicAuthEnabled()) {
+        // since env variables will be sort alphabetically,
+        // env variable name for username and password must come before SOLR_LEADER_BASIC_AUTH
+        // (the SOLR_LEADER_BASIC_AUTH name, cannot be changed since is defined in config.sh of the solr image)
+        env.add(EnvVarSimple("SOLR_LEADER_AUTH_USERNAME", "solr"));
+        env.add(EnvVarSecret("SOLR_LEADER_AUTH_PASSWORD",  "solr-pw", "solr_pw"));
+        env.add(EnvVarSimple("SOLR_LEADER_BASIC_AUTH", "$(SOLR_LEADER_AUTH_USERNAME):$(SOLR_LEADER_AUTH_PASSWORD)"));
+      }
+      env.add(EnvVarSimple("SOLR_LEADER_URL", getServiceUrl(KIND_LEADER)));
+      env.add(EnvVarSimple("SOLR_FOLLOWER_AUTOCREATE_CORES", "true"));
+      env.add(EnvVarSimple("SOLR_FOLLOWER_AUTOCREATE_CORES_LIST",  String.join(" ", this.coresToReplicate.keySet())));
+    }
+
     return env;
   }
 
-  public List<Volume> getVolumes(String name) {
+  @Override
+  public List<Volume> getVolumes() {
     LinkedList<Volume> volumes = new LinkedList<>(super.getVolumes());
 
-    volumes.add(new VolumeBuilder()
-            .withName(SOLR_PERSISTENT_STORAGE)
-            .withPersistentVolumeClaim(new PersistentVolumeClaimVolumeSourceBuilder()
-                    .withClaimName(getTargetState().getResourceNameFor(this, name))
-                    .build())
-            .build());
     volumes.add(new VolumeBuilder()
             .withName("etc-defaults")
             .withEmptyDir(new EmptyDirVolumeSource())
             .build());
+    if (getCmcc().getSpec().getWith().getJsonLogging()) {
+      volumes.add(new VolumeBuilder()
+              .withName("logging-config")
+              .withConfigMap(new ConfigMapVolumeSourceBuilder()
+                      .withName("logging-config")
+                      .withOptional()
+                      .build())
+              .build());
+    }
+    if (getSpec().getWith().isSolrBasicAuthEnabled()) {
+      volumes.add(new VolumeBuilder()
+              .withName("solr-security-config")
+              .withSecret(new SecretVolumeSourceBuilder().withSecretName("solr-security")
+                      .withDefaultMode(420)
+                      .withOptional(false)
+                      .build())
+              .build());
+    }
 
     return volumes;
-  }
-
-  /**
-   * Create a Solr core in a follower. This is a bit ugly, since exec() doesn't appear to be able to capture the
-   * commands' exit code.
-   *
-   * <pre>curl 'http://localhost:8983/solr/admin/cores?action=CREATE&name=studio&configSet=content&dataDir=data'</pre>
-   *
-   * @param name name of the index to create
-   */
-  public void createCore(String resource, String name, String configSet) {
-    String podName = concatOptional(resource, "0");
-    String url = UriComponentsBuilder.fromHttpUrl("http://localhost:8983/solr/admin/cores")
-            .queryParam("action", "CREATE")
-            .queryParam("name", name)
-            .queryParam("configSet", configSet)
-            .queryParam("dataDir", "data")
-            .toUriString();
-    log.debug("Creating Solr Core {} on pod {}, using {}", name, podName, url);
-    SimpleExecListener listener = new SimpleExecListener();
-    ByteArrayOutputStream out = new ByteArrayOutputStream();
-    ByteArrayOutputStream err = new ByteArrayOutputStream();
-    ExecWatch watch = getKubernetesClient().pods().inNamespace(getNamespace()).withName(podName)
-            .inContainer("solr")
-            .readingInput(InputStream.nullInputStream())
-            .writingOutput(out)
-            .writingError(err)
-            .usingListener(listener)
-            .exec("sh", "-c", "curl '" + url + "' || echo \"error $?\" >&2");
-    listener.awaitUninterruptable();
-    watch.close();
-    String stdout = out.toString(StandardCharsets.UTF_8);
-    String stderr = err.toString(StandardCharsets.UTF_8);
-    log.debug("Process out:\n{}", stdout);
-    log.debug("Process err:\n{}", stderr);
-    // try and parse output as JSON
-    try {
-      SolrAdminResponse response = OBJECT_MAPPER.readValue(stdout, SolrAdminResponse.class);
-      log.debug("status {}", response.responseHeader.status);
-      if (response.responseHeader != null && response.responseHeader.status == 0)
-        return; // success
-      if (response.error != null) {
-        if (response.error.code == 500 && response.error.msg.equals("Core with name '" + name + "' already exists."))
-          return; // OK if it already exists
-        throw new CustomResourceConfigError("Unable to create Solr core \"" + name + "\" on pod \"" + podName + "\": " + response.error.msg);
-      }
-    } catch (JsonProcessingException e) {
-      throw new CustomResourceConfigError("Unable to create Solr core \"" + name + "\" on pod \"" + podName + "\": " + stdout, e);
-    }
-
-    if (err.size() != 0) {
-      throw new CustomResourceConfigError("Unable to create Solr core \"" + name + "\" on pod \"" + podName + "\": " + stderr);
-    }
   }
 
   @Override
@@ -312,13 +258,28 @@ public class SolrComponent extends AbstractComponent implements HasService {
     LinkedList<VolumeMount> volumeMounts = new LinkedList<>(super.getVolumeMounts());
 
     volumeMounts.add(new VolumeMountBuilder()
-            .withName(SOLR_PERSISTENT_STORAGE)
+            .withName(getTargetState().getResourceNameFor(this))
             .withMountPath("/var/solr")
             .build());
     volumeMounts.add(new VolumeMountBuilder()
             .withName("etc-defaults")
             .withMountPath("/etc/default")
             .build());
+    if (getCmcc().getSpec().getWith().getJsonLogging()) {
+      volumeMounts.add(new VolumeMountBuilder()
+              .withName("logging-config")
+              .withMountPath("/var/solr/log4j2.xml")
+              .withSubPath("log4j2-solr.xml")
+              .build());
+    }
+    if (getSpec().getWith().isSolrBasicAuthEnabled()) {
+      volumeMounts.add(new VolumeMountBuilder()
+              .withName("solr-security-config")
+              .withMountPath("/opt/solr/server/solr/security.json")
+              .withSubPath("security.json")
+              .withReadOnly()
+              .build());
+    }
 
     return volumeMounts;
   }
@@ -329,10 +290,12 @@ public class SolrComponent extends AbstractComponent implements HasService {
    * @return probe definition
    */
   public Probe getStartupProbe() {
+    var interval = 10;
+    var timeout = Optional.ofNullable(getComponentSpec().getTimeouts().getStartup()).orElse(300);
     return new ProbeBuilder()
-            .withPeriodSeconds(10)
-            .withFailureThreshold(30)
-            .withTimeoutSeconds(15)
+            .withPeriodSeconds(interval)
+            .withTimeoutSeconds(interval)
+            .withFailureThreshold(timeout / interval)
             .withHttpGet(new HTTPGetActionBuilder()
                     .withPath("/solr/admin/info/health")
                     .withPort(new IntOrString("http"))
@@ -380,6 +343,10 @@ public class SolrComponent extends AbstractComponent implements HasService {
             new ContainerPortBuilder()
                     .withName("http")
                     .withContainerPort(8983)
+                    .build(),
+            new ContainerPortBuilder()
+                    .withName("management")
+                    .withContainerPort(8199)
                     .build()
     );
   }
@@ -387,7 +354,8 @@ public class SolrComponent extends AbstractComponent implements HasService {
   @Override
   public List<ServicePort> getServicePorts() {
     return List.of(
-            new ServicePortBuilder().withName("ior").withPort(8983).withNewTargetPort("http").build());
+            new ServicePortBuilder().withName("ior").withPort(8983).withNewTargetPort("http").build(),
+            new ServicePortBuilder().withName("management").withPort(8199).withNewTargetPort("management").build());
   }
 
   @Override
@@ -397,41 +365,47 @@ public class SolrComponent extends AbstractComponent implements HasService {
 
   @Override
   public String getServiceUrl(String variant) {
-    if (replicas > 1)
-      return "http://" + getTargetState().getResourceNameFor(this, variant) + ":8983/solr";
-    else
-      return "http://" + getTargetState().getResourceNameFor(this, SOLR_LEADER_COMPONENT) + ":8983/solr";
+    // unusual case: this could be called on leader but it must know if there are followers available
+    var replicasOfFollower = 0;
+    try {
+      var followerComponent = getTargetState().getComponentCollection().getHasServiceComponent(SOLR, KIND_FOLLOWER);
+      replicasOfFollower = followerComponent.getReplicas();
+    } catch (NoSuchComponentException e) {
+      // ignored, assume 0 followers
+    }
+    if (replicasOfFollower > 0 && !KIND_LEADER.equals(variant)) {
+      return "http://" + getFollowerServiceName() + ":8983/solr";
+    }
+    return "http://" + getTargetState().getResourceNameFor(SOLR, KIND_LEADER) + ":8983/solr";
   }
 
-  @Override
-  public Optional<Boolean> isReady() {
-    if (Milestone.compareTo(getCmcc().getStatus().getMilestone(), getComponentSpec().getMilestone()) < 0)
-      return Optional.empty();
-    return Optional.of(getTargetState().isStatefulSetReady(getTargetState().getResourceNameFor(this, SOLR_LEADER_COMPONENT)));
-  }
+  public void disableReplication() {
+    if (!this.getComponentSpec().getKind().equals(KIND_FOLLOWER)) {
+      log.warn("[{}] Called disableReplication on a non-follower component, which is not supported", getTargetState().getContextForLogging());
+      return;
+    }
 
-  @Data
-  @NoArgsConstructor
-  public static class SolrAdminResponseHeader {
-    Integer status;
-    @JsonProperty("QTime")
-    double qTime;
-  }
+    var pods = getTargetState().getKubernetesClient().pods()
+            .inNamespace(getNamespace())
+            .withLabels(getSelectorLabels())
+            .resources()
+            .toList();
 
-  @Data
-  @NoArgsConstructor
-  public static class SolrAdminResponseError {
-    List<String> metadata;
-    String msg;
-    Integer code;
-    String trace;
-  }
+    log.debug("[{}] Disable Solr Follower replication on pods {}, using '{}'", getTargetState().getContextForLogging(), pods.stream().map(x -> x.get().getMetadata().getName()).toList(), SOLR_FOLLOWER_DISABLE_SYNC_URL);
+    var credentials = getSpec().getWith().isSolrBasicAuthEnabled() ? "${SOLR_LEADER_BASIC_AUTH}" : null;
 
-  @Data
-  @NoArgsConstructor
-  public static class SolrAdminResponse {
-    SolrAdminResponseHeader responseHeader;
-    SolrAdminResponseError error;
-  }
+    var results = pods.stream().map(pod -> executeWebRequest(pod, SOLR_FOLLOWER_DISABLE_SYNC_URL, credentials, true)).toList();
+    results.stream().forEach(result -> {
+      if (result.exitCode != 0 || result.output == null || !result.output.contains("\"status\":\"OK\"")) {
+        throw new CustomResourceConfigError("Unable to stop Solr replication on pod \"" + result.pod.get().getMetadata().getName() + "\": " + result.output + ". Error output: " + result.errorOutput);
+      }
+    });
 
+    results = pods.stream().map(pod -> executeWebRequest(pod, SOLR_FOLLOWER_DISABLE_POLL_URL, credentials, true)).toList();
+    results.stream().forEach(result -> {
+      if (result.exitCode != 0 || result.output == null || !result.output.contains("\"status\":\"OK\"")) {
+        throw new CustomResourceConfigError("Unable to stop Solr replication on pod \"" + result.pod.get().getMetadata().getName() + "\": " + result.output + ". Error output: " + result.errorOutput);
+      }
+    });
+  }
 }

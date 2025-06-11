@@ -1,0 +1,35 @@
+apiVersion: cmcc.tsystemsmms.com/v2
+kind: CoreMediaContentCloud
+metadata:
+  name: test-cmcc
+spec:
+  comment: Test
+  components:
+    - type: management-tools
+      name: initcms
+      milestone: Never
+    - type: solr
+      kind: leader
+    - type: solr
+      kind: follower
+      extra:
+        replicas: "1"
+  defaults:
+    ingressDomain: 127.0.0.1.nip.io
+    javaOpts: -XX:MinRAMPercentage=75 -XX:MaxRAMPercentage=90
+    liveUrlMapper: blueprint
+    managementUrlMapper: blueprint
+  siteMappings:
+    - hostname: corporate
+      primarySegment: corporate
+      primarySegmentRedirect: true
+      urlMapper: blueprint
+  with:
+    contentImport: true
+    databases: true
+    delivery:
+      maxCae: 2
+      minCae: 2
+      rls: 2
+    management: true
+    resources: true

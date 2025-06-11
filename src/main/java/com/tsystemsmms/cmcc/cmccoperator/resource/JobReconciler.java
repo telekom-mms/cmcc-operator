@@ -24,7 +24,7 @@ public class JobReconciler implements Reconciler {
         Resource<Job> existing = kubernetesClient.batch().v1().jobs().inNamespace(namespace).withName(resource.getMetadata().getName());
         if (existing.get() == null) {
             log.debug("starting {}/{}", resource.getKind(), resource.getMetadata().getName());
-            kubernetesClient.resource(resource).inNamespace(namespace).createOrReplace();
+            kubernetesClient.resource(resource).inNamespace(namespace).create();
         }
     }
 }

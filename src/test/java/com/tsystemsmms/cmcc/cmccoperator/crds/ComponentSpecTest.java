@@ -29,7 +29,7 @@ public class ComponentSpecTest {
     cs.setExtra(Map.of("foo", "bar"));
     cs.setImage(new ImageSpec("foo", "bar", "baz", "bay"));
     cs.setKind("foo");
-    cs.setMilestone(Milestone.Created);
+    cs.setMilestone(Milestone.DeploymentStarted);
     cs.setName("foo");
     cs.setPodSecurityContext(new PodSecurityContextBuilder()
             .withRunAsUser(1000L)
@@ -56,7 +56,7 @@ public class ComponentSpecTest {
     cs.setExtra(Map.of("extra", "bar"));
     cs.setImage(new ImageSpec("foo", "bar", "baz", "bay"));
     cs.setKind("foo");
-    cs.setMilestone(Milestone.Created);
+    cs.setMilestone(Milestone.DeploymentStarted);
     cs.setName("foo");
     cs.setPodSecurityContext(new PodSecurityContextBuilder()
             .withRunAsUser(1000L)

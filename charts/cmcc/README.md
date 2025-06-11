@@ -5,7 +5,7 @@ This helm chart creates a custom resource for the [CoreMedia Content Cloud Opera
 ## TL;DR
 
 ```console
-$ helm repo add cmcc-operator https://telekom-mms.github.io/cmcc-operator/
+$ helm repo add cmcc-operator https://t-systems-mms.github.io/cmcc-operator/
 $ helm upgrade --install my-release cmcc-operator/cmcc --values my-values.yaml
 ```
 

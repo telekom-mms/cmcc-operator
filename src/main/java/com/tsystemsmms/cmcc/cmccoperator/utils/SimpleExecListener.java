@@ -36,7 +36,11 @@ public class SimpleExecListener  implements ExecListener {
 
     @Override
     public void onClose(int code, String reason) {
-        log.debug("Finished: {}, {}", code, reason);
+        if (reason.isBlank()) {
+            log.debug("Server response: Finished with code: {}", code);
+        } else {
+            log.debug("Server response: Finished with code: {}, reason: {}", code, reason);
+        }
         this.code = code;
         latch.countDown();
     }

@@ -24,8 +24,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import static com.tsystemsmms.cmcc.cmccoperator.components.HasSolrClient.SOLR_CLIENT_SECRET_REF_KIND;
-
 @Slf4j
 public class ElasticWorkerComponent extends CorbaComponent implements HasMongoDBClient, HasSolrClient, HasService {
 
@@ -49,6 +47,9 @@ public class ElasticWorkerComponent extends CorbaComponent implements HasMongoDB
     public List<HasMetadata> buildResources() {
         List<HasMetadata> resources = new LinkedList<>();
         resources.add(buildStatefulSet());
+        if (getCmcc().getSpec().getWith().getJsonLogging()) {
+            resources.add(buildLoggingConfigMap());
+        }
         return resources;
     }
 

@@ -1,0 +1,8 @@
+javaoperatorsdk:
+  reconcilers:
+    coreMediaContentCloudReconciler:
+      retry:
+        maxAttempts: 3
+
+  test:
+    crdPaths: classpath:cmcc-crd.yaml

@@ -13,6 +13,7 @@ package com.tsystemsmms.cmcc.cmccoperator.components.generic;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tsystemsmms.cmcc.cmccoperator.components.AbstractComponent;
+import com.tsystemsmms.cmcc.cmccoperator.components.Component;
 import com.tsystemsmms.cmcc.cmccoperator.components.HasService;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ImageSpec;
@@ -36,6 +37,7 @@ import java.util.*;
 
 import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.EnvVarSimple;
 import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.concatOptional;
+import static org.apache.commons.lang3.StringUtils.isEmpty;
 
 /**
  * Creates an Overview web page. It creates an NGINX web server. The contents are mounted into the docroot from a
@@ -43,6 +45,15 @@ import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.concatOptional;
  */
 @Slf4j
 public class OverviewComponent extends AbstractComponent implements HasService {
+
+    public static final String CONTAINER_PORT_KEY = "containerPort";
+    public static final String SERVICE_PORT_KEY = "servicePort";
+
+    public static final int DEFAULT_PORT = 8080;
+    public static final int DEFAULT_SERVICE_PORT = 80;
+
+    private int containerPort = DEFAULT_PORT;
+    private int servicePort = DEFAULT_SERVICE_PORT;
 
     public OverviewComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec componentSpec) {
         super(kubernetesClient, targetState, componentSpec, "studio-client");
@@ -59,8 +70,18 @@ public class OverviewComponent extends AbstractComponent implements HasService {
     }
 
     @Override
+    public Component updateComponentSpec(ComponentSpec newCs) {
+        super.updateComponentSpec(newCs);
+        String containerPortString = getComponentSpec().getExtra().get(CONTAINER_PORT_KEY);
+        this.containerPort = null != containerPortString ? Integer.parseInt(containerPortString) : DEFAULT_PORT;
+        String servicePortString = getComponentSpec().getExtra().get(SERVICE_PORT_KEY);
+        this.servicePort = null != servicePortString ? Integer.parseInt(servicePortString) : DEFAULT_SERVICE_PORT;
+        return this;
+    }
+
+    @Override
     public ImageSpec getDefaultImage() {
-        return new ImageSpec("docker.io/library/nginx:1.25");
+        return new ImageSpec("nginxinc/nginx-unprivileged:1.27-alpine");
     }
 
     @Override
@@ -100,7 +121,13 @@ public class OverviewComponent extends AbstractComponent implements HasService {
             if (urlMappingBuilderFactory == null)
                 throw new CustomResourceConfigError("Unable to find URL Mapper \"" + urlMapperName + "\" for site mapping \"" + siteMapping + "\"");
             UrlMappingBuilder liveIngressGenerator = urlMappingBuilderFactory.instance(getTargetState(), getTargetState().getServiceNameFor("cae", "live"));
-            String fqdn = concatOptional(getDefaults().getNamePrefix(), siteMapping.getHostname()) + "." + getDefaults().getIngressDomain();
+
+            String fqdn = concatOptional(
+                    isEmpty(getDefaults().getNamePrefixForIngressDomain()) ? getDefaults().getNamePrefix() : getDefaults().getNamePrefixForIngressDomain(),
+                    siteMapping.getHostname(),
+                    isEmpty(getDefaults().getNameSuffixForIngressDomain()) ? getDefaults().getNameSuffix() : getDefaults().getNameSuffixForIngressDomain()
+            ) + "." + getDefaults().getIngressDomain();
+
             if (siteMapping.getFqdn() != null && !siteMapping.getFqdn().isEmpty())
                 fqdn = siteMapping.getFqdn();
             InfoSiteMapping ism = new InfoSiteMapping();
@@ -125,7 +152,7 @@ public class OverviewComponent extends AbstractComponent implements HasService {
         try {
             contents.put("info.json", new ObjectMapper().writeValueAsString(info));
         } catch (JsonProcessingException e) {
-            log.warn("unable to render info", e);
+            log.warn("[{}] unable to render info", getTargetState().getContextForLogging(), e);
         }
 
         return new ConfigMapBuilder()
@@ -155,7 +182,7 @@ public class OverviewComponent extends AbstractComponent implements HasService {
         return List.of(
                 new ContainerPortBuilder()
                         .withName("http")
-                        .withContainerPort(80)
+                        .withContainerPort(containerPort)
                         .build()
         );
     }
@@ -163,7 +190,7 @@ public class OverviewComponent extends AbstractComponent implements HasService {
     @Override
     public List<ServicePort> getServicePorts() {
         return List.of(
-                new ServicePortBuilder().withName("http").withPort(80).withNewTargetPort("http").build());
+                new ServicePortBuilder().withName("http").withPort(servicePort).withNewTargetPort("http").build());
     }
 
     /**
@@ -272,6 +299,7 @@ public class OverviewComponent extends AbstractComponent implements HasService {
         String comment;
         String name;
         String prefix;
+        String suffix;
         String previewUrl;
         Set<InfoSiteMapping> siteMappings;
         String studioUrl;
