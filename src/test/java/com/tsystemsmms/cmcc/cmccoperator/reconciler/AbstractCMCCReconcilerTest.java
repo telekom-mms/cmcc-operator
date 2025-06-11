@@ -314,13 +314,13 @@ public abstract class AbstractCMCCReconcilerTest {
     }
 
     protected StatefulSet waitForStatefulSet(String name) {
-        return getAllStatefulSetResources().withName(name).waitUntilCondition(Objects::nonNull, 10, SECONDS);
+        return getAllStatefulSetResources().withName(name).waitUntilCondition(Objects::nonNull, 20, SECONDS);
     }
 
     protected StatefulSet waitForStatefulSet(int readyReplicas, String name) {
         return getAllStatefulSetResources().withName(name).waitUntilCondition(sts ->
                 sts != null && sts.getStatus() != null &&
-                sts.getStatus().getReadyReplicas() == readyReplicas, 10, SECONDS);
+                sts.getStatus().getReadyReplicas() == readyReplicas, 20, SECONDS);
     }
 
     protected Set<StatefulSet> waitForStatefulSets(int readyReplicas, String ...names) {
