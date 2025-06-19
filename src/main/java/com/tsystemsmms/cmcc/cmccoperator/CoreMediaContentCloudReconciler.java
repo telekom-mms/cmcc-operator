@@ -13,6 +13,7 @@ package com.tsystemsmms.cmcc.cmccoperator;
 import com.tsystemsmms.cmcc.cmccoperator.components.job.JobComponent;
 import com.tsystemsmms.cmcc.cmccoperator.crds.CoreMediaContentCloud;
 import com.tsystemsmms.cmcc.cmccoperator.crds.CoreMediaContentCloudStatus;
+import com.tsystemsmms.cmcc.cmccoperator.crds.Milestone;
 import com.tsystemsmms.cmcc.cmccoperator.customresource.CrdCustomResource;
 import com.tsystemsmms.cmcc.cmccoperator.customresource.CustomResource;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
@@ -90,12 +91,19 @@ public class CoreMediaContentCloudReconciler implements Reconciler<CoreMediaCont
     var specChanged = false;
 
     if (!status.getJob().isBlank()) {
-      cmcc.getSpec().setJob("");
-      specChanged = true;
-    } else if (!Objects.equals(deepCopy.getSpec().getScaling().getIntVal(), cmcc.getSpec().getScaling().getIntVal())) {
+      if (!cmcc.getSpec().getJob().isBlank()) {
+        cmcc.getSpec().setJob("");
+        specChanged = true;
+      }
+      if (status.getMilestone().equals(Milestone.Ready)) {
+        status.setJob(""); // job finished
+      }
+    }
+    if (!Objects.equals(deepCopy.getSpec().getScaling().getIntVal(), cmcc.getSpec().getScaling().getIntVal())) {
       cmcc.getSpec().setScaling(deepCopy.getSpec().getScaling());
       specChanged = true;
-    } else if (!Utils.deepEquals(status, cmcc.getStatus())) {
+    }
+    if (!Utils.deepEquals(status, cmcc.getStatus())) {
       statusChanged = true;
     }
 
@@ -104,11 +112,14 @@ public class CoreMediaContentCloudReconciler implements Reconciler<CoreMediaCont
 
       // avoid conflicts on update
       cmcc.getMetadata().setManagedFields(Collections.emptyList());
-      if (statusChanged) {
-        cmcc.getMetadata().setResourceVersion(null);
-      }
+      cmcc.getMetadata().setResourceVersion(null);
+      cmcc.getMetadata().setGeneration(null);
 
-      return specChanged ? UpdateControl.patchResourceAndStatus(cmcc) : UpdateControl.patchStatus(cmcc);
+      var result = UpdateControl.patchResourceAndStatus(cmcc); // assume both have changed
+      if (!statusChanged) result = UpdateControl.patchResource(cmcc); // status did not? spec only
+      if (!specChanged) result = UpdateControl.patchStatus(cmcc); // spec did not? status only
+
+      return result;
     }
 
     return UpdateControl.noUpdate();
