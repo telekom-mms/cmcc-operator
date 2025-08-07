@@ -304,8 +304,9 @@ public class ContentServerComponent extends CorbaComponent implements HasJdbcCli
     }
     if (getComponentSpec().getKind().equals(KIND_RLS)) {
       properties.remove("repository.url"); // avoid irritations
-      properties.remove("com.coremedia.corba.server.host"); // let it set the IP directly, see below
-      properties.put("com.coremedia.corba.server.singleIp", "${POD_IP}");
+      // set qualified hostname value similar to CAE target config: honoring the index
+      // podname.stsname -> replication-live-server-0.replication-live-server
+      properties.put("com.coremedia.corba.server.host", this.getBaseResourceName() + "-${POD_INDEX}." + this.getBaseResourceName());
       properties.put("replicator.publication-ior-url", getTargetState().getServiceUrlFor("content-server", "mls"));
       properties.put("management.endpoint.health.group.startup.include", "readinessState,replicator");
     }
