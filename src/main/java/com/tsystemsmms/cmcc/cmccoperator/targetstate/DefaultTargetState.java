@@ -10,6 +10,7 @@
 
 package com.tsystemsmms.cmcc.cmccoperator.targetstate;
 
+import com.tsystemsmms.cmcc.cmccoperator.components.Component;
 import com.tsystemsmms.cmcc.cmccoperator.components.ComponentSpecBuilder;
 import com.tsystemsmms.cmcc.cmccoperator.components.corba.CAEComponent;
 import com.tsystemsmms.cmcc.cmccoperator.components.generic.MongoDBComponent;
@@ -97,7 +98,7 @@ public class DefaultTargetState extends AbstractTargetState {
                     ComponentSpecBuilder.ofType("management-tools")
                             .withName("initcms")
                             .withMilestone(Milestone.ContentServerInitialized)
-                            .withArgs(List.of("change-passwords"))
+                            //.withArgs(List.of("change-passwords"))
                             .build()
             ));
 
@@ -159,21 +160,14 @@ public class DefaultTargetState extends AbstractTargetState {
         }
 
         if (cmcc.getSpec().getWith().getDatabases()) {
+            // If create database is activated, the components were already created in convergeDefaultComponents(). Now we only need to create the user.
             if (cmcc.getSpec().getWith().databaseCreateForKind("mongodb")) {
-                componentCollection.addAll(List.of(
-                        ComponentSpecBuilder.ofType("mongodb")
-                                .withMilestone(Milestone.DeploymentStarted)
-                                .withExtra(MongoDBComponent.createUsersFromClientSecrets(this))
-                                .build()
-                ));
+                Optional<Component> mongoDb = componentCollection.getOfTypeAndKind("mongodb", "");
+                mongoDb.ifPresent(c -> c.getComponentSpec().getExtra().putAll(MongoDBComponent.createUsersFromClientSecrets(this)));
             }
             if (cmcc.getSpec().getWith().databaseCreateForKind("mysql")) {
-                componentCollection.addAll(List.of(
-                        ComponentSpecBuilder.ofType("mysql")
-                                .withMilestone(Milestone.DeploymentStarted)
-                                .withExtra(MySQLComponent.createUsersFromClientSecrets(this))
-                                .build()
-                ));
+                Optional<Component> mysqlDb = componentCollection.getOfTypeAndKind("mysql", "");
+                mysqlDb.ifPresent(c -> c.getComponentSpec().getExtra().putAll(MySQLComponent.createUsersFromClientSecrets(this)));
             }
         }
 
