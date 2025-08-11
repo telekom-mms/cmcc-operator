@@ -2,6 +2,16 @@ apiVersion: v1
 entries:
   cmcc:
   - apiVersion: v2
+    appVersion: v2.0.1
+    created: "2025-08-11T14:17:42.844779484Z"
+    description: CoreMedia Content Cloud through cmcc-operator
+    digest: 511079292c27d220c27954146bf028df3b2d7c2ee6cbd8dab39f326372bfe2bd
+    name: cmcc
+    type: application
+    urls:
+    - https://github.com/telekom-mms/cmcc-operator/releases/download/cmcc-v2.0.1/cmcc-v2.0.1.tgz
+    version: v2.0.1
+  - apiVersion: v2
     appVersion: v2.0.0
     created: "2025-06-11T07:23:00.84840465Z"
     description: CoreMedia Content Cloud through cmcc-operator
@@ -802,6 +812,16 @@ entries:
     - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-0.9.8-beta.11/cmcc-0.9.8-beta.11.tgz
     version: 0.9.8-beta.11
   cmcc-operator:
+  - apiVersion: v2
+    appVersion: v2.0.1
+    created: "2025-08-11T14:17:42.648198194Z"
+    description: Kubernetes Operator to bring up a CoreMedia Content Cloud installation
+    digest: e494d7f13eb11816f6af2114b2d926791cc667c24edc44aaf44a4b17d45dc932
+    name: cmcc-operator
+    type: application
+    urls:
+    - https://github.com/telekom-mms/cmcc-operator/releases/download/cmcc-operator-v2.0.1/cmcc-operator-v2.0.1.tgz
+    version: v2.0.1
   - apiVersion: v2
     appVersion: v2.0.0
     created: "2025-06-11T07:23:00.719436682Z"
@@ -1622,4 +1642,4 @@ entries:
     urls:
     - https://github.com/Telekom-MMS/cmcc-operator/releases/download/cmcc-operator-0.9.8-beta.11/cmcc-operator-0.9.8-beta.11.tgz
     version: 0.9.8-beta.11
-generated: "2025-06-11T07:23:00.848996295Z"
+generated: "2025-08-11T14:17:42.845327935Z"
