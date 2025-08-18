@@ -11,6 +11,7 @@
 package com.tsystemsmms.cmcc.cmccoperator.components.generic;
 
 import com.tsystemsmms.cmcc.cmccoperator.components.AbstractComponent;
+import com.tsystemsmms.cmcc.cmccoperator.components.Component;
 import com.tsystemsmms.cmcc.cmccoperator.components.HasService;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ClientSecretRef;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
@@ -21,6 +22,7 @@ import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 import com.tsystemsmms.cmcc.cmccoperator.utils.EnvVarSet;
 import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;
@@ -35,9 +37,21 @@ import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.*;
 public class MySQLComponent extends AbstractComponent implements HasService {
     public static final String MYSQL = "mysql";
     public static final String MYSQL_ROOT_USERNAME = "root";
+    public static final String MYSQL_USE_MARIA_JDBC = "useMariaDBJdbc";
+
+    @Getter
+    private boolean useMariaDbJdbc;
 
     public MySQLComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec componentSpec) {
         super(kubernetesClient, targetState, componentSpec, "");
+        this.useMariaDbJdbc = Boolean.parseBoolean(componentSpec.getExtra().getOrDefault(MYSQL_USE_MARIA_JDBC, "false"));
+    }
+
+    @Override
+    public Component updateComponentSpec(ComponentSpec newCs) {
+        var result = super.updateComponentSpec(newCs);
+        this.useMariaDbJdbc = Boolean.parseBoolean(newCs.getExtra().getOrDefault(MYSQL_USE_MARIA_JDBC, "false"));
+        return result;
     }
 
     @Override

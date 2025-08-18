@@ -10,13 +10,14 @@
 
 package com.tsystemsmms.cmcc.cmccoperator.components;
 
+import com.tsystemsmms.cmcc.cmccoperator.components.generic.MySQLComponent;
 import com.tsystemsmms.cmcc.cmccoperator.crds.ClientSecretRef;
-import com.tsystemsmms.cmcc.cmccoperator.targetstate.CustomResourceConfigError;
 import com.tsystemsmms.cmcc.cmccoperator.utils.EnvVarSet;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * A Component that requires a JDBC client connection.
@@ -46,16 +47,27 @@ public interface HasJdbcClient extends Component {
      * @return reference
      */
     default ClientSecretRef getJdbcClientSecretRef(String schemaName) {
-        return getTargetState().getClientSecretRef(JDBC_CLIENT_SECRET_REF_KIND, schemaName,
-                (clientSecret, password) -> getTargetState().loadOrBuildSecret(clientSecret, Map.of(
-                                ClientSecretRef.DEFAULT_DRIVER_KEY, "com.mysql.cj.jdbc.Driver",
-                                ClientSecretRef.DEFAULT_HOSTNAME_KEY, getTargetState().getServiceNameFor("mysql"),
-                                ClientSecretRef.DEFAULT_PASSWORD_KEY, password,
-                                ClientSecretRef.DEFAULT_SCHEMA_KEY, schemaName,
-                                ClientSecretRef.DEFAULT_URL_KEY, "jdbc:mysql://" + getTargetState().getServiceNameFor("mysql") + ":3306/" + schemaName,
-                                ClientSecretRef.DEFAULT_USERNAME_KEY, schemaName
-                        )
-                )
+        return getTargetState().getClientSecretRef(
+                JDBC_CLIENT_SECRET_REF_KIND,
+                schemaName,
+                (clientSecret, password) -> getTargetState()
+                        .loadOrBuildSecret(clientSecret, buildJdbcClientSecretRef(schemaName, password))
+        );
+    }
+
+    default Map<String, String> buildJdbcClientSecretRef(String schemaName, String password) {
+        Optional<Component> mysqlDb = getTargetState().getComponentCollection().getOfTypeAndKind("mysql", "");
+        var useMariaDBJdbc = mysqlDb.map(c -> ((MySQLComponent) c).isUseMariaDbJdbc()).orElse(false);
+
+        return Map.of(
+                ClientSecretRef.DEFAULT_DRIVER_KEY, useMariaDBJdbc ? "org.mariadb.jdbc.Driver" : "com.mysql.cj.jdbc.Driver",
+                ClientSecretRef.DEFAULT_HOSTNAME_KEY, getTargetState().getServiceNameFor("mysql"),
+                ClientSecretRef.DEFAULT_PASSWORD_KEY, password,
+                ClientSecretRef.DEFAULT_SCHEMA_KEY, schemaName,
+                ClientSecretRef.DEFAULT_URL_KEY, useMariaDBJdbc ?
+                        "jdbc:mariadb://" + getTargetState().getServiceNameFor("mysql") + ":3306/" + schemaName + "?useSSL=false&allowPublicKeyRetrieval=true&useMysqlMetadata=true" :
+                        "jdbc:mysql://" + getTargetState().getServiceNameFor("mysql") + ":3306/" + schemaName,
+                ClientSecretRef.DEFAULT_USERNAME_KEY, schemaName
         );
     }
 
