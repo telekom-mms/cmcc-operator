@@ -569,6 +569,7 @@ To run a job during deployment, simply add it to the list of components, like so
       config: |
         contentUsersUrl: "http://gitlab.example.com/..."
         themesUrl: "http://gitlab.example.com/..."
+        activeDeadlineSeconds: 3600
 ```
 
 The `milestone` defines when to run this job.
@@ -633,6 +634,7 @@ components:
       config: |
         cron: "*/5 * * * *"
         timezone: "Europe/Berlin"
+        activeDeadlineSeconds: 3600
     milestone: ManagementReady
 ```
 
@@ -976,6 +978,7 @@ Note that you might need to add your own scripts to the management tools image t
 | `args`                  | list of Strings | ""         | List of the entrypoint scripts to run. No default.                                                                      |
 | `extra.config.cron`     | String | "0 0 0 * +" | When to execute the job. Default is every day at midnight local time of the k8s cluster.                                |
 | `extra.config.timezone` | String | ""         | The time zone of the time specification. By default, this is the local time of the cluster. Use "Europe/Berlin" format. |
+| `extra.config.activeDeadlineSeconds` | integer | 30 * 60 | Override for 'active deadline' in seconds, default: 30 min. This can be used to configure the maximum time a job is allowed to run before it is forcefully terminated. |
 
 ### Component `overview`
 
@@ -1132,6 +1135,7 @@ A Kubernetes Job running the `management-tools` image. You can configure these p
 | `importJob.themesAuth.secret`         | String          | ""         | name of the secret                                                                                                                                                                       |
 | `importJob.themesAuth.username`       | String          | `username` | secret key for the username                                                                                                                                                              |
 | `importJob.themesUrl`                 | string          | ""         | URL of the frontend.zip to be imported, used by `import-themes`                                                                                                                          |
+| `extra.config.activeDeadlineSeconds` | integer         | 30 * 60    | Override for 'active deadline' in seconds, default: 30 min. This can be used to configure the maximum time a job is allowed to run before it is forcefully terminated. |
 
 The `milestone` property determines at which milestone a configured job will be started. After the job has completed,
 the milestone will be advanced.
