@@ -37,7 +37,6 @@ import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.EnvVarSimple;
 public class MgmtToolsCronJobComponent extends SpringBootComponent implements HasUapiClient {
   public static final String EXTRA_CONFIG = "config";
 
-  long activeDeadlineSeconds = 30 * 60L;
   private MgmtCronJobConfig mgmtCronJobConfig = null;
 
   public MgmtToolsCronJobComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec componentSpec) {
@@ -69,7 +68,7 @@ public class MgmtToolsCronJobComponent extends SpringBootComponent implements Ha
                     .withSuccessfulJobsHistoryLimit(1)
                     .withJobTemplate(new JobTemplateSpecBuilder()
                             .withSpec(new JobSpecBuilder()
-                                    .withActiveDeadlineSeconds(activeDeadlineSeconds)
+                                    .withActiveDeadlineSeconds(mgmtCronJobConfig.activeDeadlineSeconds)
                                     .withBackoffLimit(3)
                                     .withCompletions(1)
                                     .withParallelism(1)
