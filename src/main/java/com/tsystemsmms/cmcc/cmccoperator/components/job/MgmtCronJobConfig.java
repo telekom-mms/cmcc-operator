@@ -20,4 +20,7 @@ public class MgmtCronJobConfig {
 
   @JsonPropertyDescription("Time zone for the time specification, default local timezone of the cluster")
   String timezone = "";
+
+  @JsonPropertyDescription("Override for 'active deadline' in seconds, default: 30 min.")
+  long activeDeadlineSeconds = 30 * 60L;
 }
