@@ -21,17 +21,17 @@ import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.api.model.batch.v1.JobBuilder;
 import io.fabric8.kubernetes.api.model.batch.v1.JobSpecBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import org.yaml.snakeyaml.LoaderOptions;
-import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.constructor.Constructor;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 public abstract class JobComponent extends SpringBootComponent {
   public static final String EXTRA_CONFIG = "config";
+  public static final String ACTIVE_DEADLINE_SECONDS_KEY = "activeDeadlineSeconds";
+
   long activeDeadlineSeconds = 120L;
-  private JobConfig jobConfig = null;
 
   protected JobComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec componentSpec, String imageRepository) {
     super(kubernetesClient, targetState, componentSpec, imageRepository);
@@ -41,27 +41,16 @@ public abstract class JobComponent extends SpringBootComponent {
   public Component updateComponentSpec(ComponentSpec newCs) {
     super.updateComponentSpec(newCs);
     if (getComponentSpec().getExtra() != null && getComponentSpec().getExtra().containsKey(EXTRA_CONFIG)) {
-        JobConfig jobConfig = getJobConfigFromExtra();
-        activeDeadlineSeconds = jobConfig.getActiveDeadlineSeconds();
+        try {
+            activeDeadlineSeconds = Long.parseLong(getComponentSpec().getExtra().getOrDefault(ACTIVE_DEADLINE_SECONDS_KEY, String.valueOf(activeDeadlineSeconds)));
+        } catch (Exception e) {
+            log.info("Could not parse activeDeadlineSeconds from job config {}", newCs.getName());
+        }
     }
     return this;
   }
 
-  private JobConfig getJobConfigFromExtra() {
-    Yaml yaml = new Yaml(new Constructor(JobConfig.class, new LoaderOptions()));
-    if (getComponentSpec().getExtra() == null || !getComponentSpec().getExtra().containsKey(EXTRA_CONFIG)) {
-        return new JobConfig(); // Return default config if extra is missing
-    }
-    return yaml.load(getComponentSpec().getExtra().get(EXTRA_CONFIG));
-  }
-
-  private JobConfig getJobConfig() {
-    if (jobConfig == null)
-      jobConfig = getJobConfigFromExtra();
-    return jobConfig;
-  }
-
-    @Override
+  @Override
   public boolean isBuildResources() {
     return Milestone.compareTo(getCmcc().getStatus().getMilestone(), getComponentSpec().getMilestone()) == 0;
   }
@@ -87,7 +76,6 @@ public abstract class JobComponent extends SpringBootComponent {
   }
 
   Job buildJob() {
-    getJobConfig(); // ensure config is parsed
     return new JobBuilder()
             .withMetadata(getResourceMetadata())
             .withSpec(new JobSpecBuilder()
