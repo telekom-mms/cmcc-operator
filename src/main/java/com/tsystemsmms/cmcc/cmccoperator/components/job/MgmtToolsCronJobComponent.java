@@ -36,6 +36,7 @@ import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.EnvVarSimple;
  */
 public class MgmtToolsCronJobComponent extends SpringBootComponent implements HasUapiClient {
   public static final String EXTRA_CONFIG = "config";
+
   long activeDeadlineSeconds = 30 * 60L; // Default value
   private MgmtCronJobConfig mgmtCronJobConfig = null;
 
@@ -51,7 +52,7 @@ public class MgmtToolsCronJobComponent extends SpringBootComponent implements Ha
   @Override
   public Component updateComponentSpec(ComponentSpec newCs) {
     super.updateComponentSpec(newCs);
-    if (getComponentSpec().getExtra() != null && getComponentSpec().getExtra().containsKey(EXTRA_CONFIG)) {
+    if (mgmtCronJobConfig != null) {
       mgmtCronJobConfig = getMgmtCronJobConfigFromExtra();
       activeDeadlineSeconds = mgmtCronJobConfig.getActiveDeadlineSeconds();
     }
@@ -60,6 +61,7 @@ public class MgmtToolsCronJobComponent extends SpringBootComponent implements Ha
 
   private CronJob buildJob() {
     getMgmtCronJobConfig(); // ensure config is parsed
+
     return new CronJobBuilder()
             .withMetadata(getResourceMetadata())
             .withSpec(new CronJobSpecBuilder()
@@ -165,6 +167,7 @@ public class MgmtToolsCronJobComponent extends SpringBootComponent implements Ha
   private MgmtCronJobConfig getMgmtCronJobConfig() {
     if (mgmtCronJobConfig == null) {
       mgmtCronJobConfig = getMgmtCronJobConfigFromExtra();
+      activeDeadlineSeconds = mgmtCronJobConfig.getActiveDeadlineSeconds();
     }
     return mgmtCronJobConfig;
   }
