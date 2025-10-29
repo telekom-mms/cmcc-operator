@@ -36,8 +36,7 @@ import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.EnvVarSimple;
  */
 public class MgmtToolsCronJobComponent extends SpringBootComponent implements HasUapiClient {
   public static final String EXTRA_CONFIG = "config";
-
-  long activeDeadlineSeconds = 30 * 60L;
+  long activeDeadlineSeconds = 30 * 60L; // Default value
   private MgmtCronJobConfig mgmtCronJobConfig = null;
 
   public MgmtToolsCronJobComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec componentSpec) {
@@ -52,14 +51,15 @@ public class MgmtToolsCronJobComponent extends SpringBootComponent implements Ha
   @Override
   public Component updateComponentSpec(ComponentSpec newCs) {
     super.updateComponentSpec(newCs);
-    if (mgmtCronJobConfig != null) {
+    if (getComponentSpec().getExtra() != null && getComponentSpec().getExtra().containsKey(EXTRA_CONFIG)) {
       mgmtCronJobConfig = getMgmtCronJobConfigFromExtra();
+      activeDeadlineSeconds = mgmtCronJobConfig.getActiveDeadlineSeconds();
     }
     return this;
   }
 
   private CronJob buildJob() {
-    getMgmtCronJobConfig();
+    getMgmtCronJobConfig(); // ensure config is parsed
     return new CronJobBuilder()
             .withMetadata(getResourceMetadata())
             .withSpec(new CronJobSpecBuilder()

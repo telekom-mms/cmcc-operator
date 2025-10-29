@@ -7,20 +7,13 @@
  *
  * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
  */
-
 package com.tsystemsmms.cmcc.cmccoperator.components.job;
 
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import lombok.Data;
 
 @Data
-public class MgmtCronJobConfig {
-  @JsonPropertyDescription("k8s cron expression determining when the job will be run. Default every day at midnight")
-  String cron = "0 0 0 * *";
-
-  @JsonPropertyDescription("Time zone for the time specification, default local timezone of the cluster")
-  String timezone = "";
-
-  @JsonPropertyDescription("Override for 'active deadline' in seconds, default: 30 min.")
-  long activeDeadlineSeconds = 30 * 60L;
+public class JobConfig {
+  @JsonPropertyDescription("Override for 'active deadline' in seconds, default: 120 sec.")
+  long activeDeadlineSeconds = 120L;
 }

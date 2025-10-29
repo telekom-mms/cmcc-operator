@@ -143,6 +143,7 @@ public abstract class CorbaComponent extends SpringBootComponent implements HasS
     ));
 
     if (needsTransformedBlobCache() && !getCmcc().getSpec().getWith().getCachesAsPvc()) {
+      // only a volume when no PVC is wanted, otherwise a claim will be created (see below)
       volumes.add(new VolumeBuilder()
                       .withName(PVC_TRANSFORMED_BLOBCACHE)
                       .withEmptyDir(new EmptyDirVolumeSource())
