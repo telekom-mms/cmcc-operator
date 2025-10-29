@@ -633,6 +633,7 @@ components:
       config: |
         cron: "*/5 * * * *"
         timezone: "Europe/Berlin"
+        activeDeadlineSeconds: 3600  # 1 Stunde statt 30 Minuten
     milestone: ManagementReady
 ```
 
