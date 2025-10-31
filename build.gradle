@@ -63,7 +63,7 @@ dependencies {
     // Test
     testImplementation 'org.hamcrest:hamcrest'
     testImplementation 'org.hamcrest:java-hamcrest:2.0.0.0'
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.12.2'
+    testImplementation 'org.junit.jupiter:junit-jupiter:6.0.1'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     testImplementation 'io.javaoperatorsdk:operator-framework-spring-boot-starter-test:6.0.1'
 }
