@@ -162,7 +162,7 @@ public class MySQLComponent extends AbstractComponent implements HasService {
 
     @Override
     public ImageSpec getDefaultImage() {
-        return new ImageSpec("docker.io/mariadb:10.7");
+        return new ImageSpec("docker.io/mysql:9");
     }
 
 
