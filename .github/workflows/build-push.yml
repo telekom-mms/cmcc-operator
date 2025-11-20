@@ -7,9 +7,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: 17
           distribution: adopt
@@ -19,7 +19,7 @@ jobs:
         with:
           string: ${{ github.repository }}/cmcc-operator
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v5
       - name: push
         run: |
           ./gradlew build test jib -Djib.to.image=ghcr.io/${{ steps.repository.outputs.lowercase }}:${{github.ref_name}} -Djib.to.tags=${{github.ref_name}},latest -Djib.to.auth.username=${{ github.actor }} -Djib.to.auth.password=${{ github.token }}
@@ -27,7 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
