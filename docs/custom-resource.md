@@ -868,6 +868,10 @@ Using `volumeSize`, you can customize the amount of space the PVCs and PVs are c
 not know how to resize a volume. If you need to change the size of a volume after it has been created, you will need to
 employ standard Kubernetes mechanisms to do so.
 
+Sizes are given in the [Kubernetes quantity format](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#resource-units):
+a number with an optional binary suffix (`Ki`, `Mi`, `Gi`, …), e.g. `8Gi` or `512Mi`, or with a decimal suffix
+(`k`, `M`, `G`, …), e.g. `500M`. A plain number is a byte count, e.g. `1073741824`.
+
 For the transformed BLOB and UAPI BLOB caches, the size is also used to configure a limit on the size of the caches. The
 limit is set to 90% of the volume size, which should allow for the overhead needed to manage the cache. The properties
 set are `com.coremedia.transform.blobCache.size` and `repository.blob-cache-size`.
@@ -936,6 +940,14 @@ The CAE type has two kinds: `preview` and `live`. The default image as well as t
 , respectively.
 
 The Solr collection is `preview` and `live`, respectively.
+
+#### Heap Cache Size
+
+The in-memory heap cache of the CAE is configured with the property `repository.heap-cache-size`. The size is given in
+the Kubernetes quantity format (see [Volume Size](#volume-size)) and is passed to the component as a plain byte count,
+e.g. `128Mi` becomes `134217728`. It defaults to `128Mi`.
+
+Using the component's `heapCacheSize`, you can change the size for a single component.
 
 ### Component `cae-feeder`
 

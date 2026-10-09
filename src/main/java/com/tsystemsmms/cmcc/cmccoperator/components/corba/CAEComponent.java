@@ -14,6 +14,7 @@ import com.tsystemsmms.cmcc.cmccoperator.crds.ComponentSpec;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.CustomResourceConfigError;
 import com.tsystemsmms.cmcc.cmccoperator.targetstate.TargetState;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import lombok.extern.slf4j.Slf4j;
 
@@ -27,6 +28,8 @@ import static com.tsystemsmms.cmcc.cmccoperator.utils.Utils.getInt;
 public class CAEComponent extends AbstractRenderingCorbaComponent {
     public static final String TYPE_CAE = "cae";
 
+    public static final long DEFAULT_HEAP_CACHE_SIZE = 128L * 1024 * 1024;
+
     public CAEComponent(KubernetesClient kubernetesClient, TargetState targetState, ComponentSpec componentSpec) {
         super(kubernetesClient, targetState, componentSpec);
     }
@@ -35,11 +38,23 @@ public class CAEComponent extends AbstractRenderingCorbaComponent {
   public Map<String, String> getSpringBootProperties() {
     Map<String, String> properties = super.getSpringBootProperties();
     properties.put("cae.preview.pbe.studio-url-whitelist[0]", "https://" + getTargetState().getStudioHostname());
+    properties.put("repository.heap-cache-size", String.valueOf(getHeapCacheSize()));
     addUploadSizeProperties(properties, getInt(getComponentSpec().getKind().equals(KIND_LIVE)
             ? getSpec().getWith().getUploadSize().getLive()
             : getSpec().getWith().getUploadSize().getPreview()));
 
     return properties;
+  }
+
+  /**
+   * Returns the size of the in-memory heap cache, configured with heapCacheSize, or the default of 128 MiB.
+   *
+   * @return heap cache size in bytes
+   */
+  public long getHeapCacheSize() {
+    return Quantity.getAmountInBytes(new Quantity(Objects.requireNonNullElse(
+            getComponentSpec().getHeapCacheSize(),
+            Long.toString(DEFAULT_HEAP_CACHE_SIZE)))).longValue();
   }
 
   @Override

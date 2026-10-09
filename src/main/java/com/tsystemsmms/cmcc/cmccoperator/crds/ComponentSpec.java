@@ -69,6 +69,9 @@ public class ComponentSpec {
   @JsonPropertyDescription("Size of persistent data/cache volumes")
   ComponentSpec.VolumeSize volumeSize = new ComponentSpec.VolumeSize();
 
+  @JsonPropertyDescription("Size of the in-memory heap cache of CoreMedia components (property repository.heap-cache-size), as k8s quantity, e.g. 128Mi")
+  String heapCacheSize;
+
   @JsonPropertyDescription("Additional volume mounts for a pod")
   private List<VolumeMount> volumeMounts = new LinkedList<>();
 
@@ -144,6 +147,8 @@ public class ComponentSpec {
       this.volumeSize.setTransformedBlobCache(that.getVolumeSize().getTransformedBlobCache());
     if (that.getVolumeSize().getUapiBlobCache() != null)
       this.volumeSize.setUapiBlobCache(that.getVolumeSize().getUapiBlobCache());
+    if (that.getHeapCacheSize() != null)
+      this.heapCacheSize = that.getHeapCacheSize();
 
     that.getVolumeMounts().forEach(v -> {
       if (this.volumeMounts.stream().noneMatch(tv ->
