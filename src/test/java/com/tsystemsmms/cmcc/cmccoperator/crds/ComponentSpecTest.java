@@ -67,6 +67,7 @@ public class ComponentSpecTest {
             .withRunAsUser(1000L)
             .build());
     cs.setType("foo");
+    cs.setHeapCacheSize("256Mi");
     cs.setVolumeSize(new ComponentSpec.VolumeSize("1234"));
 
     ComponentSpec dut = new ComponentSpec();
@@ -86,6 +87,7 @@ public class ComponentSpecTest {
     assertEquals(cs.getSchemas(), dut.getSchemas(), "schemas copied");
     assertEquals(cs.getSecurityContext(), dut.getSecurityContext(), "securityContext copied");
     assertNull(dut.getType(), "type not set");
+    assertEquals(cs.getHeapCacheSize(), dut.getHeapCacheSize(), "heapCacheSize copied");
     assertEquals(cs.getVolumeSize(), dut.getVolumeSize(), "volumeSize copied");
   }
 }

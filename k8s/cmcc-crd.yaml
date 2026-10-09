@@ -480,6 +480,11 @@ spec:
                     forceMls:
                       description: "Forces to use MLS over RLS when set to true"
                       type: "boolean"
+                    heapCacheSize:
+                      description: "Size of the in-memory heap cache of CoreMedia\
+                        \ components (property repository.heap-cache-size), as k8s\
+                        \ quantity, e.g. 128Mi"
+                      type: "string"
                     image:
                       description: "Image for main pod' main container"
                       properties:

@@ -12,8 +12,13 @@ package com.tsystemsmms.cmcc.cmccoperator.utils;
 
 import io.fabric8.kubernetes.api.model.EnvVar;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.context.properties.source.ConfigurationPropertySources;
+import org.springframework.core.env.StandardEnvironment;
+import org.springframework.core.env.SystemEnvironmentPropertySource;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -64,5 +69,37 @@ class SpringPropertiesTest {
         assertEquals("1", env.get(0).getValue());
         assertEquals("B", env.get(1).getName());
         assertEquals("2", env.get(1).getValue());
+    }
+
+    @Test
+    public void dashesAreRemovedInEnvVarNames() {
+        List<EnvVar> env = SpringProperties
+                .builder()
+                .property("repository.heap-cache-size", "134217728")
+                .toEnvVars();
+        assertEquals(1, env.size());
+        assertEquals("REPOSITORY_HEAPCACHESIZE", env.get(0).getName());
+        assertEquals("134217728", env.get(0).getValue());
+    }
+
+    @Test
+    public void indexedPropertiesRemainValidEnvVarNames() {
+        List<EnvVar> env = SpringProperties
+                .builder()
+                .property("cae.preview.pbe.studio-url-whitelist[0]", "https://studio.example.com")
+                .toEnvVars();
+        assertEquals(1, env.size());
+        assertEquals("CAE_PREVIEW_PBE_STUDIOURLWHITELIST_0", env.get(0).getName());
+    }
+
+    @Test
+    public void canonicalEnvVarBindsToDashedProperty() {
+        StandardEnvironment environment = new StandardEnvironment();
+        Map<String, Object> vars = new HashMap<>();
+        vars.put("REPOSITORY_HEAPCACHESIZE", "2");
+        environment.getPropertySources().replace("systemEnvironment",
+                new SystemEnvironmentPropertySource("systemEnvironment", vars));
+        ConfigurationPropertySources.attach(environment);
+        assertEquals("2", environment.getProperty("repository.heap-cache-size"));
     }
 }
