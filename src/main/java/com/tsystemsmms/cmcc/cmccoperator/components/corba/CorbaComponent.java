@@ -83,7 +83,6 @@ public abstract class CorbaComponent extends SpringBootComponent implements HasS
             "com.coremedia.transform.blobCache.size", String.valueOf(getVolumeSizeLimit(ComponentSpec.VolumeSize::getTransformedBlobCache)),
             "repository.blob-cache-path", MOUNT_UAPI_BLOBCACHE,
             "repository.blob-cache-size", String.valueOf(getVolumeSizeLimit(ComponentSpec.VolumeSize::getUapiBlobCache)),
-            "repository.heap-cache-size", Integer.toString(128 * 1024 * 1024),
             "repository.url", getTargetState().getServiceUrlFor("content-server", "cms"),
             "management.health.diskspace.path", MOUNT_UAPI_BLOBCACHE
     ));
