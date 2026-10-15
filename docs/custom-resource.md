@@ -80,8 +80,8 @@ The `milestone` status column shows the creation status of the installation:
 2. `DatabasesReady`: The databases are running, all schemas have been created. The core management components are being
    started (CMS, MLS).
 3. `ContentserverInitialized`: The Content Management Server and the Master Live Server have started for the first time.
-   An initial job can be run to import users or do other basic housekeeping for a fresh instance. Once this milestone
-   has completed all jobs, the CMS and the MLS will be restarted.
+   An initial job can be run to import users or do other basic housekeeping for a fresh instance. The Studio is being
+   started as well. Once this milestone has completed all jobs, the CMS and the MLS will be restarted.
 4. `ContentserverReady`: The Content Management Server and the Master Live Server are running.
 5. `ManagementReady`: The core management components are running. All remaining component are being started, including
    the content import.

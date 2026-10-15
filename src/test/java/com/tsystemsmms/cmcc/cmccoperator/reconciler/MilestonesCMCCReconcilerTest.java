@@ -31,11 +31,12 @@ public class MilestonesCMCCReconcilerTest extends AbstractCMCCReconcilerTest {
 
   private final String[] STS_DATABASES = {"solr-leader", "mysql", "mongodb"};
   private final String[] STS_CONTENT_SERVERS = {"content-management-server", "master-live-server"};
+  private final String[] STS_CONTENT_INITIALIZED = {"workflow-server", "studio-client", "studio-server"};
   private final String[] STS_MANAGEMENT = {"cae-feeder-preview", "cae-preview", "content-feeder",
-          "elastic-worker", "headless-preview", "studio-client", "studio-server", "user-changes"};
+          "elastic-worker", "headless-preview", "user-changes"};
   private final String[] STS_DELIVERY_SERVICES = {"cae-feeder-live", "replication-live-server", "solr-follower"};
   private final String[] STS_DELIVERY = {"cae-live-0", "cae-live-1", "headless-live-0", "headless-live-1", "overview"};
-  private final String[][] STS_ALL = {STS_DATABASES, STS_CONTENT_SERVERS, {"workflow-server"} , STS_MANAGEMENT, STS_DELIVERY_SERVICES, STS_DELIVERY};
+  private final String[][] STS_ALL = {STS_DATABASES, STS_CONTENT_SERVERS, STS_CONTENT_INITIALIZED, STS_MANAGEMENT, STS_DELIVERY_SERVICES, STS_DELIVERY};
 
   private CoreMediaContentCloud cmcc;
 
