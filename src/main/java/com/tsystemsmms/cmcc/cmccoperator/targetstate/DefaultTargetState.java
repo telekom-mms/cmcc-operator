@@ -80,26 +80,28 @@ public class DefaultTargetState extends AbstractTargetState {
 
         if (cmcc.getSpec().getWith().getManagement()) {
             componentCollection.addAll(List.of(
+                    // DatabasesReady
                     ComponentSpecBuilder.ofType("content-server").withKind("cms").withMilestone(Milestone.DatabasesReady).build(),
                     ComponentSpecBuilder.ofType("content-server").withKind("mls").withMilestone(Milestone.DatabasesReady).build(),
+                    // ContentServerInitialized
                     ComponentSpecBuilder.ofType("workflow-server").withMilestone(Milestone.ContentServerInitialized).build(),
+                    ComponentSpecBuilder.ofType("studio-client").withMilestone(Milestone.ContentServerInitialized).build(),
+                    ComponentSpecBuilder.ofType("studio-server").withMilestone(Milestone.ContentServerInitialized).build(),
+                    ComponentSpecBuilder.ofType("management-tools")
+                            .withName("initcms")
+                            .withMilestone(Milestone.ContentServerInitialized)
+                            .build(),
+                    // ContentServerReady
                     ComponentSpecBuilder.ofType("cae").withMilestone(Milestone.ContentServerReady).withKind("preview").build(),
                     ComponentSpecBuilder.ofType("cae-feeder").withMilestone(Milestone.ContentServerReady).withKind("preview").build(),
                     ComponentSpecBuilder.ofType("headless").withMilestone(Milestone.ContentServerReady).withKind("preview").build(),
                     ComponentSpecBuilder.ofType("content-feeder").withMilestone(Milestone.ContentServerReady).build(),
                     ComponentSpecBuilder.ofType("elastic-worker").withMilestone(Milestone.ContentServerReady).build(),
-                    ComponentSpecBuilder.ofType("studio-client").withMilestone(Milestone.ContentServerReady).build(),
-                    ComponentSpecBuilder.ofType("studio-server").withMilestone(Milestone.ContentServerReady).build(),
                     ComponentSpecBuilder.ofType("user-changes").withMilestone(Milestone.ContentServerReady).build(),
+                    // ManagementReady
                     ComponentSpecBuilder.ofType("cae-feeder").withMilestone(Milestone.ManagementReady).withKind("live").build(),
-                    ComponentSpecBuilder.ofType("overview").withMilestone(Milestone.DeliveryServicesReady).build(),
-
-
-                    ComponentSpecBuilder.ofType("management-tools")
-                            .withName("initcms")
-                            .withMilestone(Milestone.ContentServerInitialized)
-                            //.withArgs(List.of("change-passwords"))
-                            .build()
+                    // DeliveryServicesReady
+                    ComponentSpecBuilder.ofType("overview").withMilestone(Milestone.DeliveryServicesReady).build()
             ));
 
             // legacy solr handling if none specified or if there is one without KIND
