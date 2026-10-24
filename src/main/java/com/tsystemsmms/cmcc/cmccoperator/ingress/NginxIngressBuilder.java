@@ -36,6 +36,9 @@ public class NginxIngressBuilder extends AbstractIngressBuilder {
 
   @Override
   public Collection<? extends HasMetadata> build() {
+    if (!targetState.getCmcc().getSpec().getWith().getCreateNginxIngresses()) {
+      return List.of();
+    }
     ObjectMeta metadata = targetState.getResourceMetadataFor(name);
     metadata.getAnnotations().putAll(annotations);
 

@@ -50,6 +50,9 @@ public class WithOptions {
     @JsonPropertyDescription("Set of URI prefixes that should be passed through to /blueprint/servlet unchanged")
     Set<String> handlerPrefixes = Set.of("resource", "service-sitemap-.*", "static");
 
+    @JsonPropertyDescription("Create nginx Ingress resources for the components")
+    Boolean createNginxIngresses = true;
+
     @JsonPropertyDescription("Add these annotations to the managed Ingress resources")
     Map<String, String> ingressAnnotations = new HashMap<>();
 
