@@ -1846,6 +1846,9 @@ spec:
                   contentImport:
                     description: "Import content, users, themes and workflows"
                     type: "boolean"
+                  createNginxIngresses:
+                    description: "Create nginx Ingress resources for the components"
+                    type: "boolean"
                   databases:
                     description: "Create databases and secrets for CoreMedia"
                     type: "boolean"
