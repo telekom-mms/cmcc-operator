@@ -59,9 +59,9 @@ jobs:
       - name: Install Helm
         uses: azure/setup-helm@v4
         with:
-          version: v3.8.1
+          version: v3.22.1
 
       - name: Run chart-releaser
-        uses: helm/chart-releaser-action@v1.7.0
+        uses: helm/chart-releaser-action@v1.8.0
         env:
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
